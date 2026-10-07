@@ -1,0 +1,69 @@
+:root {
+  --bg: #eef0f5;
+  --ink: #1d1d1f;
+  --mute: #6e6e73;
+  --line: rgba(0, 0, 0, 0.08);
+  --accent: #0a84ff;
+  --good: #2fb457;
+  --warn: #ff9f0a;
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-line: rgba(255, 255, 255, 0.85);
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 14px/1.4 var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+.win { display: grid; grid-template-columns: 180px 1fr; min-height: 100vh; }
+.side {
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  border-right: 1px solid var(--glass-line);
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.brand { font-weight: 600; font-size: 15px; padding: 4px 10px 14px; }
+.side button {
+  all: unset;
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.side button.on { background: rgba(10, 132, 255, 0.14); color: var(--accent); font-weight: 500; }
+.bar {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  background: var(--glass);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--glass-line);
+}
+.bar h1 { font-size: 15px; font-weight: 600; margin: 0; }
+.body { padding: 20px 24px; }
+.mute { color: var(--mute); }
+.pill {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  background: rgba(47, 180, 87, 0.14);
+  color: #1d8a40;
+}
+.pill i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.syncing { background: rgba(10, 132, 255, 0.14); color: var(--accent); }
+.pill.offline { background: rgba(110, 110, 115, 0.16); color: #555; }
+.pill.needs-sync { background: rgba(255, 159, 10, 0.18); color: #a86400; }
