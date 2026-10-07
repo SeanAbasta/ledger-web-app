@@ -139,3 +139,15 @@ describe("salary", () => {
     await expect(addEntry(store, { kind: "income", date: "2026-10-01", amount: 0, currency: "PHP" })).rejects.toThrow();
   });
 });
+
+describe("a revised price flows into the forecast and balances", () => {
+  it("uses the new amount from its date", async () => {
+    const { applyRevision } = await import("../src/data/rules");
+    const r = applyRevision(rule({ amount: 50000, start: "2026-11-05", accountId: "A" }), "2026-12-05", { amount: 65000 });
+    const f = forecast({ today: "2026-10-10", base: "PHP", entries: [], rules: [r], start: 1000000 });
+    expect(f.months[1]!.obligations).toBe(50000); // Nov
+    expect(f.months[2]!.obligations).toBe(65000); // Dec
+    const b = accountBalances([acct({ openingBalance: 0 })], items([], [r], "2027-01-31"), "PHP");
+    expect(b.accounts[0]!.balance).toBe(-(50000 + 65000 + 65000)); // Nov, Dec, Jan
+  });
+});

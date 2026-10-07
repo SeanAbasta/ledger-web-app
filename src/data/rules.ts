@@ -1,6 +1,6 @@
 import { addDays, addMonths } from "./dates";
 import { splitEvenly } from "./money";
-import type { Entry, EntryKind, Frequency, IsoDate, Minor, Rule, Split } from "./schema";
+import type { Entry, EntryKind, Frequency, IsoDate, Minor, Rule, RuleRevision, Split } from "./schema";
 
 /** One generated payment of a rule. Never stored; computed on demand. */
 export interface Occurrence {
@@ -14,11 +14,41 @@ export interface Occurrence {
   note?: string;
   accountId?: string;
   split?: Split;
+  /** The amount before any per-date override. */
+  baseAmount: Minor;
   /** 1-based position, set for installments. */
   index?: number;
   count?: number;
   /** Installments: total still unpaid after this payment. */
   remainingAfter?: Minor;
+}
+
+type Base = Pick<RuleRevision, "amount" | "note" | "category" | "accountId">;
+
+/** What a payment on `date` looks like from the rule and its revisions, before any per-date override. */
+export function baseFor(rule: Rule, date: IsoDate): Required<Pick<Base, "amount">> & Omit<Base, "amount"> {
+  const out: Base = { amount: rule.amount, note: rule.note, category: rule.category, accountId: rule.accountId };
+  if (rule.type !== "installment") {
+    for (const r of rule.revisions ?? []) {
+      if (r.from > date) break; // kept oldest first
+      if (r.amount !== undefined) out.amount = r.amount;
+      if (r.note !== undefined) out.note = r.note;
+      if (r.category !== undefined) out.category = r.category;
+      if (r.accountId !== undefined) out.accountId = r.accountId;
+    }
+  }
+  return out as Required<Pick<Base, "amount">> & Omit<Base, "amount">;
+}
+
+/**
+ * "This and later": from `from` onward the payment becomes `patch`. Revisions and per-date
+ * overrides dated after `from` are dropped, since they were about the old arrangement.
+ */
+export function applyRevision(rule: Rule, from: IsoDate, patch: Base): Rule {
+  const revisions = (rule.revisions ?? []).filter((r) => r.from < from);
+  revisions.push({ from, ...patch });
+  const overrides = Object.fromEntries(Object.entries(rule.overrides ?? {}).filter(([d]) => d < from));
+  return { ...rule, revisions, overrides };
 }
 
 function dateAt(start: IsoDate, f: Frequency, i: number): IsoDate {
@@ -39,17 +69,19 @@ export function occurrences(rule: Rule, from: IsoDate, to: IsoDate): Occurrence[
     if (date > last) break;
     if (date < from || rule.skipped?.includes(date)) continue;
     const ov = rule.overrides?.[date];
-    const base = amounts ? (amounts[i] ?? rule.amount) : rule.amount;
+    const rev = baseFor(rule, date);
+    const base = amounts ? (amounts[i] ?? rule.amount) : rev.amount;
     const o: Occurrence = {
       ruleId: rule.id,
       type: rule.type,
       kind: rule.kind,
       date,
       amount: ov?.amount ?? base,
+      baseAmount: base,
       currency: rule.currency,
-      category: rule.category,
-      note: ov?.note ?? rule.note,
-      accountId: rule.accountId,
+      category: rev.category,
+      note: ov?.note ?? rev.note,
+      accountId: rev.accountId,
       split: rule.split,
     };
     if (isInst) {

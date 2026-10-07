@@ -95,7 +95,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
       }
 
       const base = {
-        kind: "expense" as const,
+        kind: entry?.kind === "income" ? ("income" as const) : ("expense" as const), // never turn an income entry into an expense
         amount: perPayment,
         currency,
         category,
@@ -176,9 +176,11 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
         </>
       )}
 
-      <div className="field"><b>Split</b>
-        <button type="button" className={`toggle ${split ? "on" : ""}`} aria-pressed={split} onClick={() => setSplit(!split)}><i /></button></div>
-      {split && (
+      {entry?.kind !== "income" && (
+        <div className="field"><b>Split</b>
+          <button type="button" className={`toggle ${split ? "on" : ""}`} aria-pressed={split} onClick={() => setSplit(!split)}><i /></button></div>
+      )}
+      {split && entry?.kind !== "income" && (
         <>
           <label className="field"><b>People</b><input list="people" placeholder="Maya, Jon" value={names} onChange={(e) => setNames(e.target.value)} />
             <datalist id="people">{people.map((p) => <option key={p.id} value={p.name} />)}</datalist></label>

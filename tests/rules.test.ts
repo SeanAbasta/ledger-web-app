@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addDays, addMonths, labelDay, monthKeysBetween, weekStart } from "../src/data/dates";
-import { ledgerItems, occurrences } from "../src/data/rules";
+import { applyRevision, baseFor, ledgerItems, occurrences } from "../src/data/rules";
 import type { Entry, Rule } from "../src/data/schema";
 import { buildSplit } from "../src/data/splits";
 
@@ -88,5 +88,48 @@ describe("buildSplit", () => {
     expect(() => buildSplit({ amount: 100, paidBy: "me", mode: "i-owe", people: ["a"] })).toThrow();
     expect(() => buildSplit({ amount: 100, paidBy: "a", mode: "they-owe", people: ["a"] })).toThrow();
     expect(() => buildSplit({ amount: 100, paidBy: "me", mode: "half", people: [] })).toThrow();
+  });
+});
+
+describe("revisions (edit this and later)", () => {
+  const sub = (r: Partial<Rule> = {}) => rule({ start: "2026-01-31", amount: 50000, note: "Streaming", category: "Bills", ...r });
+  const amounts = (r: Rule, from = "2026-01-01", to = "2026-06-30") => occurrences(r, from, to).map((o) => [o.date, o.amount]);
+
+  it("changes the price from a date onward and leaves earlier payments alone", () => {
+    const r = applyRevision(sub(), "2026-03-31", { amount: 65000 });
+    expect(amounts(r)).toEqual([["2026-01-31", 50000], ["2026-02-28", 50000], ["2026-03-31", 65000], ["2026-04-30", 65000], ["2026-05-31", 65000], ["2026-06-30", 65000]]);
+  });
+  it("keeps the anchor day, so a rule on the 31st still lands on the 31st after a revision", () => {
+    const r = applyRevision(sub(), "2026-02-28", { amount: 1 });
+    expect(occurrences(r, "2026-03-01", "2026-03-31").map((o) => o.date)).toEqual(["2026-03-31"]);
+  });
+  it("a later edit replaces an earlier one and drops later revisions and overrides", () => {
+    let r = applyRevision(sub(), "2026-02-28", { amount: 60000 });
+    r = applyRevision(r, "2026-05-31", { amount: 70000 });
+    r = { ...r, overrides: { ...r.overrides, "2026-06-30": { amount: 1 } } };
+    r = applyRevision(r, "2026-03-31", { amount: 55000 });
+    expect(amounts(r)).toEqual([["2026-01-31", 50000], ["2026-02-28", 60000], ["2026-03-31", 55000], ["2026-04-30", 55000], ["2026-05-31", 55000], ["2026-06-30", 55000]]);
+  });
+  it("editing the same date again replaces that revision", () => {
+    const r = applyRevision(applyRevision(sub(), "2026-03-31", { amount: 60000 }), "2026-03-31", { amount: 62000 });
+    expect(r.revisions).toHaveLength(1);
+    expect(amounts(r, "2026-03-01", "2026-03-31")).toEqual([["2026-03-31", 62000]]);
+  });
+  it("changes note, category and account too, and a per-date override still wins", () => {
+    let r = applyRevision(sub({ accountId: "A" }), "2026-03-31", { amount: 65000, note: "Streaming plus", category: "Fun", accountId: "B" });
+    r = { ...r, overrides: { "2026-04-30": { amount: 100 } } };
+    const o = occurrences(r, "2026-02-01", "2026-05-31");
+    expect(o.map((x) => [x.amount, x.note, x.category, x.accountId])).toEqual([
+      [50000, "Streaming", "Bills", "A"], [65000, "Streaming plus", "Fun", "B"], [100, "Streaming plus", "Fun", "B"], [65000, "Streaming plus", "Fun", "B"],
+    ]);
+  });
+  it("installments ignore revisions", () => {
+    const r = applyRevision(rule({ type: "installment", total: 9000, count: 3, amount: 3000, start: "2026-10-15" }), "2026-11-15", { amount: 999 });
+    expect(occurrences(r, "2026-01-01", "2030-01-01").map((o) => o.amount)).toEqual([3000, 3000, 3000]);
+  });
+  it("baseFor reports the effective payment before overrides", () => {
+    const r = applyRevision(sub(), "2026-03-31", { amount: 65000 });
+    expect(baseFor(r, "2026-02-28").amount).toBe(50000);
+    expect(baseFor(r, "2026-04-30")).toMatchObject({ amount: 65000, note: "Streaming", category: "Bills" });
   });
 });

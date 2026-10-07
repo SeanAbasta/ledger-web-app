@@ -44,7 +44,7 @@ After that you only need a browser.
 | | Feature | What you get |
 |---|---|---|
 | **Add** | Fast entry | Amount, currency, category, note, date and account in one small form. |
-| **Ledger** | History | Day, Week and Month views, search, edit and delete, and a quiet "Due soon" group for upcoming payments. |
+| **Ledger** | History | Day, Week and Month views, search, and a quiet "Due soon" group for upcoming payments. Tap any entry to edit or delete it. For recurring payments you can change one payment, or this and every later one, so a price rise on a subscription is a single edit. |
 | **Dashboard** | Summary | Spent this month compared with last month, a category donut, daily bars, account balances, and what is still due. |
 | **Splits** | Shared costs | Choose who paid and how to split: they owe it all, you owe it all, 50/50, or custom amounts for 3 or more people. |
 | **Snapshot** | Easy settling | Turn a person's balance into a clean statement image you can copy or save, then record the settlement. |

@@ -7,6 +7,7 @@ import { formatMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem, type Occurrence } from "../../data/rules";
 import type { Entry, Person, Rule } from "../../data/schema";
 import { AddForm } from "../add/AddForm";
+import { OccurrenceForm } from "./OccurrenceForm";
 import { Segmented } from "../../ui/Segmented";
 import { Sheet } from "../../ui/Sheet";
 import { useLedger } from "../../ui/Ledger";
@@ -40,6 +41,7 @@ export function Ledger() {
   const [base, setBase] = useState("PHP");
   const [editing, setEditing] = useState<Entry>();
   const [occ, setOcc] = useState<Occurrence>();
+  const [editOcc, setEditOcc] = useState<Occurrence>();
   const [paid, setPaid] = useState<Entry>();
 
   const [from, to] = range(view, anchor);
@@ -108,12 +110,14 @@ export function Ledger() {
         <input className="search" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
+      {groups.length > 0 && <p className="mute small hint">Tap an entry to edit it</p>}
+
       {due.length > 0 && !q && (
         <>
           <div className="grp">Due soon</div>
           <div className="card">
             {due.slice(0, 5).map((o) => (
-              <button key={o.ruleId + o.date} className="row" onClick={() => setOcc(o)}>
+              <button key={o.ruleId + o.date} className="row" title="Edit" onClick={() => setOcc(o)}>
                 <span>{labelShort(o.date)} &nbsp;{o.note || o.category}<span className="tag">{o.type === "installment" ? `${o.index} of ${o.count}` : "recurring"}</span></span>
                 <span>{formatMinor(o.amount, o.currency)}</span>
               </button>
@@ -131,7 +135,7 @@ export function Ledger() {
               const x = it.type === "entry" ? it.entry : it.occ;
               const b = toBase(x, base);
               return (
-                <button key={it.type === "entry" ? it.entry.id : it.occ.ruleId + it.date} className="row" onClick={() => (it.type === "entry" ? (it.entry.kind === "settlement" ? setPaid(it.entry) : setEditing(it.entry)) : setOcc(it.occ))}>
+                <button key={it.type === "entry" ? it.entry.id : it.occ.ruleId + it.date} className="row" title="Edit" onClick={() => (it.type === "entry" ? (it.entry.kind === "settlement" ? setPaid(it.entry) : setEditing(it.entry)) : setOcc(it.occ))}>
                   <span>
                     {x.category}
                     {x.note && <span className="mute"> &nbsp;{x.note}</span>}
@@ -151,7 +155,7 @@ export function Ledger() {
 
       {editing && (
         <Sheet locked onClose={() => setEditing(undefined)}>
-          <h3>Edit expense</h3>
+          <h3>{editing.kind === "income" ? "Edit income" : "Edit expense"}</h3>
           <AddForm entry={editing} onDone={() => setEditing(undefined)} />
         </Sheet>
       )}
@@ -164,6 +168,12 @@ export function Ledger() {
           </div>
         </Sheet>
       )}
+      {editOcc && rules.find((r) => r.id === editOcc.ruleId) && (
+        <Sheet locked onClose={() => setEditOcc(undefined)}>
+          <h3>Edit payment</h3>
+          <OccurrenceForm occ={editOcc} rule={rules.find((r) => r.id === editOcc.ruleId)!} onDone={() => setEditOcc(undefined)} />
+        </Sheet>
+      )}
       {occ && (
         <Sheet locked onClose={() => setOcc(undefined)}>
           <h3>{occ.note || occ.category}</h3>
@@ -173,6 +183,7 @@ export function Ledger() {
           </p>
           {occ.split && <p className="mute small">Split with {occ.split.shares.map((s) => personName(s.personId)).join(", ")}</p>}
           <div className="actions">
+            <button className="btn" onClick={() => { setEditOcc(occ); setOcc(undefined); }}>Edit</button>
             <button className="btn ghost" onClick={() => void skipOcc(occ)}>Skip this one</button>
             <button className="btn ghost danger" onClick={() => void endSeries(occ)}>End series</button>
           </div>

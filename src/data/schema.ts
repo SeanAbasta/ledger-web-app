@@ -60,6 +60,15 @@ export interface MonthFile {
 
 export type Frequency = "weekly" | "monthly" | "yearly";
 
+/** A change that applies to a rule's payments from `from` onward (a price change, a new note). */
+export interface RuleRevision {
+  from: IsoDate;
+  amount?: Minor;
+  note?: string;
+  category?: string;
+  accountId?: string;
+}
+
 export interface Rule {
   id: string;
   type: "recurring" | "installment" | "income";
@@ -78,6 +87,8 @@ export interface Rule {
   split?: Split;
   /** Dates of occurrences that are skipped. */
   skipped?: IsoDate[];
+  /** Changes from a date onward, oldest first. Ignored for installments. */
+  revisions?: RuleRevision[];
   /** Per-occurrence overrides keyed by occurrence date. */
   overrides?: Record<IsoDate, { amount?: Minor; note?: string }>;
   updatedAt: Stamp;
