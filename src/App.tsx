@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { AddForm } from "./features/add/AddForm";
 import { Dashboard } from "./features/dashboard/Dashboard";
+import { Forecast } from "./features/forecast/Forecast";
+import { Settings } from "./features/settings/Settings";
 import { Splits } from "./features/splits/Splits";
 import { Ledger } from "./features/ledger/Ledger";
 import { LedgerProvider } from "./ui/Ledger";
@@ -14,7 +16,9 @@ function Screen({ tab, go }: { tab: Tab; go: (t: Tab) => void }) {
   if (tab === "Ledger") return <Ledger />;
   if (tab === "Dashboard") return <Dashboard />;
   if (tab === "Splits") return <Splits />;
-  return <p className="mute empty">Coming soon</p>;
+  if (tab === "Forecast") return <Forecast />;
+  if (tab === "Settings") return <Settings />;
+  return null;
 }
 
 export function App() {

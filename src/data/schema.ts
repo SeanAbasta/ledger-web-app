@@ -96,6 +96,8 @@ export interface Account {
   name: string;
   currency: string;
   openingBalance: Minor;
+  /** Foreign accounts only: base-currency units per 1 unit of the account currency. */
+  rate?: string;
   updatedAt: Stamp;
   deleted?: true;
 }

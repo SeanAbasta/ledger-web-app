@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
+import { accountBalances, type Balances } from "../../data/accounts";
 import { toBase } from "../../data/base";
+import { forecast } from "../../data/forecast";
+import { itemsToDate, loadWorld } from "../../data/world";
 import { getSettings, list } from "../../data/collections";
 import { addDays, addMonths, labelMonth, monthEnd, monthStart, today } from "../../data/dates";
 import { loadEntries } from "../../data/months";
@@ -16,6 +19,8 @@ interface View {
   stillDue: number;
   from: string;
   isCurrent: boolean;
+  balances: Balances;
+  next?: { month: string; end: number };
 }
 
 const C = 2 * Math.PI * 40;
@@ -72,12 +77,15 @@ export function Dashboard() {
         ? rules.flatMap((r) => occurrences(r, addDays(t, 1), to)).filter((o) => o.kind === "expense")
             .reduce((a, o) => a + (toBase({ amount: myShare(o.amount, o.split), currency: o.currency }, base) ?? 0), 0)
         : 0;
-      setV({ base, cur, prevTotal: prev.total, stillDue, from, isCurrent });
+      const world = await loadWorld(store);
+      const balances = accountBalances(world.accounts, itemsToDate(world, t), base);
+      const fc = forecast({ start: balances.totalBase, today: t, base, entries: world.entries, rules: world.rules, months: 2 });
+      setV({ base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, next: fc.months[1] });
     })();
   }, [store, rev, anchor]);
 
   if (!v) return null;
-  const { base, cur, prevTotal, stillDue, from, isCurrent } = v;
+  const { base, cur, prevTotal, stillDue, from, isCurrent, balances, next } = v;
   const cats = topCategories(cur.byCategory);
   const change = pctChange(cur.total, prevTotal);
   const todayIdx = isCurrent ? Number(today().slice(8)) - 1 : -1;
@@ -120,6 +128,21 @@ export function Dashboard() {
           </div>
         </div>
       )}
+      <div className="grid g2">
+        {(balances.accounts.length > 0 || balances.unassigned !== 0) && (
+          <div className="card pad">
+            <div className="mute">Accounts</div>
+            {balances.accounts.map(({ account, balance }) => (
+              <div key={account.id} className="row static"><span>{account.name}</span><span>{formatMinor(balance, account.currency)}</span></div>
+            ))}
+            {balances.unassigned !== 0 && <div className="row static"><span className="mute">Other</span><span>{formatMinor(balances.unassigned, base)}</span></div>}
+            <div className="row static"><b>Total</b><b>{formatMinor(balances.totalBase, base)}</b></div>
+          </div>
+        )}
+        {next && (
+          <div className="card stat"><div className="mute">End of {labelMonth(next.month)}</div><div className="big">{formatMinor(next.end, base)}</div><div className="mute small">forecast</div></div>
+        )}
+      </div>
       {cur.unconverted > 0 && <p className="mute small">{cur.unconverted} foreign {cur.unconverted === 1 ? "amount has" : "amounts have"} no rate and {cur.unconverted === 1 ? "is" : "are"} left out.</p>}
     </>
   );

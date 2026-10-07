@@ -5,7 +5,7 @@ import { labelShort, today } from "../../data/dates";
 import { addEntry, loadAllEntries } from "../../data/months";
 import { formatMinor } from "../../data/money";
 import { ledgerItems } from "../../data/rules";
-import type { Person, Rule } from "../../data/schema";
+import type { Account, Person, Rule } from "../../data/schema";
 import { Sheet } from "../../ui/Sheet";
 import { useLedger } from "../../ui/Ledger";
 import { copyImage, downloadImage, renderStatement } from "./snapshot";
@@ -22,6 +22,8 @@ export function Splits() {
   const [rows, setRows] = useState<Row[]>([]);
   const [sel, setSel] = useState<string>();
   const [settle, setSettle] = useState<Row>();
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [acct, setAcct] = useState("");
   const [snap, setSnap] = useState<{ blob: Blob; url: string; name: string; note?: string }>();
 
   useEffect(() => {
@@ -30,6 +32,7 @@ export function Splits() {
       const items = ledgerItems(entries, rules, "0000-01-01", today());
       const rs = people.map((person) => ({ person, lines: personLines(person.id, items) })).filter((r) => r.lines.length);
       setRows(rs);
+      setAccounts(await list(store, "accounts"));
       setSel((s) => (s && rs.some((r) => r.person.id === s) ? s : rs[0]?.person.id));
     })();
   }, [store, rev]);
@@ -56,6 +59,7 @@ export function Splits() {
         note: amt > 0 ? `${r.person.name} paid you` : `You paid ${r.person.name}`,
         personId: r.person.id,
         direction: amt > 0 ? "in" : "out",
+        accountId: acct || accounts[0]?.id,
       });
     }
     setSettle(undefined);
@@ -108,6 +112,10 @@ export function Splits() {
           {nonZero(sumBy(settle.lines)).map(([c, a]) => (
             <p key={c}>{a > 0 ? `${settle.person.name} pays you` : `You pay ${settle.person.name}`} <b>{formatMinor(Math.abs(a), c)}</b></p>
           ))}
+          {accounts.length > 0 && (
+            <label className="field"><b>{nonZero(sumBy(settle.lines))[0]![1] > 0 ? "Paid into" : "Paid from"}</b>
+              <select value={acct} onChange={(e) => setAcct(e.target.value)}><option value="">{accounts[0]!.name}</option>{accounts.slice(1).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+          )}
           <p className="mute small">Records a payment today and brings the balance to zero.</p>
           <div className="actions">
             <button className="btn ghost" onClick={() => setSettle(undefined)}>Cancel</button>
