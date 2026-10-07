@@ -70,6 +70,28 @@ export class LedgerStore {
     await tx.done;
   }
 
+  async allDocs(): Promise<Record<string, Doc>> {
+    const keys = (await this.db.getAllKeys("files")) as string[];
+    const out: Record<string, Doc> = {};
+    for (const k of keys) out[k] = (await this.db.get("files", k)) as Doc;
+    return out;
+  }
+
+  /** Make the local files exactly `docs` (a pull or "keep remote"). Nothing stays dirty. */
+  async replaceAll(docs: Record<string, Doc>): Promise<void> {
+    const tx = this.db.transaction(["files", "dirty"], "readwrite");
+    await tx.objectStore("files").clear();
+    await tx.objectStore("dirty").clear();
+    for (const [p, d] of Object.entries(docs)) await tx.objectStore("files").put(d, p);
+    await tx.done;
+  }
+
+  async markDirty(paths: string[]): Promise<void> {
+    const tx = this.db.transaction("dirty", "readwrite");
+    for (const p of paths) await tx.store.put(true, p);
+    await tx.done;
+  }
+
   async dirtyPaths(): Promise<string[]> {
     return (await this.db.getAllKeys("dirty")) as string[];
   }
