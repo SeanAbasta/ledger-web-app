@@ -25,6 +25,20 @@ It runs in the browser, keeps your data on your own device first, and syncs betw
 
 ---
 
+## Quick start
+
+Ledger has no company behind it and no shared server, so **you make your own copy of it**. That takes about 15 minutes and costs nothing.
+
+1. **Make your own copy of the app** (a public repo of yours that GitHub Pages serves). [Steps](#1-make-your-own-copy-of-the-app)
+2. **Make a private repo for your data**, and a token that can only touch that repo. [Steps](#2-make-your-private-data-repo-and-token)
+3. **Connect them** in the app, once per computer. [Steps](#3-connect-your-computers)
+
+After that you only need a browser.
+
+**What you need:** a free [GitHub](https://github.com) account and a modern browser (Chrome, Edge, Safari or Firefox). You do not need to install anything or write code.
+
+---
+
 ## What it does
 
 | | Feature | What you get |
@@ -78,53 +92,92 @@ flowchart LR
 
 ---
 
-## Use Ledger yourself
+## Make your own Ledger
 
-Anyone can have their own Ledger. There is no sign-up, and nothing is shared with the person who built it: each person's data lives in their own browser and their own private GitHub repo.
+Each person runs their own copy, with their own two GitHub repos. Nothing is shared with the author or with anyone else, and each person's data lives only in their own browser and their own private repo.
 
-You can use it two ways.
-
-| | **Use the hosted copy** | **Host your own copy** |
+| Repo | Visibility | What it holds |
 |---|---|---|
-| Repos you create | **1**: a private repo for your data | **2**: a fork of this repo for the app, plus a private repo for your data |
-| Steps | Open the link, connect your data repo | Fork, switch on Pages, then connect your data repo |
-| Who controls the code | The author. Updates reach you automatically. | You. You choose when to update. |
-| Trust needed | You run code published by someone else, and that code can see your token in your browser. Use it only with people you trust. | None beyond reading the code yourself. |
-| Good for | Trying it, family and friends | Anyone who wants full control |
+| **App** (your copy of this project) | Public | Code only. GitHub Pages needs a public repo on a free account. It never holds your data. |
+| **Data** (yours alone) | **Private** | Your expenses, as small JSON files. |
 
-Hosted copy: **https://seanabasta.github.io/ledger-web-app/**
+> The author's own copy is live at https://seanabasta.github.io/ledger-web-app/ as a personal instance. Please make your own copy instead of using it: that way you decide what code runs with your token, and updates happen when you choose.
 
-### Does using someone's hosted copy use up their GitHub limits?
+### 1. Make your own copy of the app
 
-Practically no, and never the parts that matter:
+The easiest way is a fork, which needs no command line.
 
-- **Their data and yours are separate.** Your entries go from your browser straight to your own data repo, using your own token. They never pass through the author's repo or account, and your API calls count against your token, not theirs.
-- **Site size (1 GB)** is the size of the published app, which is a few hundred kilobytes in total. More users do not make it bigger.
-- **Bandwidth (100 GB a month, a soft limit)** is the only thing shared. Opening Ledger downloads roughly 100 KB the first time, and then your browser reuses it, so a single user costs almost nothing. Even a thousand people would be a tiny fraction of the limit.
-- **If you host your own copy,** all of this counts against your account instead, and nobody else's.
+1. Sign in to GitHub and click **Fork** at the top of this page. Keep the name or choose your own.
+2. In your fork, open the **Actions** tab and click the green button to enable workflows. GitHub turns them off on forks by default.
+3. In your fork, go to **Settings, then Pages**, and set **Source** to **GitHub Actions**.
+4. Back in the **Actions** tab, open **Deploy to GitHub Pages** and click **Run workflow**. When it turns green your app is live at `https://<your-username>.github.io/<your-fork-name>/`. Bookmark it.
 
-### Set up your data repo and sync
+<details>
+<summary>Prefer the command line? Make a clean copy instead of a fork</summary>
 
-You need a free GitHub account, and the same steps for either option.
+Create an empty public repo on GitHub, then:
 
-1. Create a **private** repo for your data (any name; a hard-to-guess one is a nice touch), with a README so it has a first commit.
-2. On GitHub, go to Settings, Developer settings, Personal access tokens, Fine-grained tokens, and generate a token. Limit it to **that one repo**, give it **Contents: Read and write** only, and set an expiry date.
-3. Open Ledger, click the status pill, and choose Connect GitHub. Enter your username, the data repo name and the token.
-4. Do the same on your other computer. It pulls everything on first open.
+```bash
+git clone https://github.com/SeanAbasta/ledger-web-app.git my-ledger
+cd my-ledger
+git remote set-url origin https://github.com/<your-username>/<your-repo>.git
+git push -u origin main
+```
 
-Before you close Ledger, press the status pill, then Sync now, and wait for **Synced. Safe to close.**
+Then do steps 2 to 4 above (enable Actions if asked, set Pages to GitHub Actions, run the workflow).
 
-When the token is close to expiring, Settings shows a reminder. Create a new one and use Replace token on each computer.
+</details>
 
-### Host your own copy
+### 2. Make your private data repo and token
 
-1. Fork this repo to your own account. The fork is public, which GitHub Pages needs on a free account. It holds only code, never your data.
-2. In your fork, open the Actions tab and enable workflows, since GitHub turns them off on forks by default.
-3. In the fork, go to Settings, Pages, and set Source to **GitHub Actions**.
-4. Run the "Deploy to GitHub Pages" workflow (or push any change). Your copy appears at `https://<your-username>.github.io/<fork-name>/`.
-5. Follow "Set up your data repo and sync" above.
+1. Create a new **private** repo for your data. Any name works, and a hard-to-guess one is a nice touch. Tick "Add a README" so it has a first commit.
+2. On GitHub go to **Settings, Developer settings, Personal access tokens, Fine-grained tokens, Generate new token**.
+3. Resource owner: you. **Expiration:** a date within a year, and write it down.
+4. Repository access: **Only select repositories**, and choose **only your data repo**.
+5. Permissions: **Contents: Read and write**. Nothing else.
+6. Generate the token and copy it once. You cannot see it again.
 
-To update later, use "Sync fork" on GitHub and the site redeploys on its own. Your data is untouched by app updates.
+### 3. Connect your computers
+
+1. Open your app link, click the status pill in the top corner (it says "Set up sync"), then **Connect GitHub**.
+2. Enter your GitHub username, your data repo name, the token and its expiry date, then **Verify**.
+3. Do the same on your other computer. It downloads everything on first open.
+
+That is all. Add expenses as normal and Ledger pushes them to your data repo a few seconds after each change.
+
+### Every day
+
+1. Open Ledger and wait for "Checking for updates…" to finish and the pill to say **Synced**.
+2. Work as usual.
+3. Before closing, click the pill, press **Sync now**, and wait for **Synced. Safe to close.** Then close the tab. Then use your other computer the same way.
+
+### Keeping your copy up to date
+
+Your copy does not update by itself. When the author releases bug fixes or new features, **update your copy to get them**:
+
+- **Forked:** on your fork's page, click **Sync fork, then Update branch**. The site rebuilds and redeploys on its own in about a minute.
+- **Cloned:** re-clone the project, or pull the new changes into your copy, then push to your repo.
+
+Then reload the app (and accept the update if you installed it as an app). An update only replaces the app's code. It does not change your data repo or your browser's copy. If a release ever has to change how data is stored, the release notes will say what to do.
+
+### Will my copy use the author's GitHub limits?
+
+No. Your copy is your own repo on your own account, so its site size, bandwidth and build limits are yours. Your data goes from your browser to your private repo using your own token, so it counts against your own API limits. For one person this is nowhere near any limit: the app is a few hundred kilobytes, and a month of entries is tens of kilobytes.
+
+### When something goes wrong
+
+| What you see | What it means | What to do |
+|---|---|---|
+| **Token expired** | The token reached its expiry date, or was revoked. | Create a new token (step 2), then Settings, **Replace token**, on each computer. Your data is safe on the device meanwhile. |
+| **Two versions** | Both computers changed since they last synced. | Pick Keep this device, Keep remote, or Merge. The version you do not keep is saved to your Downloads first. |
+| **Offline, read-only** | No connection. Ledger holds back edits so your other computer's data stays safe. | Reconnect and press Retry, or choose Edit offline if you are sure. |
+| **Needs sync** that does not clear | A push failed (rate limit, network). | Click the pill, then Sync now. It retries by itself too. |
+| **No access to the data repo** | The token cannot reach that repo. | Check the repo name, and that the token is limited to that repo with Contents read and write. |
+| **Pages shows a 404** | Pages is not on yet. | Settings, Pages, Source: GitHub Actions, then run the workflow again. |
+| **Workflow will not run on a fork** | GitHub disables Actions on forks. | Open the Actions tab and enable workflows. |
+| **Browser data cleared** | Ledger's local copy is gone. | Open Ledger and it downloads everything again from your data repo, or use Settings, **Import** with a backup file. |
+
+Back up now and then with Settings, **Backup file**. The data repo's history is a backup too: GitHub keeps every earlier version.
 
 ---
 
@@ -141,7 +194,7 @@ To update later, use "Sync fork" on GitHub and the site redeploys on its own. Yo
 
 ## Status
 
-Ledger is feature complete for its first version and deployed. Sync has been tested against a simulated GitHub, and the first real-world use is under way.
+Ledger is feature complete for its first version and deployed. Sync has been confirmed against a real GitHub repo from one computer; the full two-computer handoff is still being tried out, so expect rough edges and keep a backup.
 
 | Milestone | Scope | Status |
 |---|---|---|
@@ -154,7 +207,7 @@ Ledger is feature complete for its first version and deployed. Sync has been tes
 | 7 | Token setup screen, sync status, conflict screen | Done |
 | 8 | Deployment to GitHub Pages, install as an app, export and import | Done |
 
-The app is live at `https://seanabasta.github.io/ledger-web-app/`.
+The author's own copy is live at `https://seanabasta.github.io/ledger-web-app/`.
 
 ---
 
@@ -169,9 +222,9 @@ Built with Claude Code.
 
 ---
 
-## Run it locally
+## Run it locally (for developers)
 
-You need [Node.js](https://nodejs.org). Then:
+You do not need this to use Ledger. It is for changing the code. You need [Node.js](https://nodejs.org). Then:
 
 ```bash
 git clone https://github.com/SeanAbasta/ledger-web-app.git
