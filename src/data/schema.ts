@@ -16,8 +16,9 @@ export type EntryKind = "expense" | "income" | "settlement";
 export type SplitMode = "they-owe" | "i-owe" | "half" | "custom";
 
 export interface SplitShare {
+  /** A person id, or "me". */
   personId: string;
-  /** What this person's share of the expense is, in the entry's currency. */
+  /** What this participant owes the payer, in the entry's currency. The payer has no share. */
   amount: Minor;
 }
 
@@ -69,8 +70,9 @@ export interface Rule {
   frequency: Frequency;
   start: IsoDate;
   end?: IsoDate;
-  /** Installments only. */
+  /** Installments only: number of payments and the total, split with splitEvenly. */
   count?: number;
+  total?: Minor;
   split?: Split;
   /** Dates of occurrences that are skipped. */
   skipped?: IsoDate[];
