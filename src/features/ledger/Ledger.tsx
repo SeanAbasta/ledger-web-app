@@ -150,13 +150,13 @@ export function Ledger() {
       ))}
 
       {editing && (
-        <Sheet onClose={() => setEditing(undefined)}>
+        <Sheet locked onClose={() => setEditing(undefined)}>
           <h3>Edit expense</h3>
           <AddForm entry={editing} onDone={() => setEditing(undefined)} />
         </Sheet>
       )}
       {paid && (
-        <Sheet onClose={() => setPaid(undefined)}>
+        <Sheet locked onClose={() => setPaid(undefined)}>
           <h3>{paid.note}</h3>
           <p className="mute">{labelDay(paid.date)} · {formatMinor(paid.amount, paid.currency)}</p>
           <div className="actions">
@@ -165,7 +165,7 @@ export function Ledger() {
         </Sheet>
       )}
       {occ && (
-        <Sheet onClose={() => setOcc(undefined)}>
+        <Sheet locked onClose={() => setOcc(undefined)}>
           <h3>{occ.note || occ.category}</h3>
           <p className="mute">
             {labelDay(occ.date)} · {formatMinor(occ.amount, occ.currency)}

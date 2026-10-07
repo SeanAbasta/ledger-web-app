@@ -2,44 +2,76 @@ import { useState } from "react";
 import { AddForm } from "./features/add/AddForm";
 import { Dashboard } from "./features/dashboard/Dashboard";
 import { Forecast } from "./features/forecast/Forecast";
+import { Ledger } from "./features/ledger/Ledger";
 import { Settings } from "./features/settings/Settings";
 import { Splits } from "./features/splits/Splits";
-import { Ledger } from "./features/ledger/Ledger";
+import { Gate } from "./features/sync/Gate";
+import { SetupSheet } from "./features/sync/SetupSheet";
+import { SyncSheet } from "./features/sync/SyncSheet";
 import { LedgerProvider } from "./ui/Ledger";
 import { Pill } from "./ui/Pill";
+import { SyncProvider, useSync } from "./ui/Sync";
 
 const NAV = ["Add", "Ledger", "Dashboard", "Splits", "Forecast", "Settings"] as const;
-type Tab = (typeof NAV)[number];
+export type Tab = (typeof NAV)[number];
 
-function Screen({ tab, go }: { tab: Tab; go: (t: Tab) => void }) {
+/** The screens that are all about editing are locked as a whole while offline and read-only. */
+const EDIT_TABS: Tab[] = ["Add", "Forecast", "Settings"];
+
+function Screen({ tab, go, setup }: { tab: Tab; go: (t: Tab) => void; setup: () => void }) {
   if (tab === "Add") return <div className="glasscard addcard"><AddForm onDone={() => go("Ledger")} /></div>;
   if (tab === "Ledger") return <Ledger />;
   if (tab === "Dashboard") return <Dashboard />;
   if (tab === "Splits") return <Splits />;
   if (tab === "Forecast") return <Forecast />;
-  if (tab === "Settings") return <Settings />;
-  return null;
+  return <Settings onSetup={setup} />;
+}
+
+function Shell() {
+  const [tab, setTab] = useState<Tab>("Add");
+  const [sheet, setSheet] = useState<"sync" | "setup">();
+  const { status, readOnly, editOffline, engine } = useSync();
+  const locked = readOnly && EDIT_TABS.includes(tab);
+
+  return (
+    <div className="win">
+      <nav className="side">
+        <div className="brand">Ledger</div>
+        {NAV.map((n) => (
+          <button key={n} className={n === tab ? "on" : ""} onClick={() => setTab(n)}>{n}</button>
+        ))}
+      </nav>
+      <main>
+        <header className="bar">
+          <h1>{tab}</h1>
+          <Pill status={status} onClick={() => setSheet("sync")} />
+        </header>
+        {readOnly && (
+          <div className="banner">
+            Offline, read-only so the other device's data stays safe.
+            <button className="btn ghost sm" onClick={editOffline}>Edit offline</button>
+            <button className="btn ghost sm" onClick={() => void engine.open()}>Retry</button>
+          </div>
+        )}
+        <section className="body">
+          <fieldset className="plain" disabled={locked}>
+            <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} />
+          </fieldset>
+        </section>
+      </main>
+      <Gate />
+      {sheet === "sync" && <SyncSheet onClose={() => setSheet(undefined)} onSetup={() => setSheet("setup")} />}
+      {sheet === "setup" && <SetupSheet onClose={() => setSheet(undefined)} />}
+    </div>
+  );
 }
 
 export function App() {
-  const [tab, setTab] = useState<Tab>("Add");
   return (
     <LedgerProvider>
-      <div className="win">
-        <nav className="side">
-          <div className="brand">Ledger</div>
-          {NAV.map((n) => (
-            <button key={n} className={n === tab ? "on" : ""} onClick={() => setTab(n)}>{n}</button>
-          ))}
-        </nav>
-        <main>
-          <header className="bar">
-            <h1>{tab}</h1>
-            <Pill state="synced" />
-          </header>
-          <section className="body"><Screen tab={tab} go={setTab} /></section>
-        </main>
-      </div>
+      <SyncProvider>
+        <Shell />
+      </SyncProvider>
     </LedgerProvider>
   );
 }

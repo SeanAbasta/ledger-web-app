@@ -6,6 +6,10 @@ import type { Account, Person, Settings as S } from "../../data/schema";
 import { DEFAULT_SETTINGS } from "../../data/schema";
 import { getSettings } from "../../data/collections";
 import { useLedger } from "../../ui/Ledger";
+import { daysLeft } from "../../sync/config";
+import { pillOf } from "../../ui/Pill";
+import { Sheet } from "../../ui/Sheet";
+import { useSync } from "../../ui/Sync";
 
 const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[^\d.-]/g, "");
 
@@ -35,8 +39,10 @@ function AccountRow({ a, base, onSave, onRemove }: { a: Account; base: string; o
   );
 }
 
-export function Settings() {
+export function Settings({ onSetup }: { onSetup: () => void }) {
   const { store, rev, changed } = useLedger();
+  const { config, status, engine, disconnect } = useSync();
+  const [confirm, setConfirm] = useState<"pull" | "remove">();
   const [s, setS] = useState<S>(DEFAULT_SETTINGS);
   const [people, setPeople] = useState<Person[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -55,6 +61,26 @@ export function Settings() {
 
   return (
     <div className="stack">
+      <div className="grp">Sync</div>
+      <div className="card">
+        <div className="field"><b>Status</b><span className="mute">{pillOf(status).label}</span></div>
+        {config ? (
+          <>
+            <div className="field"><b>Data repo</b><span className="mute">{config.owner}/{config.repo}</span></div>
+            <div className="field"><b>Token</b><span className="mute">{tokenLine(daysLeft(config), config.tokenExpires)}</span></div>
+            <div className="field"><b>Connection</b>
+              <span className="acts">
+                <button className="btn ghost sm" onClick={onSetup}>Replace token</button>
+                <button className="btn ghost sm" onClick={() => setConfirm("pull")}>Re-pull</button>
+                <button className="btn ghost sm danger" onClick={() => setConfirm("remove")}>Remove</button>
+              </span></div>
+          </>
+        ) : (
+          <div className="field"><b>GitHub</b><button className="btn sm" onClick={onSetup}>Connect</button></div>
+        )}
+      </div>
+
+      <div className="grp">General</div>
       <div className="card">
         <label className="field"><b>Default currency</b>
           <select value={s.defaultCurrency} onChange={(e) => void save({ defaultCurrency: e.target.value })}>
@@ -100,6 +126,29 @@ export function Settings() {
           <button className="btn ghost sm" type="submit">Add</button>
         </form>
       </div>
+      {confirm && (
+        <Sheet onClose={() => setConfirm(undefined)}>
+          <h3>{confirm === "pull" ? "Re-pull from GitHub" : "Remove token"}</h3>
+          <p className="mute">
+            {confirm === "pull"
+              ? "Replaces this device with what is on GitHub. Anything not yet synced is saved to Downloads first."
+              : "Wipes the token from this browser. Your data stays on this device, but it will no longer sync."}
+          </p>
+          <div className="actions">
+            <button className="btn ghost" onClick={() => setConfirm(undefined)}>Cancel</button>
+            <button className="btn" onClick={() => { if (confirm === "pull") void engine.resolve("remote"); else disconnect(); setConfirm(undefined); }}>
+              {confirm === "pull" ? "Re-pull" : "Remove"}
+            </button>
+          </div>
+        </Sheet>
+      )}
     </div>
   );
+}
+
+function tokenLine(days: number | undefined, date?: string): string {
+  if (days === undefined) return "No expiry date saved";
+  if (days < 0) return `Expired ${date}`;
+  if (days <= 30) return `Expires in ${days} ${days === 1 ? "day" : "days"}. Renew soon`;
+  return `Expires ${date}`;
 }

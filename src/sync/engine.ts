@@ -60,6 +60,11 @@ export class SyncEngine {
     return this.status.state === "conflict" || this.status.state === "checking";
   }
 
+  /** Show "checking" straight away on start-up, before the connection is ready, so nothing is edited early. */
+  markChecking() {
+    this.set({ state: "checking" });
+  }
+
   setContext(ctx: Ctx | null) {
     this.ctx = ctx;
     if (!ctx) this.set({ state: "unconfigured", message: "Connect GitHub to sync" });

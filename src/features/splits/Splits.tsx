@@ -107,7 +107,7 @@ export function Splits() {
       )}
 
       {settle && (
-        <Sheet onClose={() => setSettle(undefined)}>
+        <Sheet locked onClose={() => setSettle(undefined)}>
           <h3>Settle up with {settle.person.name}</h3>
           {nonZero(sumBy(settle.lines)).map(([c, a]) => (
             <p key={c}>{a > 0 ? `${settle.person.name} pays you` : `You pay ${settle.person.name}`} <b>{formatMinor(Math.abs(a), c)}</b></p>

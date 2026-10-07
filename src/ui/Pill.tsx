@@ -1,17 +1,28 @@
-export type SyncState = "synced" | "syncing" | "offline" | "needs-sync";
+import type { SyncStatus } from "../sync/engine";
 
-const LABEL: Record<SyncState, string> = {
-  synced: "Synced",
-  syncing: "Syncing…",
-  offline: "Offline",
-  "needs-sync": "Needs sync",
-};
+export type PillClass = "synced" | "syncing" | "offline" | "needs-sync";
 
-export function Pill({ state }: { state: SyncState }) {
+const when = (iso?: string) => (iso ? new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "");
+
+export function pillOf(s: SyncStatus): { cls: PillClass; label: string } {
+  switch (s.state) {
+    case "synced": return { cls: "synced", label: "Synced" };
+    case "syncing": return { cls: "syncing", label: "Syncing…" };
+    case "checking": return { cls: "syncing", label: "Checking…" };
+    case "needs-sync": return { cls: "needs-sync", label: "Needs sync" };
+    case "offline": return { cls: "offline", label: s.lastSynced ? `Offline · synced ${when(s.lastSynced)}` : "Offline" };
+    case "conflict": return { cls: "needs-sync", label: "Conflict" };
+    case "error": return { cls: "needs-sync", label: /token/i.test(s.message ?? "") ? "Token expired" : "Sync problem" };
+    default: return { cls: "offline", label: "Set up sync" };
+  }
+}
+
+export function Pill({ status, onClick }: { status: SyncStatus; onClick?: () => void }) {
+  const { cls, label } = pillOf(status);
   return (
-    <span className={`pill ${state}`}>
+    <button type="button" className={`pill ${cls}`} onClick={onClick} aria-label={`Sync status: ${label}`}>
       <i />
-      {LABEL[state]}
-    </span>
+      {label}
+    </button>
   );
 }
