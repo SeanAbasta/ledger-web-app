@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { getSettings, list, upsert } from "../../data/collections";
 import { toBase } from "../../data/base";
-import { addDays, addMonths, labelDay, labelMonth, labelShort, monthEnd, monthKeysBetween, monthStart, today, weekStart } from "../../data/dates";
-import { monthPath } from "../../data/months";
+import { addDays, addMonths, labelDay, labelMonth, labelShort, monthEnd, monthStart, today, weekStart } from "../../data/dates";
+import { loadEntries } from "../../data/months";
 import { formatMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem, type Occurrence } from "../../data/rules";
 import type { Entry, Person, Rule } from "../../data/schema";
@@ -45,8 +45,7 @@ export function Ledger() {
 
   useEffect(() => {
     (async () => {
-      const files = await Promise.all(monthKeysBetween(from, to).map((m) => store.get<{ entries: Entry[] }>(monthPath(m))));
-      setEntries(files.flatMap((f) => f?.entries ?? []));
+      setEntries(await loadEntries(store, from, to));
       setRules(await list(store, "rules"));
       setPeople(await list(store, "people"));
       setBase((await getSettings(store)).baseCurrency);

@@ -1,6 +1,13 @@
 import { splitEvenly } from "./money";
 import type { Minor, Split, SplitMode, SplitShare } from "./schema";
 
+/** What an expense actually costs me: my part of a split, or the whole amount when not split. */
+export function myShare(amount: Minor, split?: Split): Minor {
+  if (!split) return amount;
+  if (split.paidBy === "me") return amount - split.shares.reduce((a, s) => a + s.amount, 0);
+  return split.shares.find((s) => s.personId === "me")?.amount ?? 0;
+}
+
 /**
  * Build the shares for a split. Shares are what each participant owes the payer.
  * - they-owe: I paid, the listed people cover the whole amount between them.

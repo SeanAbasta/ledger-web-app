@@ -34,6 +34,13 @@ export function addMonths(anchor: IsoDate, n: number): IsoDate {
   return iso(ny, nm, Math.min(day, daysInMonth(ny, nm)));
 }
 
+/** Whole days from a to b (negative if b is earlier). */
+export function daysBetween(a: IsoDate, b: IsoDate): number {
+  const [y1, m1, d1] = parts(a);
+  const [y2, m2, d2] = parts(b);
+  return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000);
+}
+
 /** 0 = Monday ... 6 = Sunday */
 export function weekday(d: IsoDate): number {
   const [y, m, day] = parts(d);

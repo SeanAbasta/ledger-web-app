@@ -1,4 +1,5 @@
 import type { LedgerStore } from "./db";
+import { monthKeysBetween } from "./dates";
 import { monthOf, type Entry, type MonthFile, type MonthKey } from "./schema";
 import { ulid } from "./ulid";
 
@@ -78,4 +79,10 @@ export async function listMonthKeys(store: LedgerStore): Promise<MonthKey[]> {
     .map((p) => p.slice(7, 14))
     .sort()
     .reverse();
+}
+
+/** All stored entries (tombstones included) in the months touching [from, to]. */
+export async function loadEntries(store: LedgerStore, from: string, to: string): Promise<Entry[]> {
+  const files = await Promise.all(monthKeysBetween(from, to).map((m) => store.get(monthPath(m))));
+  return files.flatMap((f) => entriesOf(f));
 }

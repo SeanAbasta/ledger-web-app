@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AddForm } from "./features/add/AddForm";
+import { Dashboard } from "./features/dashboard/Dashboard";
 import { Ledger } from "./features/ledger/Ledger";
 import { LedgerProvider } from "./ui/Ledger";
 import { Pill } from "./ui/Pill";
@@ -10,6 +11,7 @@ type Tab = (typeof NAV)[number];
 function Screen({ tab, go }: { tab: Tab; go: (t: Tab) => void }) {
   if (tab === "Add") return <div className="glasscard addcard"><AddForm onDone={() => go("Ledger")} /></div>;
   if (tab === "Ledger") return <Ledger />;
+  if (tab === "Dashboard") return <Dashboard />;
   return <p className="mute empty">Coming soon</p>;
 }
 
