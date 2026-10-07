@@ -117,7 +117,21 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .scrim { position: fixed; inset: 0; background: rgba(240, 243, 250, 0.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 5; padding: 16px; }
 .sheet { width: 440px; max-width: 100%; max-height: 90vh; overflow: auto; padding: 22px; }
 .sheet h3 { margin: 0 0 8px; font-size: 17px; }
-@media (max-width: 700px) { .win { grid-template-columns: 1fr; } .side { flex-direction: row; overflow: auto; } .brand { display: none; } }
+/* Small screens: nav becomes one slim scrolling row. Only the page row may grow, otherwise the grid
+   hands spare height to the nav row and stretches its buttons into a tall bar on short pages. */
+@media (max-width: 700px) {
+  .win { grid-template-columns: 1fr; grid-template-rows: auto 1fr; align-content: start; min-height: 100dvh; }
+  .side {
+    flex-direction: row;
+    align-items: center;
+    overflow-x: auto;
+    padding: calc(8px + env(safe-area-inset-top)) 10px 8px;
+    border-right: 0;
+    border-bottom: 1px solid var(--glass-line);
+  }
+  .side button { flex: none; white-space: nowrap; }
+  .brand { display: none; }
+}
 
 /* dashboard */
 .grid { display: grid; gap: 14px; margin-top: 14px; }
