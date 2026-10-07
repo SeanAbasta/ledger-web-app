@@ -21,7 +21,7 @@ Ledger is a personal expense tracker built to replace a spreadsheet. It does the
 
 It runs in the browser, keeps your data on your own device first, and syncs between your computers through a private GitHub repository you own. There is no company server, no account to create, and nothing to subscribe to.
 
-> Built for one person. Designed to feel calm: few words, light mode only, soft glass accents.
+> Built for one person. Designed to feel calm: few words, soft glass accents, light by default with an optional dark mode.
 
 ---
 
@@ -52,6 +52,7 @@ After that you only need a browser.
 | **Recurring** | Rules, not rows | One-off, recurring (weekly, monthly, yearly) and installments such as "3 of 12, 8,000 left". Stored once, generated when needed. |
 | **Forecast** | Look ahead | Enter your salary per month or repeat it, and see your balance projected 12 months out from income, recurring costs and your average spending. |
 | **Sync** | Two computers, one ledger | A verified handoff through a private GitHub repo. It shows when it is synced and only says "Safe to close" after checking. |
+| **Appearance** | Light or dark | Light by default. Switch to Dark, or Auto to follow your device, in Settings. It is a per-device choice and is not synced. |
 | **Backup** | Your data, your files | Export everything as one file or as a spreadsheet, and import a backup. Nothing is deleted on import. |
 
 ---
@@ -65,7 +66,6 @@ Ledger stays small on purpose. It does **not**:
 - set budgets or savings goals
 - support multiple users or shared accounts
 - ship a native mobile app
-- offer dark mode
 - send notifications
 - track investments
 - store account or card numbers

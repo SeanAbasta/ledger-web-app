@@ -17,7 +17,7 @@ const ROW = 40;
 
 const owes = (name: string, amt: number) => (amt > 0 ? `${name} owes you` : `You owe ${name}`);
 
-/** Draw the statement as a PNG. Light, flat, one accent: a clean card to show someone. */
+/** Draw the statement as a PNG: a flat, light card with one accent. Always light, in either theme, since it is made to be shown to someone else. */
 export function renderStatement(m: StatementModel, scale = 2): Promise<Blob> {
   const rows = m.lines.length + (m.earlier.length ? m.earlier.length : 0);
   const H = PAD + 92 + Math.max(rows, 1) * ROW + 40 + m.net.length * 64 + 56;

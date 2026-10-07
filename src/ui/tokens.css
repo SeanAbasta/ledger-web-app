@@ -4,12 +4,56 @@
   --mute: #6e6e73;
   --line: rgba(0, 0, 0, 0.08);
   --accent: #0a84ff;
+  --accent-ink: #0a84ff; /* accent as text */
   --good: #2fb457;
   --warn: #ff9f0a;
   --glass: rgba(255, 255, 255, 0.62);
   --glass-line: rgba(255, 255, 255, 0.85);
+  --glass-hi: rgba(255, 255, 255, 0.9);
+  --shadow: 0 10px 30px rgba(30, 40, 70, 0.1);
+  --surface: #fff;
+  --seg-on: #fff;
+  --fill: rgba(0, 0, 0, 0.05);
+  --fill-2: rgba(0, 0, 0, 0.06);
+  --fill-3: rgba(0, 0, 0, 0.15);
+  --scrim: rgba(240, 243, 250, 0.55);
+  --choice: rgba(255, 255, 255, 0.8);
+  --ok: #1d8a40;
+  --off: #555;
+  --pend: #a86400;
+  --banner: #7a4a00;
+  --err: #c9352b;
+  --track: rgba(0, 0, 0, 0.05);
+  --c5: #c7c7cc;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   color-scheme: light;
+}
+/* Dark is opt-in (Settings, Appearance). public/theme.js sets data-theme before first paint. */
+:root[data-theme="dark"] {
+  --bg: #0e0f12;
+  --ink: #f5f5f7;
+  --mute: #98989d;
+  --line: rgba(255, 255, 255, 0.1);
+  --accent-ink: #4da3ff;
+  --glass: rgba(44, 44, 46, 0.6);
+  --glass-line: rgba(255, 255, 255, 0.12);
+  --glass-hi: rgba(255, 255, 255, 0.08);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --surface: #1c1c1e;
+  --seg-on: #48484a;
+  --fill: rgba(255, 255, 255, 0.08);
+  --fill-2: rgba(255, 255, 255, 0.1);
+  --fill-3: rgba(255, 255, 255, 0.22);
+  --scrim: rgba(0, 0, 0, 0.55);
+  --choice: rgba(255, 255, 255, 0.08);
+  --ok: #4cd964;
+  --off: #aeaeb2;
+  --pend: #ffb340;
+  --banner: #ffcc80;
+  --err: #ff6961;
+  --track: rgba(255, 255, 255, 0.08);
+  --c5: #636366;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body {
@@ -37,7 +81,7 @@ body {
   border-radius: 8px;
   cursor: pointer;
 }
-.side button.on { background: rgba(10, 132, 255, 0.14); color: var(--accent); font-weight: 500; }
+.side button.on { background: rgba(10, 132, 255, 0.14); color: var(--accent-ink); font-weight: 500; }
 .bar {
   height: 48px;
   display: flex;
@@ -61,22 +105,22 @@ body {
   gap: 6px;
   align-items: center;
   background: rgba(47, 180, 87, 0.14);
-  color: #1d8a40;
+  color: var(--ok);
 }
 .pill i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.pill.syncing { background: rgba(10, 132, 255, 0.14); color: var(--accent); }
-.pill.offline { background: rgba(110, 110, 115, 0.16); color: #555; }
-.pill.needs-sync { background: rgba(255, 159, 10, 0.18); color: #a86400; }
+.pill.syncing { background: rgba(10, 132, 255, 0.14); color: var(--accent-ink); }
+.pill.offline { background: rgba(110, 110, 115, 0.16); color: var(--off); }
+.pill.needs-sync { background: rgba(255, 159, 10, 0.18); color: var(--pend); }
 
 /* controls */
 button { font: inherit; color: inherit; }
 input, select {
-  font: inherit; color: inherit; background: rgba(0, 0, 0, 0.05);
+  font: inherit; color: inherit; background: var(--fill);
   border: 0; border-radius: 8px; padding: 6px 10px; min-width: 0;
 }
 input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .small { font-size: 12px; }
-.err { color: #c9352b; margin: 8px 0 0; }
+.err { color: var(--err); margin: 8px 0 0; }
 .empty { text-align: center; margin-top: 48px; }
 .glasscard {
   background: var(--glass);
@@ -84,7 +128,7 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
   -webkit-backdrop-filter: blur(28px) saturate(1.5);
   border: 1px solid var(--glass-line);
   border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(30, 40, 70, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow), inset 0 1px 0 var(--glass-hi);
 }
 .addcard { max-width: 460px; margin: 0 auto; padding: 22px; }
 .main, main { min-width: 0; }
@@ -95,12 +139,12 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .amt input { font-size: 30px; font-weight: 600; width: 220px; text-align: center; background: none; }
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 .btn { background: var(--accent); color: #fff; border: 0; font-weight: 500; padding: 8px 18px; border-radius: 999px; cursor: pointer; }
-.btn.ghost { background: rgba(0, 0, 0, 0.06); color: var(--ink); }
-.btn.danger { color: #c9352b; }
-.seg { display: inline-flex; background: rgba(0, 0, 0, 0.06); border-radius: 9px; padding: 2px; }
+.btn.ghost { background: var(--fill-2); color: var(--ink); }
+.btn.danger { color: var(--err); }
+.seg { display: inline-flex; background: var(--fill-2); border-radius: 9px; padding: 2px; }
 .seg button { all: unset; padding: 4px 12px; border-radius: 7px; font-size: 13px; font-weight: 500; color: var(--mute); cursor: pointer; }
-.seg button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
-.toggle { all: unset; width: 42px; height: 24px; border-radius: 999px; background: rgba(0, 0, 0, 0.15); position: relative; cursor: pointer; }
+.seg button.on { background: var(--seg-on); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
+.toggle { all: unset; width: 42px; height: 24px; border-radius: 999px; background: var(--fill-3); position: relative; cursor: pointer; }
 .toggle i { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: left 0.15s; }
 .toggle.on { background: var(--good); }
 .toggle.on i { left: 20px; }
@@ -110,11 +154,11 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .search { width: 150px; }
 .grp { font-size: 12px; font-weight: 600; color: var(--mute); text-transform: uppercase; letter-spacing: 0.04em; margin: 18px 0 6px; display: flex; justify-content: space-between; }
 .grp .r { text-transform: none; }
-.card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 2px 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 2px 16px; }
 .row { all: unset; box-sizing: border-box; width: 100%; display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
 .row:last-child { border-bottom: 0; }
-.tag { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: rgba(0, 0, 0, 0.06); color: var(--mute); margin-left: 6px; }
-.scrim { position: fixed; inset: 0; background: rgba(240, 243, 250, 0.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 5; padding: 16px; }
+.tag { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--fill-2); color: var(--mute); margin-left: 6px; }
+.scrim { position: fixed; inset: 0; background: var(--scrim); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 5; padding: 16px; }
 .sheet { width: 440px; max-width: 100%; max-height: 90vh; overflow: auto; padding: 22px; }
 .sheet h3 { margin: 0 0 8px; font-size: 17px; }
 /* Small screens: nav becomes one slim scrolling row. Only the page row may grow, otherwise the grid
@@ -144,8 +188,8 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .legend li { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
 .legend .r { margin-left: auto; color: var(--mute); }
 .legend i { width: 9px; height: 9px; border-radius: 3px; }
-.donut .track { stroke: rgba(0, 0, 0, 0.05); }
-:root { --c0: #0a84ff; --c1: #5ac8fa; --c2: #34c759; --c3: #ff9f0a; --c4: #af52de; --c5: #c7c7cc; }
+.donut .track { stroke: var(--track); }
+:root { --c0: #0a84ff; --c1: #5ac8fa; --c2: #34c759; --c3: #ff9f0a; --c4: #af52de; }
 .s0 { stroke: var(--c0); } .s1 { stroke: var(--c1); } .s2 { stroke: var(--c2); } .s3 { stroke: var(--c3); } .s4 { stroke: var(--c4); } .s5 { stroke: var(--c5); }
 .k0 { background: var(--c0); } .k1 { background: var(--c1); } .k2 { background: var(--c2); } .k3 { background: var(--c3); } .k4 { background: var(--c4); } .k5 { background: var(--c5); }
 .bar { fill: var(--c0); opacity: 0.45; }
@@ -154,7 +198,7 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 
 /* splits */
 .row.static { cursor: default; align-items: center; }
-.row.sel .who b { color: var(--accent); }
+.row.sel .who b { color: var(--accent-ink); }
 .who { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .acts { display: flex; gap: 6px; }
 .btn.sm { padding: 5px 12px; font-size: 12px; }
@@ -168,9 +212,9 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .acct input { flex: 1; min-width: 0; }
 .acct select { flex: none; }
 .x { all: unset; cursor: pointer; color: var(--mute); padding: 4px 8px; border-radius: 6px; }
-.x:hover { background: rgba(0, 0, 0, 0.06); }
+.x:hover { background: var(--fill-2); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.chip { background: rgba(0, 0, 0, 0.06); border-radius: 999px; padding: 3px 4px 3px 12px; display: inline-flex; align-items: center; gap: 2px; }
+.chip { background: var(--fill-2); border-radius: 999px; padding: 3px 4px 3px 12px; display: inline-flex; align-items: center; gap: 2px; }
 .chip button { all: unset; cursor: pointer; color: var(--mute); padding: 0 8px; }
 .line { stroke: var(--c0); }
 .ftable { padding: 4px 16px; margin-top: 12px; }
@@ -178,19 +222,19 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .frow:last-child { border-bottom: 0; }
 .frow span:first-child { text-align: left; }
 .frow.head { color: var(--mute); font-size: 12px; }
-.tag.warn { background: rgba(255, 159, 10, 0.18); color: #a86400; margin: 0; }
+.tag.warn { background: rgba(255, 159, 10, 0.18); color: var(--pend); margin: 0; }
 .grid.g2 + .grid.g2, .g2 + .small { margin-top: 14px; }
 
 /* sync */
 .pill { border: 0; cursor: pointer; font-family: inherit; }
 fieldset.plain { border: 0; margin: 0; padding: 0; min-width: 0; }
 fieldset.plain:disabled { opacity: 0.55; }
-.banner { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 18px; background: rgba(255, 159, 10, 0.15); color: #7a4a00; font-size: 13px; }
+.banner { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 18px; background: rgba(255, 159, 10, 0.15); color: var(--banner); font-size: 13px; }
 .center { text-align: center; }
 .check { width: 44px; height: 44px; border-radius: 50%; background: rgba(47, 180, 87, 0.15); color: var(--good); display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 10px; }
 .spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid rgba(10, 132, 255, 0.2); border-top-color: var(--accent); margin: 0 auto 12px; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.choice { display: block; width: 100%; padding: 10px; border-radius: 12px; background: rgba(255, 255, 255, 0.8); border: 1px solid var(--line); margin-bottom: 8px; font-weight: 500; cursor: pointer; }
+.choice { display: block; width: 100%; padding: 10px; border-radius: 12px; background: var(--choice); border: 1px solid var(--line); margin-bottom: 8px; font-weight: 500; cursor: pointer; }
 .choice small { display: block; color: var(--mute); font-weight: 400; }
 .note { font-size: 12px; color: var(--mute); text-align: left; background: rgba(255, 159, 10, 0.12); border-radius: 10px; padding: 8px 10px; margin: 12px 0; }
 details { margin: 8px 0; font-size: 13px; color: var(--mute); }

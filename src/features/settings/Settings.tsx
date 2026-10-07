@@ -14,6 +14,8 @@ import { downloadText } from "../../ui/download";
 import { pillOf } from "../../ui/Pill";
 import { Sheet } from "../../ui/Sheet";
 import { useSync } from "../../ui/Sync";
+import { Segmented } from "../../ui/Segmented";
+import { applyTheme, loadTheme, saveTheme, THEMES, type Theme } from "../../ui/theme";
 
 const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[^\d.-]/g, "");
 
@@ -49,6 +51,7 @@ export function Settings({ onSetup }: { onSetup: () => void }) {
   const [lastExported, setLastExported] = useState<string>();
   const [incoming, setIncoming] = useState<Bundle>();
   const [backupMsg, setBackupMsg] = useState("");
+  const [theme, setThemeState] = useState<Theme>(loadTheme);
   const [confirm, setConfirm] = useState<"pull" | "remove">();
   const [s, setS] = useState<S>(DEFAULT_SETTINGS);
   const [people, setPeople] = useState<Person[]>([]);
@@ -145,6 +148,8 @@ export function Settings({ onSetup }: { onSetup: () => void }) {
             {[...new Set([...CURRENCIES, s.defaultCurrency])].map((c) => <option key={c}>{c}</option>)}
           </select></label>
         <div className="field"><b>Base currency</b><span className="mute">{s.baseCurrency}</span></div>
+        <div className="field"><b>Appearance</b>
+          <Segmented value={theme} options={THEMES} labels={{ light: "Light", dark: "Dark", auto: "Auto" }} onChange={(t) => { setThemeState(t); saveTheme(t); applyTheme(t); }} /></div>
       </div>
 
       <div className="grp">Accounts</div>
