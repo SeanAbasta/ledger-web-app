@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getSettings, list, upsert } from "../../data/collections";
 import { toBase } from "../../data/base";
 import { addDays, addMonths, labelDay, labelMonth, labelShort, monthEnd, monthStart, today, weekStart } from "../../data/dates";
-import { loadEntries } from "../../data/months";
+import { deleteEntry, loadEntries } from "../../data/months";
 import { formatMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem, type Occurrence } from "../../data/rules";
 import type { Entry, Person, Rule } from "../../data/schema";
@@ -40,6 +40,7 @@ export function Ledger() {
   const [base, setBase] = useState("PHP");
   const [editing, setEditing] = useState<Entry>();
   const [occ, setOcc] = useState<Occurrence>();
+  const [paid, setPaid] = useState<Entry>();
 
   const [from, to] = range(view, anchor);
 
@@ -130,7 +131,7 @@ export function Ledger() {
               const x = it.type === "entry" ? it.entry : it.occ;
               const b = toBase(x, base);
               return (
-                <button key={it.type === "entry" ? it.entry.id : it.occ.ruleId + it.date} className="row" onClick={() => (it.type === "entry" ? setEditing(it.entry) : setOcc(it.occ))}>
+                <button key={it.type === "entry" ? it.entry.id : it.occ.ruleId + it.date} className="row" onClick={() => (it.type === "entry" ? (it.entry.kind === "settlement" ? setPaid(it.entry) : setEditing(it.entry)) : setOcc(it.occ))}>
                   <span>
                     {x.category}
                     {x.note && <span className="mute"> &nbsp;{x.note}</span>}
@@ -138,7 +139,7 @@ export function Ledger() {
                     {it.type === "occurrence" && <span className="tag">{it.occ.type === "installment" ? `${it.occ.index} of ${it.occ.count}` : "recurring"}</span>}
                   </span>
                   <span>
-                    {x.kind === "expense" ? "-" : ""}{formatMinor(x.amount, x.currency)}
+                    {x.kind === "expense" || (x.kind === "settlement" && "direction" in x && x.direction === "out") ? "-" : ""}{formatMinor(x.amount, x.currency)}
                     {x.currency !== base && b !== undefined && <span className="mute small"> ≈ {formatMinor(b, base)}</span>}
                   </span>
                 </button>
@@ -152,6 +153,15 @@ export function Ledger() {
         <Sheet onClose={() => setEditing(undefined)}>
           <h3>Edit expense</h3>
           <AddForm entry={editing} onDone={() => setEditing(undefined)} />
+        </Sheet>
+      )}
+      {paid && (
+        <Sheet onClose={() => setPaid(undefined)}>
+          <h3>{paid.note}</h3>
+          <p className="mute">{labelDay(paid.date)} · {formatMinor(paid.amount, paid.currency)}</p>
+          <div className="actions">
+            <button className="btn ghost danger" onClick={async () => { await deleteEntry(store, paid.date.slice(0, 7), paid.id); setPaid(undefined); changed(); }}>Delete</button>
+          </div>
         </Sheet>
       )}
       {occ && (

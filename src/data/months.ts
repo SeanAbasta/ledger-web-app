@@ -86,3 +86,9 @@ export async function loadEntries(store: LedgerStore, from: string, to: string):
   const files = await Promise.all(monthKeysBetween(from, to).map((m) => store.get(monthPath(m))));
   return files.flatMap((f) => entriesOf(f));
 }
+
+/** Every stored entry across all months (tombstones included). */
+export async function loadAllEntries(store: LedgerStore): Promise<Entry[]> {
+  const files = await Promise.all((await store.paths()).filter((p) => p.startsWith("months/")).map((p) => store.get(p)));
+  return files.flatMap((f) => entriesOf(f));
+}

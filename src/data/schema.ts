@@ -45,6 +45,8 @@ export interface Entry {
   split?: Split;
   /** Settlement entries: the person paid to or received from. */
   personId?: string;
+  /** Settlement entries: "in" = they paid me, "out" = I paid them. */
+  direction?: "in" | "out";
   createdAt: Stamp;
   updatedAt: Stamp;
   /** Tombstone, so deletes survive merges. */

@@ -137,3 +137,13 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .bar { fill: var(--c0); opacity: 0.45; }
 .bar.now { opacity: 1; }
 @media (max-width: 700px) { .g3, .g2 { grid-template-columns: 1fr; } }
+
+/* splits */
+.row.static { cursor: default; align-items: center; }
+.row.sel .who b { color: var(--accent); }
+.who { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.acts { display: flex; gap: 6px; }
+.btn.sm { padding: 5px 12px; font-size: 12px; }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.pos { color: var(--good); }
+.snap { width: 100%; border-radius: 12px; display: block; }
