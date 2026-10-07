@@ -16,7 +16,7 @@ const NAV = ["Add", "Ledger", "Dashboard", "Splits", "Forecast", "Settings"] as 
 export type Tab = (typeof NAV)[number];
 
 /** The screens that are all about editing are locked as a whole while offline and read-only. */
-const EDIT_TABS: Tab[] = ["Add", "Forecast", "Settings"];
+const EDIT_TABS: Tab[] = ["Add", "Forecast"]; // Settings locks its own edit controls so Export still works offline
 
 function Screen({ tab, go, setup }: { tab: Tab; go: (t: Tab) => void; setup: () => void }) {
   if (tab === "Add") return <div className="glasscard addcard"><AddForm onDone={() => go("Ledger")} /></div>;

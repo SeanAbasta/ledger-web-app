@@ -7,6 +7,10 @@ import { DEFAULT_SETTINGS } from "../../data/schema";
 import { getSettings } from "../../data/collections";
 import { useLedger } from "../../ui/Ledger";
 import { daysLeft } from "../../sync/config";
+import { bundleText, parseBundle, type Bundle } from "../../data/bundle";
+import { entriesCsv, exportBundle, importBundle, validateBundle } from "../../data/exportImport";
+import { loadAllEntries } from "../../data/months";
+import { downloadText } from "../../ui/download";
 import { pillOf } from "../../ui/Pill";
 import { Sheet } from "../../ui/Sheet";
 import { useSync } from "../../ui/Sync";
@@ -41,7 +45,10 @@ function AccountRow({ a, base, onSave, onRemove }: { a: Account; base: string; o
 
 export function Settings({ onSetup }: { onSetup: () => void }) {
   const { store, rev, changed } = useLedger();
-  const { config, status, engine, disconnect } = useSync();
+  const { config, status, engine, disconnect, readOnly } = useSync();
+  const [lastExported, setLastExported] = useState<string>();
+  const [incoming, setIncoming] = useState<Bundle>();
+  const [backupMsg, setBackupMsg] = useState("");
   const [confirm, setConfirm] = useState<"pull" | "remove">();
   const [s, setS] = useState<S>(DEFAULT_SETTINGS);
   const [people, setPeople] = useState<Person[]>([]);
@@ -54,13 +61,64 @@ export function Settings({ onSetup }: { onSetup: () => void }) {
       setS(await getSettings(store));
       setPeople(await list(store, "people"));
       setAccounts(await list(store, "accounts"));
+      setLastExported(await store.getMeta<string>("lastExported"));
     })();
   }, [store, rev]);
 
   const save = async (patch: Partial<S>) => { await saveSettings(store, patch); changed(); };
+  const stamp = () => new Date().toISOString().slice(0, 10);
+
+  async function exportJson() {
+    downloadText(bundleText(await exportBundle(store)), `ledger-export-${stamp()}.json`);
+    await store.setMeta("lastExported", new Date().toISOString());
+    setLastExported(new Date().toISOString());
+    setBackupMsg("");
+  }
+  async function exportCsv() {
+    downloadText(entriesCsv(await loadAllEntries(store), people, accounts), `ledger-entries-${stamp()}.csv`, "text/csv");
+  }
+  async function pickFile(f: File | undefined) {
+    setBackupMsg("");
+    if (!f) return;
+    try {
+      const b = parseBundle(await f.text());
+      const errs = validateBundle(b);
+      if (errs.length) throw new Error(`${errs[0]}${errs.length > 1 ? ` (and ${errs.length - 1} more)` : ""}`);
+      setIncoming(b);
+    } catch (e) {
+      setBackupMsg(e instanceof Error && !/JSON/.test(e.message) ? `Cannot import: ${e.message}` : "That is not a Ledger export");
+    }
+  }
+  async function doImport() {
+    if (!incoming) return;
+    try {
+      const r = await importBundle(store, incoming);
+      setBackupMsg(`Imported ${r.newEntries} new ${r.newEntries === 1 ? "entry" : "entries"}`);
+      changed();
+    } catch (e) {
+      setBackupMsg(e instanceof Error ? e.message : "Import failed");
+    }
+    setIncoming(undefined);
+  }
 
   return (
     <div className="stack">
+      <div className="grp">Backup</div>
+      <div className="card">
+        <div className="field"><b>Export</b>
+          <span className="acts">
+            <button className="btn ghost sm" onClick={() => void exportJson()}>Backup file</button>
+            <button className="btn ghost sm" onClick={() => void exportCsv()}>Spreadsheet</button>
+          </span></div>
+        <fieldset className="plain" disabled={readOnly}>
+          <div className="field"><b>Import</b>
+            <label className="btn ghost sm filebtn">Choose file<input type="file" accept=".json,application/json" onChange={(e) => { void pickFile(e.target.files?.[0]); e.target.value = ""; }} /></label></div>
+        </fieldset>
+        <div className="field"><b>Last exported</b><span className="mute">{sinceText(lastExported)}</span></div>
+        {backupMsg && <p className="mute small" role="status">{backupMsg}</p>}
+      </div>
+
+      <fieldset className="plain" disabled={readOnly}>
       <div className="grp">Sync</div>
       <div className="card">
         <div className="field"><b>Status</b><span className="mute">{pillOf(status).label}</span></div>
@@ -126,6 +184,22 @@ export function Settings({ onSetup }: { onSetup: () => void }) {
           <button className="btn ghost sm" type="submit">Add</button>
         </form>
       </div>
+      </fieldset>
+
+      {incoming && (
+        <Sheet onClose={() => setIncoming(undefined)}>
+          <h3>Import backup</h3>
+          <p className="mute">
+            Adds {count(incoming)} from a file exported {incoming.exportedAt.slice(0, 10)}.
+            Nothing here is deleted; where both have the same entry, the newest edit wins.
+          </p>
+          <div className="actions">
+            <button className="btn ghost" onClick={() => setIncoming(undefined)}>Cancel</button>
+            <button className="btn" onClick={() => void doImport()}>Import</button>
+          </div>
+        </Sheet>
+      )}
+
       {confirm && (
         <Sheet onClose={() => setConfirm(undefined)}>
           <h3>{confirm === "pull" ? "Re-pull from GitHub" : "Remove token"}</h3>
@@ -144,6 +218,17 @@ export function Settings({ onSetup }: { onSetup: () => void }) {
       )}
     </div>
   );
+}
+
+function count(b: Bundle): string {
+  const n = Object.values(b.files).reduce((a, d) => a + ((d.entries as unknown[] | undefined)?.length ?? 0), 0);
+  return `${n} ${n === 1 ? "entry" : "entries"}`;
+}
+
+function sinceText(iso?: string): string {
+  if (!iso) return "Never";
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  return days <= 0 ? "Today" : days === 1 ? "Yesterday" : `${days} days ago`;
 }
 
 function tokenLine(days: number | undefined, date?: string): string {

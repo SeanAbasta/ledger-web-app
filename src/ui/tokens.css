@@ -183,3 +183,7 @@ details { margin: 8px 0; font-size: 13px; color: var(--mute); }
 .steps { margin: 6px 0 0; padding-left: 18px; }
 .steps li { margin: 3px 0; }
 .sheet .field input[type="password"], .sheet .field input[type="date"] { max-width: 60%; }
+
+/* backup */
+.filebtn { position: relative; cursor: pointer; overflow: hidden; }
+.filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; max-width: none; }
