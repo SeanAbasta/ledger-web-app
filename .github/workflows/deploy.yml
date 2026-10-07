@@ -24,6 +24,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+        env:
+          LEDGER_BASE: /${{ github.event.repository.name }}/
       - name: Make sure the build holds no token or data
         run: |
           if grep -rEl "github_pat_[A-Za-z0-9_]{20,}|ghp_[A-Za-z0-9]{20,}|ledger-data-" dist; then

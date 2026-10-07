@@ -78,11 +78,36 @@ flowchart LR
 
 ---
 
-## Set up sync
+## Use Ledger yourself
 
-You need a free GitHub account.
+Anyone can have their own Ledger. There is no sign-up, and nothing is shared with the person who built it: each person's data lives in their own browser and their own private GitHub repo.
 
-1. Create a **private** repo for your data, with a README so it has a first commit.
+You can use it two ways.
+
+| | **Use the hosted copy** | **Host your own copy** |
+|---|---|---|
+| Repos you create | **1**: a private repo for your data | **2**: a fork of this repo for the app, plus a private repo for your data |
+| Steps | Open the link, connect your data repo | Fork, switch on Pages, then connect your data repo |
+| Who controls the code | The author. Updates reach you automatically. | You. You choose when to update. |
+| Trust needed | You run code published by someone else, and that code can see your token in your browser. Use it only with people you trust. | None beyond reading the code yourself. |
+| Good for | Trying it, family and friends | Anyone who wants full control |
+
+Hosted copy: **https://seanabasta.github.io/ledger-web-app/**
+
+### Does using someone's hosted copy use up their GitHub limits?
+
+Practically no, and never the parts that matter:
+
+- **Their data and yours are separate.** Your entries go from your browser straight to your own data repo, using your own token. They never pass through the author's repo or account, and your API calls count against your token, not theirs.
+- **Site size (1 GB)** is the size of the published app, which is a few hundred kilobytes in total. More users do not make it bigger.
+- **Bandwidth (100 GB a month, a soft limit)** is the only thing shared. Opening Ledger downloads roughly 100 KB the first time, and then your browser reuses it, so a single user costs almost nothing. Even a thousand people would be a tiny fraction of the limit.
+- **If you host your own copy,** all of this counts against your account instead, and nobody else's.
+
+### Set up your data repo and sync
+
+You need a free GitHub account, and the same steps for either option.
+
+1. Create a **private** repo for your data (any name; a hard-to-guess one is a nice touch), with a README so it has a first commit.
 2. On GitHub, go to Settings, Developer settings, Personal access tokens, Fine-grained tokens, and generate a token. Limit it to **that one repo**, give it **Contents: Read and write** only, and set an expiry date.
 3. Open Ledger, click the status pill, and choose Connect GitHub. Enter your username, the data repo name and the token.
 4. Do the same on your other computer. It pulls everything on first open.
@@ -90,6 +115,16 @@ You need a free GitHub account.
 Before you close Ledger, press the status pill, then Sync now, and wait for **Synced. Safe to close.**
 
 When the token is close to expiring, Settings shows a reminder. Create a new one and use Replace token on each computer.
+
+### Host your own copy
+
+1. Fork this repo to your own account. The fork is public, which GitHub Pages needs on a free account. It holds only code, never your data.
+2. In your fork, open the Actions tab and enable workflows, since GitHub turns them off on forks by default.
+3. In the fork, go to Settings, Pages, and set Source to **GitHub Actions**.
+4. Run the "Deploy to GitHub Pages" workflow (or push any change). Your copy appears at `https://<your-username>.github.io/<fork-name>/`.
+5. Follow "Set up your data repo and sync" above.
+
+To update later, use "Sync fork" on GitHub and the site redeploys on its own. Your data is untouched by app updates.
 
 ---
 
@@ -106,7 +141,7 @@ When the token is close to expiring, Settings shows a reminder. Create a new one
 
 ## Status
 
-Ledger is feature complete for its first version. The first real sync against GitHub is the next thing to try.
+Ledger is feature complete for its first version and deployed. Sync has been tested against a simulated GitHub, and the first real-world use is under way.
 
 | Milestone | Scope | Status |
 |---|---|---|
@@ -119,7 +154,7 @@ Ledger is feature complete for its first version. The first real sync against Gi
 | 7 | Token setup screen, sync status, conflict screen | Done |
 | 8 | Deployment to GitHub Pages, install as an app, export and import | Done |
 
-Once GitHub Pages is switched on for this repo (Settings, Pages, Source: GitHub Actions), the app is served at `https://seanabasta.github.io/ledger-web-app/`.
+The app is live at `https://seanabasta.github.io/ledger-web-app/`.
 
 ---
 

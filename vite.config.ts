@@ -1,3 +1,4 @@
+import { loadEnv } from "vite";
 import { defineConfig, type Plugin } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
@@ -22,13 +23,14 @@ const csp = (): Plugin => ({
   ],
 });
 
-// Served from https://<user>.github.io/ledger-web-app/
-export default defineConfig({
-  base: "/ledger-web-app/",
+// Served from https://<user>.github.io/<repo>/. The deploy workflow sets LEDGER_BASE from the repo
+// name, so a fork works under any name. Local dev and tests use /ledger-web-app/.
+export default defineConfig(({ mode }) => ({
+  base: loadEnv(mode, ".", "LEDGER_").LEDGER_BASE ?? "/ledger-web-app/",
   plugins: [react(), csp()],
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
     setupFiles: ["fake-indexeddb/auto"],
   },
-});
+}));
