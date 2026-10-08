@@ -7,6 +7,7 @@ import { today } from "../../data/dates";
 import type { Account, Entry, Frequency, Person, Settings, SplitMode, SplitShare } from "../../data/schema";
 import { monthOf, DEFAULT_SETTINGS } from "../../data/schema";
 import { buildSplit } from "../../data/splits";
+import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { useLedger } from "../../ui/Ledger";
 
@@ -144,7 +145,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
   return (
     <form className="form" onSubmit={(e) => { e.preventDefault(); void save(); }}>
       <div className="amt">
-        <input aria-label="Amount" inputMode="decimal" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
+        <MoneyInput aria-label="Amount" placeholder="0.00" value={amount} onChange={setAmount} currency={currency || settings.defaultCurrency} autoFocus />
         <select aria-label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value)}>
           {[...new Set([settings.defaultCurrency, ...CURRENCIES, currency].filter(Boolean))].map((c) => <option key={c}>{c}</option>)}
         </select>
@@ -191,7 +192,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
               {picks.map(([k, n]) => <option key={k} value={k}>{n}</option>)}
             </select></label>
           {mode === "custom" && picks.map(([k, n]) => (
-            <label className="field" key={k}><b>{n} owes</b><input inputMode="decimal" value={custom[k] ?? ""} onChange={(e) => setCustom({ ...custom, [k]: e.target.value })} /></label>
+            <label className="field" key={k}><b>{n} owes</b><MoneyInput value={custom[k] ?? ""} onChange={(v) => setCustom({ ...custom, [k]: v })} currency={currency} /></label>
           ))}
         </>
       )}

@@ -14,6 +14,7 @@ import { downloadText } from "../../ui/download";
 import { pillOf } from "../../ui/Pill";
 import { Sheet } from "../../ui/Sheet";
 import { useSync } from "../../ui/Sync";
+import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { applyTheme, loadTheme, saveTheme, THEMES, type Theme } from "../../ui/theme";
 
@@ -38,7 +39,7 @@ function AccountRow({ a, base, onSave, onRemove }: { a: Account; base: string; o
       <select aria-label="Currency" value={currency} onChange={(e) => { setCurrency(e.target.value); commit({ currency: e.target.value }); }}>
         {[...new Set([...CURRENCIES, currency])].map((c) => <option key={c}>{c}</option>)}
       </select>
-      <input aria-label="Opening balance" inputMode="decimal" placeholder="Opening" value={opening} onChange={(e) => setOpening(e.target.value)} onBlur={() => commit()} />
+      <MoneyInput aria-label="Opening balance" placeholder="Opening" allowNegative currency={currency} value={opening} onChange={setOpening} onBlur={() => commit()} />
       {currency !== base && <input aria-label={`${base} per 1 ${currency}`} inputMode="decimal" placeholder={`${base} rate`} value={rate} onChange={(e) => setRate(e.target.value)} onBlur={() => commit()} />}
       <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}>✕</button>
     </div>

@@ -5,6 +5,7 @@ import { formatMinor, parseMinor } from "../../data/money";
 import { applyRevision, baseFor, type Occurrence } from "../../data/rules";
 import type { Account, Rule } from "../../data/schema";
 import { DEFAULT_SETTINGS } from "../../data/schema";
+import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { useLedger } from "../../ui/Ledger";
 
@@ -72,7 +73,7 @@ export function OccurrenceForm({ occ, rule, onDone }: { occ: Occurrence; rule: R
         <div className="field"><b>Apply to</b>
           <Segmented value={scope} options={SCOPES} labels={{ this: "This payment", later: "This and later" }} onChange={setScope} /></div>
       )}
-      <label className="field"><b>Amount</b><input inputMode="decimal" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} /></label>
+      <label className="field"><b>Amount</b><MoneyInput autoFocus value={amount} onChange={setAmount} currency={occ.currency} /></label>
       <label className="field"><b>Note</b><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" /></label>
       {scope === "later" && (
         <>

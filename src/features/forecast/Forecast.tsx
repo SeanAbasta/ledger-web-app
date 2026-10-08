@@ -6,6 +6,7 @@ import { activeSalaryRule, salaryFor, setRepeat, setSalary } from "../../data/in
 import { formatMinor, parseMinor } from "../../data/money";
 import { itemsToDate, loadWorld, type World } from "../../data/world";
 import { useLedger } from "../../ui/Ledger";
+import { MoneyInput } from "../../ui/MoneyInput";
 
 function Line({ values, base }: { values: number[]; base: string }) {
   const min = Math.min(...values);
@@ -17,6 +18,12 @@ function Line({ values, base }: { values: number[]; base: string }) {
       <polyline points={pts.join(" ")} fill="none" className="line" strokeWidth="2.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );
+}
+
+/** A month's salary box: shows commas while typing, saves when you leave the field or press Enter. */
+function SalaryField({ initial, currency, onCommit }: { initial: string; currency: string; onCommit: (plain: string) => void }) {
+  const [v, setV] = useState(initial);
+  return <MoneyInput placeholder="Add" currency={currency} value={v} onChange={setV} onBlur={() => onCommit(v)} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />;
 }
 
 export function Forecast() {
@@ -81,8 +88,7 @@ export function Forecast() {
           return (
             <label key={m + (s?.amount ?? "")} className="field">
               <b>{labelMonth(m)}</b>
-              <input inputMode="decimal" placeholder="Add" defaultValue={s ? formatMinor(s.amount, base).replace(/[^\d.]/g, "") : ""}
-                onBlur={(e) => void commit(m, e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
+              <SalaryField currency={base} initial={s ? formatMinor(s.amount, base).replace(/[^\d.]/g, "") : ""} onCommit={(text) => void commit(m, text)} />
             </label>
           );
         })}

@@ -136,7 +136,9 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .field > b { font-weight: 500; }
 .field input, .field select { text-align: right; max-width: 60%; }
 .amt { display: flex; justify-content: center; gap: 8px; align-items: center; margin-bottom: 8px; }
-.amt input { font-size: 30px; font-weight: 600; width: 220px; text-align: center; background: none; }
+.amt input { font-size: 30px; font-weight: 600; flex: 1; min-width: 0; max-width: 300px; text-align: center; background: none; }
+.amt select { flex: none; }
+@media (max-width: 480px) { .amt input { font-size: 22px; } }
 .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 .btn { background: var(--accent); color: #fff; border: 0; font-weight: 500; padding: 8px 18px; border-radius: 999px; cursor: pointer; }
 .btn.ghost { background: var(--fill-2); color: var(--ink); }
