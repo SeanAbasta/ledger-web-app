@@ -158,7 +158,7 @@ Your copy does not update by itself. When the author releases bug fixes or new f
 - **Forked:** on your fork's page, click **Sync fork, then Update branch**. The site rebuilds and redeploys on its own in about a minute.
 - **Cloned:** re-clone the project, or pull the new changes into your copy, then push to your repo.
 
-Then reload the app (and accept the update if you installed it as an app). An update only replaces the app's code. It does not change your data repo or your browser's copy. If a release ever has to change how data is stored, the release notes will say what to do.
+Then reload the app (and accept the update if you installed it as an app). An update only replaces the app's code. It does not change your data repo or your browser's copy. If a release ever has to change how data is stored, the release notes will say what to do. See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
 
 ### Will my copy use the author's GitHub limits?
 
