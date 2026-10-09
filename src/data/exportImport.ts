@@ -1,6 +1,7 @@
 import { makeBundle, type Bundle } from "./bundle";
 import type { Doc, LedgerStore } from "./db";
 import { minorDigits } from "./money";
+import { shapeProblem } from "./months";
 import type { Account, Entry, Person } from "./schema";
 import { isDataPath } from "../sync/handoff";
 import { mergeDocs } from "../sync/merge";
@@ -11,7 +12,7 @@ export async function exportBundle(store: LedgerStore): Promise<Bundle> {
   return makeBundle(Object.fromEntries(Object.entries(docs).filter(([p]) => isDataPath(p))));
 }
 
-const KINDS = ["expense", "income", "settlement"];
+const KINDS = ["expense", "income", "settlement", "transfer"];
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
 function entryProblem(e: unknown): string | undefined {
@@ -23,6 +24,20 @@ function entryProblem(e: unknown): string | undefined {
   if (typeof e.currency !== "string" || !/^[A-Za-z]{3}$/.test(e.currency)) return "bad currency";
   if (typeof e.updatedAt !== "string" || typeof e.createdAt !== "string") return "missing timestamps";
   if (e.rate !== undefined && (typeof e.rate !== "string" || !/^\d+(\.\d+)?$/.test(e.rate))) return "bad rate";
+  for (const k of ["accountId", "toAccountId", "refundOf"]) if (e[k] !== undefined && typeof e[k] !== "string") return `bad ${k}`;
+  return shapeProblem(e as unknown as Entry)?.toLowerCase();
+}
+
+const day = (v: unknown) => Number.isInteger(v) && (v as number) >= 1 && (v as number) <= 31;
+const isoDate = (v: unknown) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+/** Card fields are optional; when present they must make sense. */
+function accountProblem(a: Record<string, unknown>): string | undefined {
+  if (a.type !== undefined && a.type !== "bank" && a.type !== "card") return "bad type";
+  if (a.statementDay !== undefined && !day(a.statementDay)) return "bad statement day";
+  if (a.dueDays !== undefined && !(Number.isInteger(a.dueDays) && (a.dueDays as number) >= 0 && (a.dueDays as number) <= 60)) return "bad due days";
+  if (a.limit !== undefined && !(Number.isInteger(a.limit) && (a.limit as number) >= 0)) return "bad limit";
+  if (a.dueOverrides !== undefined && !(isObj(a.dueOverrides) && Object.entries(a.dueOverrides).every(([k, v]) => isoDate(k) && isoDate(v)))) return "bad due dates";
   return undefined;
 }
 
@@ -44,7 +59,10 @@ export function validateBundle(b: Bundle): string[] {
       const key = path.slice(0, -5);
       const list = doc[key];
       if (!Array.isArray(list)) out.push(`${path}: no ${key} list`);
-      else list.forEach((x, i) => { if (!isObj(x) || typeof x.id !== "string" || typeof x.updatedAt !== "string") out.push(`${path} item ${i + 1}: missing id or timestamp`); });
+      else list.forEach((x, i) => {
+        if (!isObj(x) || typeof x.id !== "string" || typeof x.updatedAt !== "string") out.push(`${path} item ${i + 1}: missing id or timestamp`);
+        else if (key === "accounts") { const p = accountProblem(x); if (p) out.push(`${path} item ${i + 1}: ${p}`); }
+      });
     } else if (doc.categories !== undefined && !(Array.isArray(doc.categories) && doc.categories.every((c) => typeof c === "string"))) {
       out.push("settings.json: bad categories");
     }
@@ -92,16 +110,18 @@ export function csvCell(v: string): string {
 /** Stored entries as a spreadsheet-friendly CSV, oldest first. Recurring rules are not expanded. */
 export function entriesCsv(entries: Entry[], people: Person[], accounts: Account[]): string {
   const name = (id: string) => (id === "me" ? "me" : people.find((p) => p.id === id)?.name ?? id);
-  const head = ["date", "type", "category", "note", "amount", "currency", "rate", "account", "paid_by", "split", "shares"];
+  const acct = (id?: string) => accounts.find((a) => a.id === id)?.name ?? "";
+  const head = ["date", "type", "category", "note", "amount", "currency", "rate", "account", "paid_by", "split", "shares", "to_account"];
   const rows = entries
     .filter((e) => !e.deleted)
     .sort((a, b) => (a.date === b.date ? (a.id < b.id ? -1 : 1) : a.date < b.date ? -1 : 1))
     .map((e) => [
-      e.date, e.kind, e.category ?? "", e.note ?? "", plain(e.amount, e.currency), e.currency, e.rate ?? "",
-      accounts.find((a) => a.id === e.accountId)?.name ?? "",
+      e.date, e.refund ? "refund" : e.kind, e.category ?? "", e.note ?? "", plain(e.amount, e.currency), e.currency, e.rate ?? "",
+      acct(e.accountId),
       e.split ? name(e.split.paidBy) : e.personId ? name(e.personId) : "",
       e.split?.mode ?? "",
       e.split ? e.split.shares.map((s) => `${name(s.personId)}:${plain(s.amount, e.currency)}`).join("; ") : "",
+      acct(e.toAccountId),
     ]);
   return [head, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }

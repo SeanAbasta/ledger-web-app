@@ -64,9 +64,9 @@ describe("csv", () => {
       [{ id: "A", name: "BDO", currency: "PHP", openingBalance: 0, updatedAt: "x" }],
     );
     expect(csv.split("\r\n")).toEqual([
-      "date,type,category,note,amount,currency,rate,account,paid_by,split,shares",
-      "2026-10-01,expense,Food,,500,JPY,0.38,,,,",
-      '2026-10-07,expense,Food,"Dinner, with Maya",1250.50,PHP,,BDO,me,half,Maya:625.25',
+      "date,type,category,note,amount,currency,rate,account,paid_by,split,shares,to_account",
+      "2026-10-01,expense,Food,,500,JPY,0.38,,,,,",
+      '2026-10-07,expense,Food,"Dinner, with Maya",1250.50,PHP,,BDO,me,half,Maya:625.25,',
       "",
     ]);
   });

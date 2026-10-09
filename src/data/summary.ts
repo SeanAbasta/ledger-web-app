@@ -1,8 +1,8 @@
 import { toBase } from "./base";
 import { daysBetween } from "./dates";
 import type { LedgerItem } from "./rules";
-import type { IsoDate, Minor } from "./schema";
-import { myShare } from "./splits";
+import type { Entry, IsoDate, Minor } from "./schema";
+import { myRefund, myShare } from "./splits";
 
 export interface Summary {
   /** What expenses cost me, in the base currency (my share of splits). */
@@ -14,15 +14,22 @@ export interface Summary {
   unconverted: number;
 }
 
-export function summarize(items: LedgerItem[], base: string, from: IsoDate, to: IsoDate): Summary {
+/**
+ * Spending from `from` to `to`. Refunds count against the category they came back to. `all` is
+ * used to find the expense a refund belongs to (for my share of a split one).
+ */
+export function summarize(items: LedgerItem[], base: string, from: IsoDate, to: IsoDate, all: Entry[] = []): Summary {
+  const byId = new Map([...all, ...items.flatMap((it) => (it.type === "entry" ? [it.entry] : []))].map((e) => [e.id, e]));
   const byDay: Minor[] = Array(daysBetween(from, to) + 1).fill(0);
   const cats = new Map<string, Minor>();
   let total = 0;
   let unconverted = 0;
   for (const it of items) {
     const x = it.type === "entry" ? it.entry : it.occ;
-    if (x.kind !== "expense") continue;
-    const mine = toBase({ amount: myShare(x.amount, x.split), currency: x.currency, rate: "rate" in x ? x.rate : undefined } as never, base);
+    const refund = it.type === "entry" && it.entry.refund;
+    if (x.kind !== "expense" && !refund) continue;
+    const amount = refund ? -myRefund(it.entry, byId) : myShare(x.amount, x.split);
+    const mine = toBase({ amount, currency: x.currency, rate: "rate" in x ? x.rate : undefined } as never, base);
     if (mine === undefined) {
       unconverted++;
       continue;

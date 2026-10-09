@@ -12,7 +12,7 @@ export type MonthKey = string;
 /** ISO timestamp, used for last-write-wins merges. */
 export type Stamp = string;
 
-export type EntryKind = "expense" | "income" | "settlement";
+export type EntryKind = "expense" | "income" | "settlement" | "transfer";
 export type SplitMode = "they-owe" | "i-owe" | "half" | "custom";
 
 export interface SplitShare {
@@ -39,7 +39,14 @@ export interface Entry {
   rate?: string;
   category?: string;
   note?: string;
+  /** The account the money moved in. For a transfer, the account it left. */
   accountId?: string;
+  /** Transfers only: the account the money went to (for example paying a card from the bank). */
+  toAccountId?: string;
+  /** Income only: money back for an expense. It lowers spending in its category instead of counting as income. */
+  refund?: true;
+  /** Refunds: the id of the expense being refunded. */
+  refundOf?: string;
   /** Set when generated or overridden from a rule. */
   ruleId?: string;
   split?: Split;
@@ -106,9 +113,20 @@ export interface Account {
   id: string;
   name: string;
   currency: string;
+  /** Cash at the start. For a card this is negative: what was owed when it was added. */
   openingBalance: Minor;
   /** Foreign accounts only: base-currency units per 1 unit of the account currency. */
   rate?: string;
+  /** Absent means "bank", so accounts made before cards existed stay bank accounts. */
+  type?: "bank" | "card";
+  /** Cards: day of the month the statement closes (29 to 31 clamp to the month end). */
+  statementDay?: number;
+  /** Cards: days from the cut-off to the due date. Default DEFAULT_DUE_DAYS. */
+  dueDays?: number;
+  /** Cards: credit limit. */
+  limit?: Minor;
+  /** Cards: a statement's due date moved by hand (weekends, holidays), keyed by its cut-off date. */
+  dueOverrides?: Record<IsoDate, IsoDate>;
   updatedAt: Stamp;
   deleted?: true;
 }
@@ -134,5 +152,9 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultCurrency: "PHP",
   categories: ["Food", "Transport", "Rent", "Bills", "Shopping", "Health", "Fun", "Other"],
 };
+
+export const DEFAULT_DUE_DAYS = 25;
+
+export const isCard = (a: Pick<Account, "type">) => a.type === "card";
 
 export const monthOf = (d: IsoDate): MonthKey => d.slice(0, 7);

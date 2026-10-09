@@ -1,11 +1,21 @@
 import { splitEvenly } from "./money";
-import type { Minor, Split, SplitMode, SplitShare } from "./schema";
+import type { Entry, Minor, Split, SplitMode, SplitShare } from "./schema";
 
 /** What an expense actually costs me: my part of a split, or the whole amount when not split. */
 export function myShare(amount: Minor, split?: Split): Minor {
   if (!split) return amount;
   if (split.paidBy === "me") return amount - split.shares.reduce((a, s) => a + s.amount, 0);
   return split.shares.find((s) => s.personId === "me")?.amount ?? 0;
+}
+
+/**
+ * My part of a refund: the same share I had of the expense it refunds (all of it when that
+ * expense was not split, or cannot be found).
+ */
+export function myRefund(refund: Pick<Entry, "amount" | "refundOf">, byId?: Map<string, Entry>): Minor {
+  const orig = refund.refundOf ? byId?.get(refund.refundOf) : undefined;
+  if (!orig?.split || orig.amount <= 0) return refund.amount;
+  return Math.round((refund.amount * myShare(orig.amount, orig.split)) / orig.amount);
 }
 
 /**

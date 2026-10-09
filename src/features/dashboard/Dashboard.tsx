@@ -73,13 +73,13 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
       const prevFrom = addMonths(from, -1);
       const prevTo = isCurrent ? addMonths(spentTo, -1) : monthEnd(prevFrom);
       const entries = await loadEntries(store, prevFrom, to);
-      const cur = summarize(from > t ? [] : ledgerItems(entries, rules, from, spentTo), base, from, to);
-      const prev = summarize(ledgerItems(entries, rules, prevFrom, prevTo), base, prevFrom, prevTo);
+      const world = await loadWorld(store);
+      const cur = summarize(from > t ? [] : ledgerItems(entries, rules, from, spentTo), base, from, to, world.entries);
+      const prev = summarize(ledgerItems(entries, rules, prevFrom, prevTo), base, prevFrom, prevTo, world.entries);
       const stillDue = isCurrent
         ? rules.flatMap((r) => occurrences(r, addDays(t, 1), to)).filter((o) => o.kind === "expense")
             .reduce((a, o) => a + (toBase({ amount: myShare(o.amount, o.split), currency: o.currency }, base) ?? 0), 0)
         : 0;
-      const world = await loadWorld(store);
       const upToToday = itemsToDate(world, t);
       const balances = accountBalances(world.accounts, upToToday, base);
       const owed = owedSummary(world.people, upToToday, base);

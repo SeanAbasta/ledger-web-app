@@ -12,6 +12,23 @@ function validate(e: NewEntry) {
   if (!Number.isInteger(e.amount) || e.amount <= 0) throw new Error("Amount must be a positive integer in minor units");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(e.date)) throw new Error("Date must be YYYY-MM-DD");
   if (!e.currency) throw new Error("Currency required");
+  const problem = shapeProblem(e);
+  if (problem) throw new Error(problem);
+}
+
+/** Rules that depend on the kind. Shared with the import check, so both say the same thing. */
+export function shapeProblem(e: Pick<Entry, "kind" | "accountId" | "toAccountId" | "split" | "refund" | "refundOf">): string | undefined {
+  if (e.kind === "transfer") {
+    if (!e.accountId || !e.toAccountId) return "A transfer needs a from and a to account";
+    if (e.accountId === e.toAccountId) return "A transfer needs two different accounts";
+    if (e.split) return "A transfer cannot be split";
+  } else if (e.toAccountId !== undefined) return "Only a transfer has a to account";
+  if (e.refund !== undefined || e.refundOf !== undefined) {
+    if (e.kind !== "income") return "Only income can be a refund";
+    if (e.refund !== true) return "Bad refund flag";
+    if (e.split) return "A refund cannot be split";
+  }
+  return undefined;
 }
 
 const entriesOf = (d: { entries?: unknown } | undefined) => ((d?.entries as Entry[] | undefined) ?? []);
