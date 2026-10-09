@@ -2,7 +2,7 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
-## Unreleased
+## V1.0.3 (2026-10-09)
 
 Now includes:
 
