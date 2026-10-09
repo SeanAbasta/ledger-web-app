@@ -3,7 +3,7 @@ import { getSettings, list, upsert } from "../../data/collections";
 import { CURRENCIES } from "../../data/currencies";
 import { addEntry, deleteEntry, updateEntry } from "../../data/months";
 import { formatMinor, parseMinor, splitEvenly } from "../../data/money";
-import { today } from "../../data/dates";
+import { labelShort, today } from "../../data/dates";
 import type { Account, Entry, Frequency, Person, Settings, SplitMode, SplitShare } from "../../data/schema";
 import { monthOf, DEFAULT_SETTINGS } from "../../data/schema";
 import { buildSplit } from "../../data/splits";
@@ -45,6 +45,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
   const [names, setNames] = useState("");
   const [custom, setCustom] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
+  const [saved, setSaved] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -67,6 +68,9 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
 
   const foreign = currency !== settings.baseCurrency;
   const nameList = names.split(",").map((n) => n.trim()).filter(Boolean);
+  // When someone else paid a split, none of my money moved, so no account is needed.
+  const someoneElsePaid = split && paidBy !== "me";
+  const needsAccount = accounts.length > 0 && !someoneElsePaid;
 
   async function resolvePeople(): Promise<Person[]> {
     const out: Person[] = [];
@@ -79,10 +83,12 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
 
   async function save() {
     setError("");
+    setSaved("");
     try {
       const minor = parseMinor(amount, currency);
       if (!minor) return setError("Enter a valid amount");
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError("Pick a date");
+      if (needsAccount && !accountId) return setError("Pick an account");
       if (foreign && !/^\d+(\.\d+)?$/.test(rate)) return setError(`Enter the ${currency} to ${settings.baseCurrency} rate`);
       const n = kind === "installment" ? Number(count) : 0;
       if (kind === "installment" && (!Number.isInteger(n) || n < 2)) return setError("Payments must be 2 or more");
@@ -127,6 +133,9 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
       if (!entry) {
         setAmount("");
         setNote("");
+        // A plan that starts later shows nowhere yet, so say when it begins.
+        const later = kind !== "one-off" && date > today();
+        setSaved(later ? `Saved. First payment ${labelShort(date)}${kind === "installment" ? `, ${n} payments` : ""}` : "Saved");
       }
       onDone?.();
     } catch (e) {
@@ -146,7 +155,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
   return (
     <form className="form" onSubmit={(e) => { e.preventDefault(); void save(); }}>
       <div className="amt">
-        <MoneyInput aria-label="Amount" placeholder="0.00" value={amount} onChange={setAmount} currency={currency || settings.defaultCurrency} autoFocus />
+        <MoneyInput aria-label="Amount" placeholder="0.00" value={amount} onChange={(v) => { setAmount(v); setSaved(""); }} currency={currency || settings.defaultCurrency} autoFocus />
         <select aria-label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value)}>
           {[...new Set([settings.defaultCurrency, ...CURRENCIES, currency].filter(Boolean))].map((c) => <option key={c}>{c}</option>)}
         </select>
@@ -160,7 +169,10 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
       <label className="field"><b>{kind === "one-off" ? "Date" : "Starts"}</b><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
       {accounts.length > 0 && (
         <label className="field"><b>Account</b>
-          <select value={accountId} onChange={(e) => setAccountId(e.target.value)}><option value="">None</option><AccountOptions accounts={accounts} /></select></label>
+          <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+            {someoneElsePaid ? <option value="">None</option> : !accountId && <option value="" disabled>Pick an account</option>}
+            <AccountOptions accounts={accounts} />
+          </select></label>
       )}
 
       {!entry && (
@@ -199,6 +211,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
       )}
 
       {error && <p className="err" role="alert">{error}</p>}
+      {saved && <p className="mute small" role="status">{saved}</p>}
       <div className="actions">
         {entry && <button type="button" className="btn ghost danger" onClick={() => void remove()}>Delete</button>}
         <button type="submit" className="btn">Save</button>
