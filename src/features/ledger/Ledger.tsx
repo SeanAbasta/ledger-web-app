@@ -70,7 +70,9 @@ export function Ledger() {
     return hay.includes(q.trim().toLowerCase());
   };
 
-  const items = useMemo(() => ledgerItems(entries, rules, from, to).filter((i) => i.type === "entry" || i.date <= t).filter(match), [entries, rules, from, to, t, q]);
+  // Generated payments after today show too (as upcoming), so a plan that starts later can be found and fixed.
+  const items = useMemo(() => ledgerItems(entries, rules, from, to).filter(match), [entries, rules, from, to, t, q]);
+  const upcoming = (it: LedgerItem) => it.type === "occurrence" && it.date > t;
   const due = useMemo(
     () => rules.flatMap((r) => occurrences(r, addDays(t, 1), addDays(t, 30))).sort((a, b) => (a.date < b.date ? -1 : 1)).filter((o) => o.kind === "expense"),
     [rules, t],
@@ -127,6 +129,7 @@ export function Ledger() {
 
   const total = (its: LedgerItem[]) =>
     its.reduce((sum, it) => {
+      if (upcoming(it)) return sum; // day totals are what happened
       const x = it.type === "entry" ? it.entry : it.occ;
       if (it.type === "entry" && it.entry.refund) return sum - (toBase(it.entry, base) ?? 0);
       if (x.kind !== "expense") return sum;
@@ -181,8 +184,9 @@ export function Ledger() {
                     {x.split && <span className="tag">split</span>}
                     {it.type === "entry" && it.entry.refund && <span className="tag">refund</span>}
                     {it.type === "occurrence" && <span className="tag">{it.occ.type === "installment" ? `${it.occ.index} of ${it.occ.count}` : "recurring"}</span>}
+                    {upcoming(it) && <span className="tag">upcoming</span>}
                   </span>
-                  <span>
+                  <span className={upcoming(it) ? "mute" : undefined}>
                     {x.kind === "expense" || (x.kind === "settlement" && "direction" in x && x.direction === "out") ? "-" : it.type === "entry" && it.entry.refund ? "+" : ""}{formatMinor(x.amount, x.currency)}
                     {x.currency !== base && b !== undefined && <span className="mute small"> ≈ {formatMinor(b, base)}</span>}
                   </span>
