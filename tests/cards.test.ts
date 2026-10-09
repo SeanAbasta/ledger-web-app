@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { accountBalances } from "../src/data/accounts";
+import { forecast } from "../src/data/forecast";
 import { cardStatus, cutoffIn, dueFor, lastCutoff, nextCutoff, prevCutoff } from "../src/data/cards";
 import { ledgerItems } from "../src/data/rules";
 import type { Account, Entry, Rule } from "../src/data/schema";
@@ -74,5 +75,44 @@ describe("the example card", () => {
     expect(status("2026-11-15", charges, { ...card, limit: undefined }).creditLeft).toBeUndefined();
     const skipped = { ...iphone, skipped: ["2027-01-20"] };
     expect(cardStatus(card, ledgerItems(charges, [skipped], "0000-01-01", "2026-11-15"), [skipped], "2026-11-15").futureInstallments).toBe(66000 * P);
+  });
+});
+
+describe("forecast with a card", () => {
+  const run = (today: string, entries: Entry[], c: Account = card, rules: Rule[] = [iphone]) => {
+    const start = accountBalances([bank, c], ledgerItems(entries, rules, "0000-01-01", today), "PHP").totalBase;
+    return forecast({ start, today, base: "PHP", entries, rules, months: 4, accounts: [bank, c] });
+  };
+
+  it("takes card spending from the bank on the statement's due date, not on the swipe date", () => {
+    const f = run("2026-11-16", charges);
+    expect(f.months.map((m) => [m.month, m.cards])).toEqual([["2026-11-01", 0], ["2026-12-01", 7000 * P], ["2027-01-01", 3000 * P], ["2027-02-01", 3000 * P]]);
+    expect(f.months[0]!.obligations).toBe(0); // the Nov 20 installment used to be here
+    // Without the card the same installment would hit November.
+    const asBank = run("2026-11-16", charges, { ...card, type: undefined });
+    expect(asBank.months[0]!.obligations).toBe(3000 * P);
+  });
+
+  it("does not move when the bill is paid", () => {
+    const before = run("2026-12-05", charges).months.map((m) => m.end);
+    const after = run("2026-12-05", [...charges, pay]).months.map((m) => m.end);
+    expect(after).toEqual(before);
+    // Nothing more is due in December; the Dec 15 statement (the Nov 20 payment) is due Jan 4.
+    expect(run("2026-12-05", [...charges, pay]).months.slice(0, 2).map((m) => m.cards)).toEqual([0, 3000 * P]);
+  });
+
+  it("follows a due date moved by hand", () => {
+    const moved = { ...card, dueOverrides: { "2026-11-15": "2027-01-04" } };
+    const f = run("2026-11-16", charges, moved);
+    expect([f.months[1]!.cards, f.months[2]!.cards]).toEqual([0, 10000 * P]);
+  });
+
+  it("puts a split card charge on the bill in full, and a card refund is not income", () => {
+    const split = e("s", "2026-11-25", 2000, { split: { paidBy: "me", mode: "half", shares: [{ personId: "m", amount: 1000 * P }] } });
+    const back = e("r", "2026-11-26", 500, { kind: "income", refund: true, refundOf: "c", category: "Shopping" });
+    const f = run("2026-11-30", [...charges, split, back], card, []);
+    expect(f.months[1]!.cards).toBe(7000 * P - 3000 * P); // Nov 15 statement without the iPhone rule: 4,000 swipes
+    expect(f.months[2]!.cards).toBe((2000 - 500) * P);
+    expect(f.months.every((m) => m.income === 0 && m.noIncome)).toBe(true);
   });
 });

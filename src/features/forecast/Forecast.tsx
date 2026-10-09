@@ -6,6 +6,7 @@ import { forecast, type Forecast as F } from "../../data/forecast";
 import { activeSalaryRule, salaryFor, setRepeat, setSalary } from "../../data/income";
 import { formatMinor, parseMinor } from "../../data/money";
 import { itemsToDate, loadWorld, type World } from "../../data/world";
+import { isCard } from "../../data/schema";
 import { useLedger } from "../../ui/Ledger";
 import { MoneyInput } from "../../ui/MoneyInput";
 
@@ -48,7 +49,7 @@ export function Forecast() {
       setW(world);
       setStart(b.totalBase);
       setSkipped(b.skipped);
-      setF(forecast({ start: b.totalBase, today: t, base: world.base, entries: world.entries, rules: world.rules, owed: o.net }));
+      setF(forecast({ start: b.totalBase, today: t, base: world.base, entries: world.entries, rules: world.rules, owed: o.net, accounts: world.accounts }));
     })();
   }, [store, rev]);
 
@@ -81,7 +82,7 @@ export function Forecast() {
     <>
       <div className={`grid ${owed?.net ? "g3" : "g2"}`}>
         <div className="card stat"><div className="mute">Balance today</div><div className="big">{formatMinor(start, base)}</div>
-          <div className="mute small">{w.accounts.length ? "all accounts" : "add accounts in Settings"}{skipped ? ` · ${skipped} left out (no rate)` : ""}</div></div>
+          <div className="mute small">{!w.accounts.length ? "add accounts in Settings" : w.accounts.some(isCard) ? "bank accounts, cards not included" : "all accounts"}{skipped ? ` · ${skipped} left out (no rate)` : ""}</div></div>
         {!!owed?.net && (
           <div className="card stat"><div className="mute">{owed.net > 0 ? "Owed to you" : "You owe"}</div><div className="big">{formatMinor(Math.abs(owed.net), base)}</div>
             <div className="mute small">net, {owed.net > 0 ? "expected back" : "to pay"} this month</div></div>
@@ -121,7 +122,7 @@ export function Forecast() {
               {m.noIncome ? <span className="tag warn">No income set</span> : formatMinor(m.income, base)}
               {m.owed !== 0 && <span className="mute small owedline">{m.owed > 0 ? "+" : "-"} {formatMinor(Math.abs(m.owed), base)} {m.owed > 0 ? "owed to you" : "you owe"}</span>}
             </span>
-            <span>{formatMinor(m.obligations + m.variable, base)}</span>
+            <span>{formatMinor(m.obligations + m.variable + m.cards, base)}{m.cards !== 0 && <span className="mute small owedline">{formatMinor(m.cards, base)} card bills</span>}</span>
             <span><b>{formatMinor(m.end, base)}</b></span>
           </div>
         ))}

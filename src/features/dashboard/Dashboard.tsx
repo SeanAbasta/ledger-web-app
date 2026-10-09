@@ -83,7 +83,7 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
       const upToToday = itemsToDate(world, t);
       const balances = accountBalances(world.accounts, upToToday, base);
       const owed = owedSummary(world.people, upToToday, base);
-      const fc = forecast({ start: balances.totalBase, today: t, base, entries: world.entries, rules: world.rules, months: 2, owed: owed.net });
+      const fc = forecast({ start: balances.totalBase, today: t, base, entries: world.entries, rules: world.rules, months: 2, owed: owed.net, accounts: world.accounts });
       setV({ base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1] });
     })();
   }, [store, rev, anchor]);
