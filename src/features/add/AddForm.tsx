@@ -20,8 +20,11 @@ const MODE_LABEL = { "they-owe": "They owe", "i-owe": "I owe", half: "50/50", cu
 const FREQ = ["weekly", "monthly", "yearly"] as const;
 const FREQ_LABEL = { weekly: "Weekly", monthly: "Monthly", yearly: "Yearly" } as const;
 
+/** What was just added: a short line to show, and the date to open the Ledger at. */
+export interface SavedNote { message: string; date: string }
+
 /** New expense, or edit an existing one (pass `entry`). */
-export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void }) {
+export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: SavedNote) => void }) {
   const { store, changed } = useLedger();
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [people, setPeople] = useState<Person[]>([]);
@@ -45,7 +48,6 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
   const [names, setNames] = useState("");
   const [custom, setCustom] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -83,7 +85,6 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
 
   async function save() {
     setError("");
-    setSaved("");
     try {
       const minor = parseMinor(amount, currency);
       if (!minor) return setError("Enter a valid amount");
@@ -130,14 +131,12 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
         });
       }
       changed();
-      if (!entry) {
-        setAmount("");
-        setNote("");
-        // A plan that starts later shows nowhere yet, so say when it begins.
-        const later = kind !== "one-off" && date > today();
-        setSaved(later ? `Saved. First payment ${labelShort(date)}${kind === "installment" ? `, ${n} payments` : ""}` : "Saved");
-      }
-      onDone?.();
+      if (entry) return onDone?.();
+      setAmount("");
+      setNote("");
+      // A plan that starts later is easy to lose, so say when it begins.
+      const later = kind !== "one-off" && date > today();
+      onDone?.({ date, message: later ? `Saved. First payment ${labelShort(date)}${kind === "installment" ? `, ${n} payments` : ""}` : "Saved" });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save");
     }
@@ -155,7 +154,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
   return (
     <form className="form" onSubmit={(e) => { e.preventDefault(); void save(); }}>
       <div className="amt">
-        <MoneyInput aria-label="Amount" placeholder="0.00" value={amount} onChange={(v) => { setAmount(v); setSaved(""); }} currency={currency || settings.defaultCurrency} autoFocus />
+        <MoneyInput aria-label="Amount" placeholder="0.00" value={amount} onChange={setAmount} currency={currency || settings.defaultCurrency} autoFocus />
         <select aria-label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value)}>
           {[...new Set([settings.defaultCurrency, ...CURRENCIES, currency].filter(Boolean))].map((c) => <option key={c}>{c}</option>)}
         </select>
@@ -211,7 +210,6 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
       )}
 
       {error && <p className="err" role="alert">{error}</p>}
-      {saved && <p className="mute small" role="status">{saved}</p>}
       <div className="actions">
         {entry && <button type="button" className="btn ghost danger" onClick={() => void remove()}>Delete</button>}
         <button type="submit" className="btn">Save</button>

@@ -31,10 +31,11 @@ function title(view: View, anchor: string): string {
   return view === "Day" ? labelDay(a) : view === "Week" ? `${labelShort(a)} to ${labelShort(b)}` : labelMonth(a);
 }
 
-export function Ledger() {
+/** `initialDate` and `notice` come from the Add form: open where the new item is, and say it was saved. */
+export function Ledger({ initialDate, notice }: { initialDate?: string; notice?: string } = {}) {
   const { store, rev, changed } = useLedger();
   const [view, setView] = useState<View>("Month");
-  const [anchor, setAnchor] = useState(today());
+  const [anchor, setAnchor] = useState(initialDate ?? today());
   const [q, setQ] = useState("");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
@@ -151,7 +152,8 @@ export function Ledger() {
         <input className="search" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
-      {groups.length > 0 && <p className="mute small hint">Tap an entry to edit it</p>}
+      {notice && <p className="mute small hint" role="status">{notice}</p>}
+      {groups.length > 0 && !notice && <p className="mute small hint">Tap an entry to edit it</p>}
 
       {due.length > 0 && !q && (
         <>
