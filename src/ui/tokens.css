@@ -213,6 +213,8 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .acct { display: flex; gap: 8px; align-items: center; padding: 6px 0; }
 .acct input { flex: 1; min-width: 0; }
 .acct select { flex: none; }
+.cardacct { padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
+.cardacct .field:last-of-type { border-bottom: 0; }
 .x { all: unset; cursor: pointer; color: var(--mute); padding: 4px 8px; border-radius: 6px; }
 .x:hover { background: var(--fill-2); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }

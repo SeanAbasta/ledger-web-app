@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { list, remove, saveSettings, upsert } from "../../data/collections";
 import { CURRENCIES } from "../../data/currencies";
 import { formatMinor, parseMinor } from "../../data/money";
-import type { Account, Person, Settings as S } from "../../data/schema";
-import { DEFAULT_SETTINGS } from "../../data/schema";
+import type { Account, Person, Rule, Settings as S } from "../../data/schema";
+import { DEFAULT_DUE_DAYS, DEFAULT_SETTINGS, isCard } from "../../data/schema";
 import { getSettings } from "../../data/collections";
 import { useLedger } from "../../ui/Ledger";
 import { daysLeft } from "../../sync/config";
@@ -46,6 +46,43 @@ function AccountRow({ a, base, onSave, onRemove }: { a: Account; base: string; o
   );
 }
 
+const dayOk = (n: number, lo: number, hi: number) => Number.isInteger(n) && n >= lo && n <= hi;
+
+/** A credit card: cut-off day, due days, optional limit and what was owed when it was added. Always in the base currency. */
+function CardRow({ a, base, onSave, onRemove }: { a: Account; base: string; onSave: (a: Account) => void; onRemove: () => void }) {
+  const [name, setName] = useState(a.name);
+  const [day, setDay] = useState(String(a.statementDay ?? ""));
+  const [dueDays, setDueDays] = useState(String(a.dueDays ?? DEFAULT_DUE_DAYS));
+  const [limit, setLimit] = useState(a.limit !== undefined ? plain(a.limit, base) : "");
+  const [owed, setOwed] = useState(a.openingBalance ? plain(-a.openingBalance, base) : "");
+  const [error, setError] = useState("");
+  const commit = () => {
+    setError("");
+    const d = Number(day);
+    const dd = Number(dueDays);
+    if (!dayOk(d, 1, 31)) return setError("Cut-off day is 1 to 31");
+    if (!dayOk(dd, 0, 60)) return setError("Due is 0 to 60 days after the cut-off");
+    const lim = limit.trim() ? parseMinor(limit, base) : undefined;
+    if (lim === null) return setError("Enter a valid limit");
+    const o = owed.trim() ? parseMinor(owed, base) : 0;
+    if (o === null) return setError("Enter a valid amount owed");
+    onSave({ ...a, name: name.trim() || "Card", currency: base, rate: undefined, statementDay: d, dueDays: dd, limit: lim, openingBalance: o ? -o : 0 });
+  };
+  return (
+    <div className="cardacct">
+      <div className="acct">
+        <input aria-label="Card name" value={name} onChange={(e) => setName(e.target.value)} onBlur={commit} />
+        <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}>✕</button>
+      </div>
+      <label className="field"><b>Cut-off day</b><input aria-label="Cut-off day" inputMode="numeric" placeholder="1 to 31" value={day} onChange={(e) => setDay(e.target.value)} onBlur={commit} /></label>
+      <label className="field"><b>Days until due</b><input aria-label="Days from cut-off to due date" inputMode="numeric" value={dueDays} onChange={(e) => setDueDays(e.target.value)} onBlur={commit} /></label>
+      <label className="field"><b>Credit limit</b><MoneyInput aria-label="Credit limit" placeholder="Optional" currency={base} value={limit} onChange={setLimit} onBlur={commit} /></label>
+      <label className="field"><b>Owed at start</b><MoneyInput aria-label="Owed at start" placeholder="0" currency={base} value={owed} onChange={setOwed} onBlur={commit} /></label>
+      {error && <p className="err" role="alert">{error}</p>}
+    </div>
+  );
+}
+
 export function Settings({ onSetup }: { onSetup: () => void }) {
   const { store, rev, changed } = useLedger();
   const { config, status, engine, disconnect, readOnly } = useSync();
@@ -54,6 +91,8 @@ export function Settings({ onSetup }: { onSetup: () => void }) {
   const [backupMsg, setBackupMsg] = useState("");
   const [theme, setThemeState] = useState<Theme>(loadTheme);
   const [confirm, setConfirm] = useState<"pull" | "remove">();
+  const [dropCard, setDropCard] = useState<Account>();
+  const [used, setUsed] = useState<Set<string>>(new Set());
   const [s, setS] = useState<S>(DEFAULT_SETTINGS);
   const [people, setPeople] = useState<Person[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -65,6 +104,12 @@ export function Settings({ onSetup }: { onSetup: () => void }) {
       setS(await getSettings(store));
       setPeople(await list(store, "people"));
       setAccounts(await list(store, "accounts"));
+      // Accounts that something refers to, so removing a card with history asks first.
+      const [entries, rules] = await Promise.all([loadAllEntries(store), list(store, "rules") as Promise<Rule[]>]);
+      setUsed(new Set([
+        ...entries.filter((e) => !e.deleted).flatMap((e) => [e.accountId, e.toAccountId]),
+        ...rules.flatMap((r) => [r.accountId, ...(r.revisions ?? []).map((x) => x.accountId)]),
+      ].filter((x): x is string => !!x)));
       setLastExported(await store.getMeta<string>("lastExported"));
     })();
   }, [store, rev]);
@@ -153,15 +198,26 @@ export function Settings({ onSetup }: { onSetup: () => void }) {
           <Segmented value={theme} options={THEMES} labels={{ light: "Light", dark: "Dark", auto: "Auto" }} onChange={(t) => { setThemeState(t); saveTheme(t); applyTheme(t); }} /></div>
       </div>
 
-      <div className="grp">Accounts</div>
+      <div className="grp">Bank accounts</div>
       <div className="card pad">
-        {accounts.length === 0 && <p className="mute">No accounts yet</p>}
-        {accounts.map((a) => (
+        {!accounts.some((a) => !isCard(a)) && <p className="mute">No bank accounts yet</p>}
+        {accounts.filter((a) => !isCard(a)).map((a) => (
           <AccountRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency}
             onSave={async (x) => { await upsert(store, "accounts", x); changed(); }}
             onRemove={async () => { await remove(store, "accounts", a.id); changed(); }} />
         ))}
         <button className="btn ghost sm" onClick={async () => { await upsert(store, "accounts", { name: "New account", currency: s.baseCurrency, openingBalance: 0 }); changed(); }}>Add account</button>
+      </div>
+
+      <div className="grp">Credit cards</div>
+      <div className="card pad">
+        {!accounts.some(isCard) && <p className="mute">No cards yet</p>}
+        {accounts.filter(isCard).map((a) => (
+          <CardRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency}
+            onSave={async (x) => { await upsert(store, "accounts", x); changed(); }}
+            onRemove={async () => { if (used.has(a.id)) setDropCard(a); else { await remove(store, "accounts", a.id); changed(); } }} />
+        ))}
+        <button className="btn ghost sm" onClick={async () => { await upsert(store, "accounts", { name: "New card", currency: s.baseCurrency, openingBalance: 0, type: "card", statementDay: 15, dueDays: DEFAULT_DUE_DAYS }); changed(); }}>Add card</button>
       </div>
 
       <div className="grp">People</div>
@@ -202,6 +258,19 @@ export function Settings({ onSetup }: { onSetup: () => void }) {
           <div className="actions">
             <button className="btn ghost" onClick={() => setIncoming(undefined)}>Cancel</button>
             <button className="btn" onClick={() => void doImport()}>Import</button>
+          </div>
+        </Sheet>
+      )}
+
+      {dropCard && (
+        <Sheet locked onClose={() => setDropCard(undefined)}>
+          <h3>Remove {dropCard.name}</h3>
+          <p className="mute">
+            This card has entries. They stay in the Ledger, but without the card they count as money that left no account ("Other"), not as card charges. Change their account first if you want to keep them on a card.
+          </p>
+          <div className="actions">
+            <button className="btn ghost" onClick={() => setDropCard(undefined)}>Cancel</button>
+            <button className="btn ghost danger" onClick={async () => { await remove(store, "accounts", dropCard.id); setDropCard(undefined); changed(); }}>Remove</button>
           </div>
         </Sheet>
       )}
