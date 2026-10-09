@@ -50,7 +50,7 @@ function Bars({ days, from, todayIdx, base }: { days: number[]; from: string; to
     <svg viewBox={`0 0 ${days.length * 10} 100`} width="100%" height="150" preserveAspectRatio="none" role="img" aria-label={`Daily spending from ${from}, highest ${formatMinor(max, base)}`}>
       {days.map((v, i) => {
         const h = (v / max) * 96;
-        return <rect key={i} x={i * 10 + 1.5} y={100 - h} width="7" height={Math.max(h, v ? 1 : 0)} rx="2" className={i === todayIdx ? "bar now" : "bar"}><title>{`${i + 1}: ${formatMinor(v, base)}`}</title></rect>;
+        return <rect key={i} x={i * 10 + 1.5} y={100 - h} width="7" height={Math.max(h, v > 0 ? 1 : 0)} rx="2" className={i === todayIdx ? "bar now" : "bar"}><title>{`${i + 1}: ${formatMinor(v, base)}`}</title></rect>;
       })}
     </svg>
   );
@@ -94,6 +94,9 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
   const showOwed = owed.people.length > 0;
   const bottomCards = [showAccounts, showOwed, !!next].filter(Boolean).length;
   const cats = topCategories(cur.byCategory);
+  // Shares of what was spent per category. A refund for an earlier month's purchase can leave a
+  // category below zero; it is left out of the chart, so shares use the categories shown.
+  const catTotal = cats.reduce((a, c) => a + c.amount, 0);
   const change = pctChange(cur.total, prevTotal);
   const todayIdx = isCurrent ? Number(today().slice(8)) - 1 : -1;
 
@@ -116,16 +119,16 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
           <div className="mute small">{isCurrent ? "same days" : "full month"}</div></div>
       </div>
 
-      {cur.total === 0 ? (
+      {catTotal <= 0 ? (
         <p className="mute empty">Nothing spent yet</p>
       ) : (
         <div className="grid g2">
           <div className="card pad">
             <div className="mute">Categories</div>
-            <div className="donut"><Donut cats={cats} total={cur.total} base={base} /></div>
+            <div className="donut"><Donut cats={cats} total={catTotal} base={base} /></div>
             <ul className="legend">
               {cats.map((c, i) => (
-                <li key={c.category}><i className={`k${i}`} />{c.category}<span className="r">{Math.round((c.amount / cur.total) * 100)}%</span></li>
+                <li key={c.category}><i className={`k${i}`} />{c.category}<span className="r">{Math.round((c.amount / catTotal) * 100)}%</span></li>
               ))}
             </ul>
           </div>

@@ -6,7 +6,7 @@ import { list } from "../src/data/collections";
 import { LedgerStore } from "../src/data/db";
 import { entriesCsv, importBundle, validateBundle } from "../src/data/exportImport";
 import { forecast } from "../src/data/forecast";
-import { addEntry, loadAllEntries } from "../src/data/months";
+import { addEntry, addRefund, loadAllEntries, refundable, updateEntry } from "../src/data/months";
 import { ledgerItems } from "../src/data/rules";
 import type { Account, Entry } from "../src/data/schema";
 import { summarize } from "../src/data/summary";
@@ -77,6 +77,23 @@ describe("refunds", () => {
     const split = { ...jacket, split: { paidBy: "me", mode: "half" as const, shares: [{ personId: "m", amount: 2500 * P }] } };
     const s = summarize(items([back]), "PHP", "2026-11-20", "2026-11-20", [split]);
     expect(s.total).toBe(-250 * P);
+  });
+
+  it("are recorded against an expense and cannot add up to more than it", async () => {
+    const x = await addEntry(store, { kind: "expense", date: "2026-11-03", amount: 1000 * P, currency: "PHP", category: "Shopping", note: "Jacket", accountId: "C" });
+    const r = await addRefund(store, x, 500 * P, "2026-11-20");
+    expect(r).toMatchObject({ kind: "income", refund: true, refundOf: x.id, accountId: "C", category: "Shopping", note: "Refund: Jacket" });
+    expect(refundable(x, await loadAllEntries(store))).toBe(500 * P);
+    await expect(addRefund(store, x, 501 * P, "2026-11-21")).rejects.toThrow(/more than is left/);
+    await addRefund(store, x, 500 * P, "2026-11-21");
+    await expect(addRefund(store, x, 1, "2026-11-22")).rejects.toThrow(/fully refunded/);
+    await expect(addRefund(store, r, 1, "2026-11-22")).rejects.toThrow(/Only an expense/);
+  });
+
+  it("stay refunds when edited", async () => {
+    const x = await addEntry(store, { kind: "expense", date: "2026-11-03", amount: 1000 * P, currency: "PHP", accountId: "C" });
+    const r = await addRefund(store, x, 500 * P, "2026-11-20");
+    expect(await updateEntry(store, "2026-11", r.id, { amount: 400 * P, kind: "income", note: "x" })).toMatchObject({ refund: true, refundOf: x.id, amount: 400 * P });
   });
 
   it("can only be income and cannot be split", async () => {

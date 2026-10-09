@@ -109,3 +109,22 @@ export async function loadAllEntries(store: LedgerStore): Promise<Entry[]> {
   const files = await Promise.all((await store.paths()).filter((p) => p.startsWith("months/")).map((p) => store.get(p)));
   return files.flatMap((f) => entriesOf(f));
 }
+
+/** How much of an expense can still be refunded: its amount minus the refunds already recorded for it. */
+export const refundable = (expense: Entry, entries: Entry[]): number =>
+  expense.amount - entries.filter((e) => !e.deleted && e.refund && e.refundOf === expense.id).reduce((n, e) => n + e.amount, 0);
+
+/**
+ * Money back for an expense, on the same account and in the same category and currency. It
+ * lowers spending in that category and what the account (usually a card) owes.
+ */
+export async function addRefund(store: LedgerStore, expense: Entry, amount: number, date: string): Promise<Entry> {
+  if (expense.kind !== "expense" || expense.deleted) throw new Error("Only an expense can be refunded");
+  const left = refundable(expense, await loadAllEntries(store));
+  if (amount > left) throw new Error(left > 0 ? "That is more than is left to refund" : "This is already fully refunded");
+  return addEntry(store, {
+    kind: "income", refund: true, refundOf: expense.id, date, amount,
+    currency: expense.currency, rate: expense.rate, category: expense.category, accountId: expense.accountId,
+    note: expense.note ? `Refund: ${expense.note}` : "Refund",
+  });
+}

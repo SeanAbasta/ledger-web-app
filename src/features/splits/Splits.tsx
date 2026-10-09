@@ -5,7 +5,7 @@ import { labelShort, today } from "../../data/dates";
 import { addEntry, loadAllEntries } from "../../data/months";
 import { formatMinor } from "../../data/money";
 import { ledgerItems } from "../../data/rules";
-import type { Account, Person, Rule } from "../../data/schema";
+import { isCard, type Account, type Person, type Rule } from "../../data/schema";
 import { Sheet } from "../../ui/Sheet";
 import { useLedger } from "../../ui/Ledger";
 import { copyImage, downloadImage, renderStatement } from "./snapshot";
@@ -32,7 +32,7 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
       const items = ledgerItems(entries, rules, "0000-01-01", today());
       const rs = people.map((person) => ({ person, lines: personLines(person.id, items) })).filter((r) => r.lines.length);
       setRows(rs);
-      setAccounts(await list(store, "accounts"));
+      setAccounts((await list(store, "accounts")).filter((a) => !isCard(a))); // settling up never goes to a card
       setSel((s) => (s && rs.some((r) => r.person.id === s) ? s : rs[0]?.person.id));
     })();
   }, [store, rev]);

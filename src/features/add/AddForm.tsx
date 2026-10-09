@@ -9,6 +9,7 @@ import { monthOf, DEFAULT_SETTINGS } from "../../data/schema";
 import { buildSplit } from "../../data/splits";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
+import { AccountOptions } from "../../ui/AccountOptions";
 import { useLedger } from "../../ui/Ledger";
 
 type Kind = "one-off" | "recurring" | "installment";
@@ -159,7 +160,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: () => void 
       <label className="field"><b>{kind === "one-off" ? "Date" : "Starts"}</b><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
       {accounts.length > 0 && (
         <label className="field"><b>Account</b>
-          <select value={accountId} onChange={(e) => setAccountId(e.target.value)}><option value="">None</option>{accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+          <select value={accountId} onChange={(e) => setAccountId(e.target.value)}><option value="">None</option><AccountOptions accounts={accounts} /></select></label>
       )}
 
       {!entry && (

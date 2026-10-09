@@ -7,6 +7,7 @@ import type { Account, Rule } from "../../data/schema";
 import { DEFAULT_SETTINGS } from "../../data/schema";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
+import { AccountOptions } from "../../ui/AccountOptions";
 import { useLedger } from "../../ui/Ledger";
 
 type Scope = "this" | "later";
@@ -83,7 +84,7 @@ export function OccurrenceForm({ occ, rule, onDone }: { occ: Occurrence; rule: R
             </select></label>
           {accounts.length > 0 && (
             <label className="field"><b>Account</b>
-              <select value={accountId} onChange={(e) => setAccountId(e.target.value)}><option value="">None</option>{accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+              <select value={accountId} onChange={(e) => setAccountId(e.target.value)}><option value="">None</option><AccountOptions accounts={accounts} /></select></label>
           )}
         </>
       )}

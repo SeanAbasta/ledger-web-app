@@ -57,6 +57,7 @@ export function Forecast() {
   const { base } = w;
   const t = today();
   const repeat = !!activeSalaryRule(w.rules, t);
+  const banks = w.accounts.filter((a) => !isCard(a)); // salary never goes to a card
 
   async function commit(month: string, text: string) {
     setError("");
@@ -64,14 +65,14 @@ export function Forecast() {
     const val = text.trim() === "" ? null : parseMinor(text, base);
     if (text.trim() !== "" && val === null) return setError("Enter a valid amount");
     if (val === cur) return;
-    await setSalary(store, month, val, { base, accountId: accountId || w!.accounts[0]?.id });
+    await setSalary(store, month, val, { base, accountId: accountId || banks[0]?.id });
     changed();
   }
 
   async function toggle(on: boolean) {
     setError("");
     try {
-      await setRepeat(store, on, { today: t, base, accountId: accountId || w!.accounts[0]?.id });
+      await setRepeat(store, on, { today: t, base, accountId: accountId || banks[0]?.id });
       changed();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not change");
@@ -104,9 +105,9 @@ export function Forecast() {
         })}
         <div className="field"><b>Repeat every month</b>
           <button type="button" className={`toggle ${repeat ? "on" : ""}`} aria-pressed={repeat} onClick={() => void toggle(!repeat)}><i /></button></div>
-        {w.accounts.length > 0 && (
+        {banks.length > 0 && (
           <label className="field"><b>Paid into</b>
-            <select value={accountId} onChange={(e) => setAccountId(e.target.value)}><option value="">{w.accounts[0]!.name}</option>{w.accounts.slice(1).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+            <select value={accountId} onChange={(e) => setAccountId(e.target.value)}><option value="">{banks[0]!.name}</option>{banks.slice(1).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
         )}
         {error && <p className="err" role="alert">{error}</p>}
       </div>
