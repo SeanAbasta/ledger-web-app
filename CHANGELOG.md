@@ -2,6 +2,25 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V1.1.0 (2026-10-09)
+
+**Update both computers before you use cards.** An older copy reads a card payment as an ordinary expense, cannot import a backup that has card payments, and treats refunds as income.
+
+Now includes:
+
+- Credit cards. In Settings, accounts are now Bank accounts and Credit cards. A card has a cut-off day (the 29th to 31st move to the month end in shorter months), days until due (25 by default), an optional credit limit, and what you owed when you added it. Existing accounts stay bank accounts.
+- Put an expense or an installment on a card with the Account picker. A swipe counts as spending once, on the day you made it. An installment counts one payment a month, as before, while the whole remaining amount holds the card's limit.
+- Each card has a tile on the Dashboard: the last statement and its due date (a statement is out on its cut-off day), unbilled charges, and the credit left.
+- Pay a card from the tile. It records a transfer from a bank account for what is still due on the statement. A transfer is not spending or income, so Spent, the category chart and the forecast do not change when you pay.
+- Move one statement's due date by tapping it on the tile, for example when the bank shifts it for a holiday.
+- Refund a card expense: open it in the Ledger and tap Refund. A refund can be partial, lowers what the card owes, and lowers spending in the category it came back to.
+- The forecast starts from your bank accounts only and takes each card bill from the bank on its due date. Card charges already made go on the bill at their full amount; future ones (like installment payments) go on the statement they fall in.
+- The Ledger shows card payments with both accounts, and refunds with a plus.
+- Settle up and the salary account only offer bank accounts.
+- The spreadsheet export has a new last column, to_account, for transfers.
+
+Not included: interest, late fees, minimum payments, automatic exchange-rate adjustment, reminders. Foreign charges use the rate you entered; if the bill differs, log the difference as an expense.
+
 ## V1.0.3 (2026-10-09)
 
 Now includes:

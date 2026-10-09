@@ -49,8 +49,9 @@ After that you only need a browser.
 | **Splits** | Shared costs | Choose who paid and how to split: they owe it all, you owe it all, 50/50, or custom amounts for 3 or more people. |
 | **Snapshot** | Easy settling | Turn a person's balance into a clean statement image you can copy or save, then record the settlement. |
 | **Currency** | Multi-currency | PHP by default. Foreign expenses keep their original amount and the exchange rate at the time, so history never shifts. |
+| **Credit cards** | Swipe once, pay once | Put an expense or an installment on a card. Each card shows its last statement and due date, what is unbilled, and the credit left (installments hold the full remaining amount). Pay the bill from a bank account in one tap: it is a transfer, so the spending is never counted twice. Refund a card expense from the Ledger, and move one statement's due date for a weekend or holiday. |
 | **Recurring** | Rules, not rows | One-off, recurring (weekly, monthly, yearly) and installments such as "3 of 12, 8,000 left". Stored once, generated when needed. |
-| **Forecast** | Look ahead | Enter your salary per month or repeat it, and see your balance projected 12 months out from income, recurring costs, your average spending, and money people owe you. |
+| **Forecast** | Look ahead | Enter your salary per month or repeat it, and see your balance projected 12 months out from income, recurring costs, your average spending, and money people owe you. Card spending leaves your bank on the statement's due date, not on the day you swiped. |
 | **Sync** | Two computers, one ledger | A verified handoff through a private GitHub repo. It shows when it is synced and only says "Safe to close" after checking. |
 | **Appearance** | Light or dark | Light by default. Switch to Dark, or Auto to follow your device, in Settings. It is a per-device choice and is not synced. |
 | **Backup** | Your data, your files | Export everything as one file or as a spreadsheet, and import a backup. Nothing is deleted on import. |
@@ -69,6 +70,7 @@ Ledger stays small on purpose. It does **not**:
 - send notifications
 - track investments
 - store account or card numbers
+- work out card interest, late fees or minimum payments (it assumes you pay the full statement)
 - run a server, require a login, or cost money
 
 ---
