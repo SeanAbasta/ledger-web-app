@@ -12,6 +12,8 @@ export interface ForecastMonth {
   obligations: Minor;
   /** Estimated everyday spending. */
   variable: Minor;
+  /** Money owed to me (net of what I owe) expected back this month. Only set on the first month. */
+  owed: Minor;
   /** Projected balance at the end of the month. */
   end: Minor;
   /** True when no income at all is known for the month (past or future). */
@@ -30,6 +32,7 @@ const spend = (e: { amount: Minor; currency: string; rate?: string; split?: Entr
 
 /**
  * Month-end balance projection. Assumptions: split amounts are settled (only my share is spent),
+ * and what people owe me (net of what I owe them, `owed`) comes back during the current month,
  * everyday spending repeats the average of the last 3 full months, and what is left of the
  * current month is prorated by days. Foreign amounts without a rate are ignored.
  */
@@ -40,6 +43,8 @@ export function forecast(opts: {
   entries: Entry[];
   rules: Rule[];
   months?: number;
+  /** Net amount owed to me in the base currency (owedSummary().net). */
+  owed?: Minor;
 }): Forecast {
   const { start, today, base, rules } = opts;
   const entries = opts.entries.filter((e) => !e.deleted);
@@ -89,8 +94,9 @@ export function forecast(opts: {
 
     const dim = daysInMonth(...(parts(ms).slice(0, 2) as [number, number]));
     const variable = i === 0 ? Math.round((avgVariable * (dim - todayDay)) / dim) : avgVariable;
-    bal = bal + income - obligations - variable;
-    out.push({ month: ms, income, obligations, variable, end: bal, noIncome: !hasIncome });
+    const owed = i === 0 ? (opts.owed ?? 0) : 0;
+    bal = bal + income + owed - obligations - variable;
+    out.push({ month: ms, income, obligations, variable, owed, end: bal, noIncome: !hasIncome });
   }
   return { months: out, avgVariable, basis };
 }

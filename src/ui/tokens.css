@@ -253,3 +253,4 @@ details { margin: 8px 0; font-size: 13px; color: var(--mute); }
 .row:not(.static)::after { content: "›"; color: var(--mute); opacity: 0.6; font-size: 18px; line-height: 1; }
 .hint { margin: 10px 0 0; }
 .row:not(.static) > :first-child { flex: 1; min-width: 0; }
+.owedline { display: block; }

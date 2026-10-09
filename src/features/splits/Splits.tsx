@@ -17,10 +17,10 @@ interface Row {
 
 const phrase = (name: string, amt: number) => (amt > 0 ? `${name} owes you` : `You owe ${name}`);
 
-export function Splits() {
+export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
   const { store, rev, changed } = useLedger();
   const [rows, setRows] = useState<Row[]>([]);
-  const [sel, setSel] = useState<string>();
+  const [sel, setSel] = useState<string | undefined>(initialPerson);
   const [settle, setSettle] = useState<Row>();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [acct, setAcct] = useState("");

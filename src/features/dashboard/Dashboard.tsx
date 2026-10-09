@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { accountBalances, type Balances } from "../../data/accounts";
+import { owedSummary, type OwedSummary } from "../../data/balances";
 import { toBase } from "../../data/base";
 import { forecast } from "../../data/forecast";
 import { itemsToDate, loadWorld } from "../../data/world";
@@ -20,6 +21,7 @@ interface View {
   from: string;
   isCurrent: boolean;
   balances: Balances;
+  owed: OwedSummary;
   next?: { month: string; end: number };
 }
 
@@ -54,7 +56,7 @@ function Bars({ days, from, todayIdx, base }: { days: number[]; from: string; to
   );
 }
 
-export function Dashboard() {
+export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) => void }) {
   const { store, rev } = useLedger();
   const [anchor, setAnchor] = useState(today());
   const [v, setV] = useState<View>();
@@ -78,14 +80,19 @@ export function Dashboard() {
             .reduce((a, o) => a + (toBase({ amount: myShare(o.amount, o.split), currency: o.currency }, base) ?? 0), 0)
         : 0;
       const world = await loadWorld(store);
-      const balances = accountBalances(world.accounts, itemsToDate(world, t), base);
-      const fc = forecast({ start: balances.totalBase, today: t, base, entries: world.entries, rules: world.rules, months: 2 });
-      setV({ base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, next: fc.months[1] });
+      const upToToday = itemsToDate(world, t);
+      const balances = accountBalances(world.accounts, upToToday, base);
+      const owed = owedSummary(world.people, upToToday, base);
+      const fc = forecast({ start: balances.totalBase, today: t, base, entries: world.entries, rules: world.rules, months: 2, owed: owed.net });
+      setV({ base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1] });
     })();
   }, [store, rev, anchor]);
 
   if (!v) return null;
-  const { base, cur, prevTotal, stillDue, from, isCurrent, balances, next } = v;
+  const { base, cur, prevTotal, stillDue, from, isCurrent, balances, owed, next } = v;
+  const showAccounts = balances.accounts.length > 0 || balances.unassigned !== 0;
+  const showOwed = owed.people.length > 0;
+  const bottomCards = [showAccounts, showOwed, !!next].filter(Boolean).length;
   const cats = topCategories(cur.byCategory);
   const change = pctChange(cur.total, prevTotal);
   const todayIdx = isCurrent ? Number(today().slice(8)) - 1 : -1;
@@ -128,8 +135,8 @@ export function Dashboard() {
           </div>
         </div>
       )}
-      <div className="grid g2">
-        {(balances.accounts.length > 0 || balances.unassigned !== 0) && (
+      <div className={`grid ${bottomCards === 3 ? "g3" : "g2"}`}>
+        {showAccounts && (
           <div className="card pad">
             <div className="mute">Accounts</div>
             {balances.accounts.map(({ account, balance }) => (
@@ -139,8 +146,27 @@ export function Dashboard() {
             <div className="row static"><b>Total</b><b>{formatMinor(balances.totalBase, base)}</b></div>
           </div>
         )}
+        {showOwed && (
+          <div className="card pad">
+            <div className="mute">{owed.net >= 0 ? "Owed to you" : "You owe"}</div>
+            <div className="big">{formatMinor(Math.abs(owed.net), base)}</div>
+            <div className="mute small">
+              {owed.owedToMe && owed.iOwe ? `${formatMinor(owed.owedToMe, base)} owed to you, ${formatMinor(owed.iOwe, base)} you owe` : "net"}
+            </div>
+            {owed.people.map((p) => (
+              <button key={p.person.id} className="row" title={`Open ${p.person.name} in Splits`} onClick={() => onOpenPerson(p.person.id)}>
+                <span>
+                  {p.person.name} <span className="mute">{p.base >= 0 ? "owes you" : "you owe"}</span>
+                  {p.foreign && Object.keys(p.byCurrency).filter((c) => c !== base).map((c) => <span key={c} className="tag">{c}</span>)}
+                </span>
+                <span className={p.base > 0 ? "pos" : ""}>{formatMinor(Math.abs(p.base), base)}</span>
+              </button>
+            ))}
+            {owed.skipped > 0 && <p className="mute small">{owed.skipped} foreign {owed.skipped === 1 ? "balance has" : "balances have"} no rate and {owed.skipped === 1 ? "is" : "are"} left out.</p>}
+          </div>
+        )}
         {next && (
-          <div className="card stat"><div className="mute">End of {labelMonth(next.month)}</div><div className="big">{formatMinor(next.end, base)}</div><div className="mute small">forecast</div></div>
+          <div className="card stat"><div className="mute">End of {labelMonth(next.month)}</div><div className="big">{formatMinor(next.end, base)}</div><div className="mute small">{owed.net ? "forecast, after everyone settles up" : "forecast"}</div></div>
         )}
       </div>
       {cur.unconverted > 0 && <p className="mute small">{cur.unconverted} foreign {cur.unconverted === 1 ? "amount has" : "amounts have"} no rate and {cur.unconverted === 1 ? "is" : "are"} left out.</p>}

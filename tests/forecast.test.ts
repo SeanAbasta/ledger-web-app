@@ -151,3 +151,29 @@ describe("a revised price flows into the forecast and balances", () => {
     expect(b.accounts[0]!.balance).toBe(-(50000 + 65000 + 65000)); // Nov, Dec, Jan
   });
 });
+
+describe("money owed to me in the forecast", () => {
+  const base = { today: "2026-10-10", base: "PHP", entries: [] as Entry[], rules: [] as Rule[], start: 1000000 };
+  it("comes back this month and lifts every later month by the same amount", () => {
+    const without = forecast(base);
+    const withOwed = forecast({ ...base, owed: 120000 });
+    expect(withOwed.months[0]!.owed).toBe(120000);
+    expect(withOwed.months[1]!.owed).toBe(0);
+    withOwed.months.forEach((m, i) => expect(m.end - without.months[i]!.end).toBe(120000));
+  });
+  it("lowers the forecast when I owe more than I am owed", () => {
+    expect(forecast({ ...base, owed: -5000 }).months[11]!.end).toBe(1000000 - 5000);
+  });
+  it("does not double count when someone pays me back", async () => {
+    const { owedSummary } = await import("../src/data/balances");
+    const people = [{ id: "maya", name: "Maya", updatedAt: "x" }];
+    const lent = e("2026-10-02", 50000, { id: "L", accountId: "A", split: { paidBy: "me", mode: "they-owe", shares: [{ personId: "maya", amount: 50000 }] } });
+    const paid = e("2026-10-05", 50000, { id: "P", kind: "settlement", personId: "maya", direction: "in", accountId: "A" });
+    const project = (entries: Entry[]) => {
+      const its = items(entries, [], "2026-10-10");
+      const start = accountBalances([acct({})], its, "PHP").totalBase;
+      return forecast({ ...base, entries, start, owed: owedSummary(people, its, "PHP").net }).months[11]!.end;
+    };
+    expect(project([lent, paid])).toBe(project([lent]));
+  });
+});

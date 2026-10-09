@@ -18,11 +18,11 @@ export type Tab = (typeof NAV)[number];
 /** The screens that are all about editing are locked as a whole while offline and read-only. */
 const EDIT_TABS: Tab[] = ["Add", "Forecast"]; // Settings locks its own edit controls so Export still works offline
 
-function Screen({ tab, go, setup }: { tab: Tab; go: (t: Tab) => void; setup: () => void }) {
+function Screen({ tab, go, setup, focusPerson, openPerson }: { tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void }) {
   if (tab === "Add") return <div className="glasscard addcard"><AddForm onDone={() => go("Ledger")} /></div>;
   if (tab === "Ledger") return <Ledger />;
-  if (tab === "Dashboard") return <Dashboard />;
-  if (tab === "Splits") return <Splits />;
+  if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} />;
+  if (tab === "Splits") return <Splits key={focusPerson ?? ""} initialPerson={focusPerson} />;
   if (tab === "Forecast") return <Forecast />;
   return <Settings onSetup={setup} />;
 }
@@ -30,6 +30,8 @@ function Screen({ tab, go, setup }: { tab: Tab; go: (t: Tab) => void; setup: () 
 function Shell() {
   const [tab, setTab] = useState<Tab>("Add");
   const [sheet, setSheet] = useState<"sync" | "setup">();
+  // Set when the Dashboard opens a person, so Splits starts on them.
+  const [focusPerson, setFocusPerson] = useState<string>();
   const { status, readOnly, editOffline, engine } = useSync();
   const locked = readOnly && EDIT_TABS.includes(tab);
 
@@ -38,7 +40,7 @@ function Shell() {
       <nav className="side">
         <div className="brand">Ledger</div>
         {NAV.map((n) => (
-          <button key={n} className={n === tab ? "on" : ""} onClick={() => setTab(n)}>{n}</button>
+          <button key={n} className={n === tab ? "on" : ""} onClick={() => { setFocusPerson(undefined); setTab(n); }}>{n}</button>
         ))}
       </nav>
       <main>
@@ -55,7 +57,7 @@ function Shell() {
         )}
         <section className="body">
           <fieldset className="plain" disabled={locked}>
-            <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} />
+            <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("Splits"); }} />
           </fieldset>
         </section>
       </main>

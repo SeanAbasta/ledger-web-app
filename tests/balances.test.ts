@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nonZero, personLines, statementOf, sumBy } from "../src/data/balances";
+import { nonZero, owedSummary, personLines, statementOf, sumBy } from "../src/data/balances";
 import type { LedgerItem } from "../src/data/rules";
 import type { Entry } from "../src/data/schema";
 
@@ -54,5 +54,37 @@ describe("balances", () => {
   });
   it("hides exactly-settled currencies", () => {
     expect(nonZero({ PHP: 0, USD: 5 })).toEqual([["USD", 5]]);
+  });
+});
+
+describe("owedSummary", () => {
+  const people = [{ id: "maya", name: "Maya", updatedAt: "x" }, { id: "jon", name: "Jon", updatedAt: "x" }, { id: "ana", name: "Ana", updatedAt: "x" }];
+  const theyOwe = (id: string, date: string, amount: number, p: string, extra: Partial<Entry> = {}) =>
+    it_({ id, date, amount, split: { paidBy: "me", mode: "they-owe", shares: [{ personId: p, amount }] }, ...extra });
+  const iOwe = (id: string, date: string, amount: number, p: string) =>
+    it_({ id, date, amount, split: { paidBy: p, mode: "i-owe", shares: [{ personId: "me", amount }] } });
+
+  it("totals per person and overall, largest first, owed to me minus what I owe", () => {
+    const s = owedSummary(people, [theyOwe("a", "2026-10-01", 300, "jon"), theyOwe("b", "2026-10-02", 850, "maya"), iOwe("c", "2026-10-03", 48, "ana")], "PHP");
+    expect(s.people.map((p) => [p.person.name, p.base])).toEqual([["Maya", 850], ["Jon", 300], ["Ana", -48]]);
+    expect([s.owedToMe, s.iOwe, s.net, s.skipped]).toEqual([1150, 48, 1102, 0]);
+  });
+  it("leaves out people who are settled and counts settlements", () => {
+    const s = owedSummary(people, [theyOwe("a", "2026-10-01", 300, "jon"), it_({ id: "t", date: "2026-10-03", amount: 300, kind: "settlement", personId: "jon", direction: "in" })], "PHP");
+    expect(s.people).toEqual([]);
+    expect(s.net).toBe(0);
+  });
+  it("converts foreign balances with the latest rate, and skips them without one", () => {
+    const usd = theyOwe("u", "2026-10-01", 1000, "maya", { currency: "USD", rate: "56" });
+    const s = owedSummary(people, [usd, theyOwe("e", "2026-10-02", 2000, "jon", { currency: "EUR" })], "PHP");
+    expect(s.people.find((p) => p.person.id === "maya")).toMatchObject({ base: 56000, foreign: true, byCurrency: { USD: 1000 } });
+    expect(s.people.find((p) => p.person.id === "jon")).toMatchObject({ base: 0, byCurrency: { EUR: 2000 } });
+    expect(s.skipped).toBe(1);
+    expect(s.net).toBe(56000);
+  });
+  it("a foreign balance that is fully settled counts as zero even without a rate on the payment", () => {
+    const usd = theyOwe("u", "2026-10-01", 1000, "maya", { currency: "USD", rate: "56" });
+    const paid = it_({ id: "p", date: "2026-10-05", amount: 1000, currency: "USD", kind: "settlement", personId: "maya", direction: "in" });
+    expect(owedSummary(people, [usd, paid], "PHP")).toMatchObject({ people: [], net: 0, skipped: 0 });
   });
 });

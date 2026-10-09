@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { accountBalances } from "../../data/accounts";
+import { owedSummary, type OwedSummary } from "../../data/balances";
 import { addMonths, labelMonth, monthStart, today } from "../../data/dates";
 import { forecast, type Forecast as F } from "../../data/forecast";
 import { activeSalaryRule, salaryFor, setRepeat, setSalary } from "../../data/income";
@@ -31,6 +32,7 @@ export function Forecast() {
   const [w, setW] = useState<World>();
   const [start, setStart] = useState(0);
   const [skipped, setSkipped] = useState(0);
+  const [owed, setOwed] = useState<OwedSummary>();
   const [f, setF] = useState<F>();
   const [error, setError] = useState("");
   const [accountId, setAccountId] = useState("");
@@ -39,11 +41,14 @@ export function Forecast() {
     (async () => {
       const world = await loadWorld(store);
       const t = today();
-      const b = accountBalances(world.accounts, itemsToDate(world, t), world.base);
+      const upToToday = itemsToDate(world, t);
+      const b = accountBalances(world.accounts, upToToday, world.base);
+      const o = owedSummary(world.people, upToToday, world.base);
+      setOwed(o);
       setW(world);
       setStart(b.totalBase);
       setSkipped(b.skipped);
-      setF(forecast({ start: b.totalBase, today: t, base: world.base, entries: world.entries, rules: world.rules }));
+      setF(forecast({ start: b.totalBase, today: t, base: world.base, entries: world.entries, rules: world.rules, owed: o.net }));
     })();
   }, [store, rev]);
 
@@ -74,9 +79,13 @@ export function Forecast() {
 
   return (
     <>
-      <div className="grid g2">
+      <div className={`grid ${owed?.net ? "g3" : "g2"}`}>
         <div className="card stat"><div className="mute">Balance today</div><div className="big">{formatMinor(start, base)}</div>
           <div className="mute small">{w.accounts.length ? "all accounts" : "add accounts in Settings"}{skipped ? ` · ${skipped} left out (no rate)` : ""}</div></div>
+        {!!owed?.net && (
+          <div className="card stat"><div className="mute">{owed.net > 0 ? "Owed to you" : "You owe"}</div><div className="big">{formatMinor(Math.abs(owed.net), base)}</div>
+            <div className="mute small">net, {owed.net > 0 ? "expected back" : "to pay"} this month</div></div>
+        )}
         <div className="card stat"><div className="mute">In 12 months</div><div className="big">{formatMinor(f.months[11]?.end ?? start, base)}</div>
           <div className="mute small">{f.basis ? `spending averaged over ${f.basis} ${f.basis === 1 ? "month" : "months"}` : "no spending history yet"}</div></div>
       </div>
@@ -108,13 +117,16 @@ export function Forecast() {
         {f.months.map((m) => (
           <div key={m.month} className="frow">
             <span>{labelMonth(m.month)}</span>
-            <span>{m.noIncome ? <span className="tag warn">No income set</span> : formatMinor(m.income, base)}</span>
+            <span>
+              {m.noIncome ? <span className="tag warn">No income set</span> : formatMinor(m.income, base)}
+              {m.owed !== 0 && <span className="mute small owedline">{m.owed > 0 ? "+" : "-"} {formatMinor(Math.abs(m.owed), base)} {m.owed > 0 ? "owed to you" : "you owe"}</span>}
+            </span>
             <span>{formatMinor(m.obligations + m.variable, base)}</span>
             <span><b>{formatMinor(m.end, base)}</b></span>
           </div>
         ))}
       </div>
-      <p className="mute small">Assumes split amounts get settled and everyday spending repeats your recent average.</p>
+      <p className="mute small">Assumes people settle what they owe you this month, and everyday spending repeats your recent average.</p>
     </>
   );
 }
