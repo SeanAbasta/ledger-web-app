@@ -116,3 +116,23 @@ describe("forecast with a card", () => {
     expect(f.months.every((m) => m.income === 0 && m.noIncome)).toBe(true);
   });
 });
+
+describe("a plan that starts later", () => {
+  // Made-up numbers: 48,000 over 24 monthly payments from Dec 8, entered on Oct 9.
+  const card8: Account = { ...card, statementDay: 8, dueDays: 18, limit: 100000 * P };
+  const plan = (accountId?: string): Rule => ({ id: "L", type: "installment", kind: "expense", amount: 2000 * P, total: 48000 * P, count: 24, currency: "PHP", category: "Shopping", accountId, frequency: "monthly", start: "2026-12-08", updatedAt: "x" });
+  const today = "2026-10-09";
+  const run = (r: Rule) => forecast({ start: 50000 * P, today, base: "PHP", entries: [], rules: [r], months: 3, accounts: [bank, card8] });
+
+  it("with no account, it is not on the card and the bank pays it on its own date", () => {
+    expect(cardStatus(card8, [], [plan()], today)).toMatchObject({ futureInstallments: 0, creditLeft: 100000 * P });
+    expect(run(plan()).months[2]).toMatchObject({ obligations: 2000 * P, cards: 0 });
+  });
+
+  it("on the card, it holds the limit at once and lands on the Dec 8 statement, due Dec 26", () => {
+    expect(cardStatus(card8, [], [plan("C")], today)).toMatchObject({ futureInstallments: 48000 * P, creditLeft: 52000 * P });
+    expect(dueFor(card8, "2026-12-08")).toBe("2026-12-26");
+    expect(run(plan("C")).months[2]).toMatchObject({ obligations: 0, cards: 2000 * P });
+    expect(summarize(ledgerItems([], [plan("C")], "0000-01-01", today), "PHP", "2026-10-01", "2026-10-31").total).toBe(0);
+  });
+});

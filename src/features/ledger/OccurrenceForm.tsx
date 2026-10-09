@@ -61,6 +61,8 @@ export function OccurrenceForm({ occ, rule, onDone }: { occ: Occurrence; rule: R
       if (Object.keys(ov).length) overrides[occ.date] = ov;
       else delete overrides[occ.date];
       next = { ...rule, overrides };
+      // An installment's account belongs to the whole plan (revisions are ignored for installments).
+      if (installment && accountId && accountId !== rule.accountId) next.accountId = accountId;
     }
     await upsert(store, "rules", next);
     changed();
@@ -88,8 +90,18 @@ export function OccurrenceForm({ occ, rule, onDone }: { occ: Occurrence; rule: R
           )}
         </>
       )}
+      {installment && accounts.length > 0 && (
+        <label className="field"><b>Account, all payments</b>
+          <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+            {!rule.accountId && <option value="" disabled>Pick an account</option>}
+            <AccountOptions accounts={accounts} />
+          </select></label>
+      )}
+      {installment && accountId !== (rule.accountId ?? "") && rule.start <= today() && (
+        <p className="mute small">Payments already made move to this account too.</p>
+      )}
       <p className="mute small">
-        {scope === "later" ? "Earlier payments keep what they were." : "Only this payment changes."}
+        {scope === "later" ? "Earlier payments keep what they were." : installment ? "Amount and note change for this payment only." : "Only this payment changes."}
         {occ.split && " The split stays as set."}
       </p>
       {error && <p className="err" role="alert">{error}</p>}
