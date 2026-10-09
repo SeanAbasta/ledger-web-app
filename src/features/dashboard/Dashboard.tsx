@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { accountBalances, type Balances } from "../../data/accounts";
 import { owedSummary, type OwedSummary } from "../../data/balances";
 import { toBase } from "../../data/base";
+import { cardStatus, type CardStatus } from "../../data/cards";
+import { activeSalaryRule } from "../../data/income";
+import { isCard, type Account } from "../../data/schema";
 import { forecast } from "../../data/forecast";
 import { itemsToDate, loadWorld } from "../../data/world";
 import { getSettings, list } from "../../data/collections";
@@ -12,6 +15,7 @@ import { ledgerItems, occurrences } from "../../data/rules";
 import { myShare } from "../../data/splits";
 import { pctChange, summarize, topCategories, type Summary } from "../../data/summary";
 import { useLedger } from "../../ui/Ledger";
+import { CardTile } from "./CardTile";
 
 interface View {
   base: string;
@@ -23,6 +27,9 @@ interface View {
   balances: Balances;
   owed: OwedSummary;
   next?: { month: string; end: number };
+  cards: { card: Account; st: CardStatus }[];
+  banks: Account[];
+  salaryAccount?: string;
 }
 
 const C = 2 * Math.PI * 40;
@@ -84,12 +91,14 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
       const balances = accountBalances(world.accounts, upToToday, base);
       const owed = owedSummary(world.people, upToToday, base);
       const fc = forecast({ start: balances.totalBase, today: t, base, entries: world.entries, rules: world.rules, months: 2, owed: owed.net, accounts: world.accounts });
-      setV({ base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1] });
+      const cards = world.accounts.filter(isCard).map((card) => ({ card, st: cardStatus(card, upToToday, world.rules, t) }));
+      const banks = world.accounts.filter((a) => !isCard(a));
+      setV({ base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, salaryAccount: activeSalaryRule(world.rules, t)?.accountId });
     })();
   }, [store, rev, anchor]);
 
   if (!v) return null;
-  const { base, cur, prevTotal, stillDue, from, isCurrent, balances, owed, next } = v;
+  const { base, cur, prevTotal, stillDue, from, isCurrent, balances, owed, next, cards, banks, salaryAccount } = v;
   const showAccounts = balances.accounts.length > 0 || balances.unassigned !== 0;
   const showOwed = owed.people.length > 0;
   const bottomCards = [showAccounts, showOwed, !!next].filter(Boolean).length;
@@ -136,6 +145,11 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
             <div className="mute">Daily</div>
             <Bars days={cur.byDay} from={from} todayIdx={todayIdx} base={base} />
           </div>
+        </div>
+      )}
+      {cards.length > 0 && (
+        <div className={`grid ${cards.length % 3 === 0 ? "g3" : "g2"}`}>
+          {cards.map(({ card, st }) => <CardTile key={card.id} card={card} st={st} banks={banks} defaultBank={salaryAccount} />)}
         </div>
       )}
       <div className={`grid ${bottomCards === 3 ? "g3" : "g2"}`}>
