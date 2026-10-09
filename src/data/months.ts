@@ -64,12 +64,12 @@ export async function deleteEntry(store: LedgerStore, month: MonthKey, id: strin
   });
 }
 
-/** Live entries for a month, newest date first. */
+/** Live entries for a month, newest first (same order as the Ledger: date, then createdAt, then id). */
 export async function listMonth(store: LedgerStore, month: MonthKey): Promise<Entry[]> {
   const d = await store.get(monthPath(month));
   return entriesOf(d)
     .filter((e) => !e.deleted)
-    .sort((a, b) => (a.date === b.date ? (a.id < b.id ? 1 : -1) : a.date < b.date ? 1 : -1));
+    .sort((a, b) => (a.date !== b.date ? (a.date < b.date ? 1 : -1) : a.createdAt !== b.createdAt ? (a.createdAt < b.createdAt ? 1 : -1) : a.id < b.id ? 1 : -1));
 }
 
 /** Months that have a file, newest first. */

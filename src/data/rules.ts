@@ -98,10 +98,25 @@ export type LedgerItem =
   | { type: "entry"; date: IsoDate; entry: Entry }
   | { type: "occurrence"; date: IsoDate; occ: Occurrence };
 
-/** Real entries plus generated occurrences in [from, to], newest date first. */
+const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
+/**
+ * Newest first: later days first, and inside a day the most recently added entry first (by
+ * createdAt, then id; editing keeps createdAt, so an edit never reorders). Generated payments have
+ * no time, so they count as the start of their day and sit below that day's entries.
+ */
+export function newestFirst(a: LedgerItem, b: LedgerItem): number {
+  if (a.date !== b.date) return cmp(b.date, a.date);
+  if (a.type !== b.type) return a.type === "entry" ? -1 : 1;
+  if (a.type === "entry" && b.type === "entry") return cmp(b.entry.createdAt, a.entry.createdAt) || cmp(b.entry.id, a.entry.id);
+  if (a.type === "occurrence" && b.type === "occurrence") return cmp(a.occ.ruleId, b.occ.ruleId);
+  return 0;
+}
+
+/** Real entries plus generated occurrences in [from, to], newest first (see newestFirst). */
 export function ledgerItems(entries: Entry[], rules: Rule[], from: IsoDate, to: IsoDate): LedgerItem[] {
   const items: LedgerItem[] = [];
   for (const e of entries) if (!e.deleted && e.date >= from && e.date <= to) items.push({ type: "entry", date: e.date, entry: e });
   for (const r of rules) for (const occ of occurrences(r, from, to)) items.push({ type: "occurrence", date: occ.date, occ });
-  return items.sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1));
+  return items.sort(newestFirst);
 }

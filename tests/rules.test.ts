@@ -133,3 +133,31 @@ describe("revisions (edit this and later)", () => {
     expect(baseFor(r, "2026-04-30")).toMatchObject({ amount: 65000, note: "Streaming", category: "Bills" });
   });
 });
+
+describe("newest first ordering", () => {
+  const ent = (id: string, date: string, createdAt: string, extra: Partial<Entry> = {}): Entry => ({
+    id, kind: "expense", date, amount: 100, currency: "PHP", createdAt, updatedAt: createdAt, ...extra,
+  });
+  const order = (items: ReturnType<typeof ledgerItems>) => items.map((i) => (i.type === "entry" ? i.entry.id : `occ:${i.occ.ruleId}`));
+
+  it("puts the most recently added entry first inside a day, whatever the file order", () => {
+    const entries = [ent("A", "2026-10-09", "2026-10-09T01:00:00Z"), ent("B", "2026-10-09", "2026-10-09T05:00:00Z"), ent("C", "2026-10-09", "2026-10-09T03:00:00Z")];
+    expect(order(ledgerItems(entries, [], "2026-10-01", "2026-10-31"))).toEqual(["B", "C", "A"]);
+  });
+  it("puts generated payments at the start of their day, below that day's entries", () => {
+    const entries = [ent("A", "2026-10-09", "2026-10-09T01:00:00Z"), ent("B", "2026-10-09", "2026-10-09T05:00:00Z")];
+    const sub = rule({ id: "SUB", start: "2026-10-09", amount: 28500 });
+    expect(order(ledgerItems(entries, [sub], "2026-10-09", "2026-10-09"))).toEqual(["B", "A", "occ:SUB"]);
+  });
+  it("keeps days newest first, and an entry backdated today sorts by its date, not when it was added", () => {
+    const entries = [ent("OLD", "2026-10-07", "2026-10-09T09:00:00Z"), ent("NEW", "2026-10-09", "2026-10-09T01:00:00Z"), ent("MID", "2026-10-08", "2026-10-08T01:00:00Z")];
+    const sub = rule({ id: "SUB", start: "2026-10-08", amount: 1 });
+    expect(order(ledgerItems(entries, [sub], "2026-10-07", "2026-10-09"))).toEqual(["NEW", "MID", "occ:SUB", "OLD"]);
+  });
+  it("an edit (new updatedAt, same createdAt) keeps its place", () => {
+    const a = ent("A", "2026-10-09", "2026-10-09T01:00:00Z");
+    const b = ent("B", "2026-10-09", "2026-10-09T05:00:00Z");
+    const edited = { ...a, amount: 999, updatedAt: "2026-10-10T00:00:00Z" };
+    expect(order(ledgerItems([edited, b], [], "2026-10-09", "2026-10-09"))).toEqual(["B", "A"]);
+  });
+});
