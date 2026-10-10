@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getSettings, list, upsert } from "../../data/collections";
 import { toBase } from "../../data/base";
-import { addDays, addMonths, labelDay, labelMonth, labelShort, monthEnd, monthStart, today, weekStart } from "../../data/dates";
+import { addDays, addMonths, contains, labelDay, labelMonth, labelShort, monthStart, periodOf, today } from "../../data/dates";
 import { addRefund, deleteEntry, loadAllEntries, loadEntries, refundable } from "../../data/months";
 import { formatMinor, parseMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem, type Occurrence } from "../../data/rules";
@@ -12,22 +12,17 @@ import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { Sheet } from "../../ui/Sheet";
 import { useLedger } from "../../ui/Ledger";
+import { useTodayKey } from "../../ui/useTodayKey";
 
 const VIEWS = ["Day", "Week", "Month"] as const;
 type View = (typeof VIEWS)[number];
-
-function range(view: View, anchor: string): [string, string] {
-  if (view === "Day") return [anchor, anchor];
-  if (view === "Week") return [weekStart(anchor), addDays(weekStart(anchor), 6)];
-  return [monthStart(anchor), monthEnd(anchor)];
-}
 
 function shift(view: View, anchor: string, dir: 1 | -1): string {
   return view === "Day" ? addDays(anchor, dir) : view === "Week" ? addDays(anchor, 7 * dir) : addMonths(monthStart(anchor), dir);
 }
 
 function title(view: View, anchor: string): string {
-  const [a, b] = range(view, anchor);
+  const [a, b] = periodOf(view, anchor);
   return view === "Day" ? labelDay(a) : view === "Week" ? `${labelShort(a)} to ${labelShort(b)}` : labelMonth(a);
 }
 
@@ -51,7 +46,7 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
   const [refundDate, setRefundDate] = useState(today());
   const [refundErr, setRefundErr] = useState("");
 
-  const [from, to] = range(view, anchor);
+  const [from, to] = periodOf(view, anchor);
 
   useEffect(() => {
     (async () => {
@@ -64,6 +59,10 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
   }, [store, rev, from, to]);
 
   const t = today();
+  // "Next 30 days" counts from today, so it only shows on the period that holds today (it repeated upcoming rows elsewhere).
+  const hasToday = contains([from, to], t);
+  const goToday = () => setAnchor(today());
+  useTodayKey(goToday);
   const match = (it: LedgerItem) => {
     if (!q.trim()) return true;
     const x = it.type === "entry" ? it.entry : it.occ;
@@ -146,8 +145,9 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
         <Segmented value={view} options={VIEWS} onChange={setView} />
         <span className="nav">
           <button aria-label="Previous" onClick={() => setAnchor(shift(view, anchor, -1))}>‹</button>
-          <span>{title(view, anchor)}</span>
+          <button className="title" title="Go to today" onClick={goToday}>{title(view, anchor)}</button>
           <button aria-label="Next" onClick={() => setAnchor(shift(view, anchor, 1))}>›</button>
+          <button className={hasToday ? "today off" : "today"} onClick={goToday}>Today</button>
         </span>
         <input className="search" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
@@ -155,9 +155,9 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
       {notice && <p className="mute small hint" role="status">{notice}</p>}
       {groups.length > 0 && !notice && <p className="mute small hint">Tap an entry to edit it</p>}
 
-      {due.length > 0 && !q && (
+      {hasToday && due.length > 0 && !q && (
         <>
-          <div className="grp">Due soon</div>
+          <div className="grp">Next 30 days</div>
           <div className="card">
             {due.slice(0, 5).map((o) => (
               <button key={o.ruleId + o.date} className="row" title="Edit" onClick={() => setOcc(o)}>

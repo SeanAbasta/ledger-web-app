@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, addMonths, labelDay, monthKeysBetween, weekStart } from "../src/data/dates";
+import { addDays, addMonths, contains, labelDay, monthKeysBetween, periodOf, weekStart } from "../src/data/dates";
 import { applyRevision, baseFor, ledgerItems, occurrences } from "../src/data/rules";
 import type { Entry, Rule } from "../src/data/schema";
 import { buildSplit } from "../src/data/splits";
@@ -21,6 +21,23 @@ describe("dates", () => {
     expect(weekStart("2026-10-07")).toBe("2026-10-05");
     expect(weekStart("2026-10-11")).toBe("2026-10-05");
     expect(labelDay("2026-10-07")).toBe("Wed Oct 7");
+  });
+  it("gives the Day, Week and Month periods around an anchor", () => {
+    expect(periodOf("Day", "2026-10-10")).toEqual(["2026-10-10", "2026-10-10"]);
+    expect(periodOf("Week", "2026-10-10")).toEqual(["2026-10-05", "2026-10-11"]);
+    expect(periodOf("Week", "2026-09-30")).toEqual(["2026-09-28", "2026-10-04"]);
+    expect(periodOf("Month", "2028-02-14")).toEqual(["2028-02-01", "2028-02-29"]);
+  });
+  it("knows which periods hold today (Next 30 days only shows there)", () => {
+    const t = "2026-10-10";
+    expect(contains(periodOf("Month", "2026-10-01"), t)).toBe(true);
+    expect(contains(periodOf("Week", "2026-10-05"), t)).toBe(true);
+    expect(contains(periodOf("Week", "2026-10-11"), t)).toBe(true);
+    expect(contains(periodOf("Day", t), t)).toBe(true);
+    expect(contains(periodOf("Month", "2026-11-01"), t)).toBe(false);
+    expect(contains(periodOf("Month", "2026-09-30"), t)).toBe(false);
+    expect(contains(periodOf("Week", "2026-10-12"), t)).toBe(false);
+    expect(contains(periodOf("Day", "2026-10-09"), t)).toBe(false);
   });
   it("lists month keys", () => {
     expect(monthKeysBetween("2026-11-20", "2027-02-03")).toEqual(["2026-11", "2026-12", "2027-01", "2027-02"]);

@@ -54,6 +54,17 @@ export const monthEnd = (d: IsoDate): IsoDate => {
   return iso(y, m, daysInMonth(y, m));
 };
 
+export type Period = "Day" | "Week" | "Month";
+
+/** First and last day of the Day, Week (Monday start) or Month that holds `anchor`. */
+export function periodOf(view: Period, anchor: IsoDate): [IsoDate, IsoDate] {
+  if (view === "Day") return [anchor, anchor];
+  if (view === "Week") return [weekStart(anchor), addDays(weekStart(anchor), 6)];
+  return [monthStart(anchor), monthEnd(anchor)];
+}
+
+export const contains = ([from, to]: [IsoDate, IsoDate], d: IsoDate): boolean => from <= d && d <= to;
+
 /** Month keys "YYYY-MM" from `from` to `to`, inclusive. */
 export function monthKeysBetween(from: IsoDate, to: IsoDate): string[] {
   const out: string[] = [];

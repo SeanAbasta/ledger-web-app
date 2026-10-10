@@ -15,6 +15,7 @@ import { ledgerItems, occurrences } from "../../data/rules";
 import { myShare } from "../../data/splits";
 import { pctChange, summarize, topCategories, type Summary } from "../../data/summary";
 import { useLedger } from "../../ui/Ledger";
+import { useTodayKey } from "../../ui/useTodayKey";
 import { CardTile } from "./CardTile";
 
 interface View {
@@ -67,6 +68,8 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
   const { store, rev } = useLedger();
   const [anchor, setAnchor] = useState(today());
   const [v, setV] = useState<View>();
+  const goToday = () => setAnchor(today());
+  useTodayKey(goToday);
 
   useEffect(() => {
     (async () => {
@@ -114,8 +117,9 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
       <div className="toolrow">
         <span className="nav">
           <button aria-label="Previous month" onClick={() => setAnchor(addMonths(from, -1))}>‹</button>
-          <span>{labelMonth(from)}</span>
+          <button className="title" title="Go to this month" onClick={goToday}>{labelMonth(from)}</button>
           <button aria-label="Next month" onClick={() => setAnchor(addMonths(from, 1))}>›</button>
+          <button className={monthStart(anchor) === monthStart(today()) ? "today off" : "today"} onClick={goToday}>Today</button>
         </span>
       </div>
 
