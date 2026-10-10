@@ -2,6 +2,26 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V1.2.0 (2026-10-10)
+
+**Update both computers before you use "Bill on next statement".** An older copy ignores it and keeps the charge on its original statement, so the two computers would show different card numbers. Everything else works with an older copy.
+
+Now includes:
+
+- A Today button on the Ledger and the Dashboard. It appears next to the period when you have moved away from today. Tap it, tap the period title, or press T on a computer to jump back. Day, Week or Month stays as it was.
+- "Due soon" in the Ledger is now "Next 30 days" and only shows on the period that contains today. Before, it showed on every month, so next month's payments appeared twice.
+- The Pay form offers Statement (what is left on the last statement), Pay all (the statement plus everything unbilled) and Other. After the statement is paid, a Pay ahead button stays on the tile, so a second payment never needs a manual transfer.
+- A card tile explains why credit left is below the limit with a line named after each installment plan, for example "iPhone hold". With several plans it shows one total; tap it to see each plan.
+- Default accounts in Settings, under Defaults: the account new expenses start with, the account your salary goes into, the account card bills are paid from, and the starting category. "Use last used instead" starts with the last ones you used on that computer. With no default set, the Add form still asks you to pick an account.
+- Smoother motion. Sheets slide up (on phones they sit at the bottom and close when you drag the handle down), buttons dim and shrink a little while pressed, the list slides when you change period, and tabs fade in. With Reduce Motion on in your system settings, things only fade.
+- A statement view for each card. Tap the top of a card tile to see what makes up its numbers: Statement (what you owed at the start or on the last statement, then every charge, refund and payment), Unbilled, and Plans. The lists always add up to the tile.
+- Reconcile with your bank, in the card view. Type any of the bank's last statement, outstanding balance and available credit. Ledger says which match, and for a gap names the likely cause: charges on one day that the bank posted later, charges still pending, a single entry or split share, or a balance from before you started Ledger. It saves nothing, except when you tap "Bill on next statement" on posting-day charges.
+- Bill on next statement. A card expense made on the cut-off day or up to two days before has a switch that moves it to the following statement, for charges your bank posts after the cut-off. Only the bill it lands on changes. Spending, what you owe in total and your credit left stay the same. Moved charges are tagged "next bill".
+- The Ledger shows upcoming recurring and installment payments on their future dates, tagged "upcoming" and left out of day totals.
+- Editing a payment of an installment plan can move the whole plan to another account or card.
+- The Add form asks for an account when you have any (unless someone else paid a split) and confirms each save. After saving, the Ledger opens at the month of the new item.
+- Fixed: tapping the period arrows quickly could skip a step, and a slow load could briefly show the previous period's list.
+
 ## V1.1.0 (2026-10-09)
 
 **Update both computers before you use cards.** An older copy reads a card payment as an ordinary expense, cannot import a backup that has card payments, and treats refunds as income.
