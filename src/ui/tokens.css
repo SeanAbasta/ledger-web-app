@@ -134,6 +134,7 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .main, main { min-width: 0; }
 .field { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
 .field > b { font-weight: 500; }
+.field > b .sub { display: block; font-weight: 400; }
 .field input, .field select { text-align: right; max-width: 60%; }
 .amt { display: flex; justify-content: center; gap: 8px; align-items: center; margin-bottom: 8px; }
 .amt input { font-size: 30px; font-weight: 600; flex: 1; min-width: 0; max-width: 300px; text-align: center; background: none; }

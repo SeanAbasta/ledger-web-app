@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { accountBalances } from "../../data/accounts";
 import { owedSummary, type OwedSummary } from "../../data/balances";
 import { addMonths, labelMonth, monthStart, today } from "../../data/dates";
+import { startAccount } from "../../data/defaults";
 import { forecast, type Forecast as F } from "../../data/forecast";
 import { activeSalaryRule, salaryFor, setRepeat, setSalary } from "../../data/income";
 import { formatMinor, parseMinor } from "../../data/money";
 import { itemsToDate, loadWorld, type World } from "../../data/world";
 import { isCard } from "../../data/schema";
 import { useLedger } from "../../ui/Ledger";
+import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 import { MoneyInput } from "../../ui/MoneyInput";
 
 function Line({ values, base }: { values: number[]; base: string }) {
@@ -49,6 +51,9 @@ export function Forecast() {
       setW(world);
       setStart(b.totalBase);
       setSkipped(b.skipped);
+      const banks = world.accounts.filter((a) => !isCard(a));
+      // Keep a choice made here; otherwise start with the default (or last used) income account, else the first bank.
+      setAccountId((x) => (banks.some((b) => b.id === x) ? x : startAccount("income", world.settings.defaults, loadLastUsed(), banks) || banks[0]?.id || ""));
       setF(forecast({ start: b.totalBase, today: t, base: world.base, entries: world.entries, rules: world.rules, owed: o.net, accounts: world.accounts }));
     })();
   }, [store, rev]);
@@ -66,6 +71,7 @@ export function Forecast() {
     if (text.trim() !== "" && val === null) return setError("Enter a valid amount");
     if (val === cur) return;
     await setSalary(store, month, val, { base, accountId: accountId || banks[0]?.id });
+    rememberUsed({ income: accountId });
     changed();
   }
 
@@ -73,6 +79,7 @@ export function Forecast() {
     setError("");
     try {
       await setRepeat(store, on, { today: t, base, accountId: accountId || banks[0]?.id });
+      rememberUsed({ income: accountId });
       changed();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not change");
@@ -107,7 +114,7 @@ export function Forecast() {
           <button type="button" className={`toggle ${repeat ? "on" : ""}`} aria-pressed={repeat} onClick={() => void toggle(!repeat)}><i /></button></div>
         {banks.length > 0 && (
           <label className="field"><b>Paid into</b>
-            <select value={accountId} onChange={(e) => setAccountId(e.target.value)}><option value="">{banks[0]!.name}</option>{banks.slice(1).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+            <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>{banks.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
         )}
         {error && <p className="err" role="alert">{error}</p>}
       </div>

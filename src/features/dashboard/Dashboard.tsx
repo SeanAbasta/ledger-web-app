@@ -4,7 +4,7 @@ import { owedSummary, type OwedSummary } from "../../data/balances";
 import { toBase } from "../../data/base";
 import { cardStatus, type CardStatus } from "../../data/cards";
 import { activeSalaryRule } from "../../data/income";
-import { isCard, type Account } from "../../data/schema";
+import { isCard, type Account, type Defaults } from "../../data/schema";
 import { forecast } from "../../data/forecast";
 import { itemsToDate, loadWorld } from "../../data/world";
 import { getSettings, list } from "../../data/collections";
@@ -31,6 +31,7 @@ interface View {
   cards: { card: Account; st: CardStatus }[];
   banks: Account[];
   salaryAccount?: string;
+  defaults?: Defaults;
 }
 
 const C = 2 * Math.PI * 40;
@@ -74,7 +75,8 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
   useEffect(() => {
     (async () => {
       const t = today();
-      const base = (await getSettings(store)).baseCurrency;
+      const settings = await getSettings(store);
+      const base = settings.baseCurrency;
       const rules = await list(store, "rules");
       const from = monthStart(anchor);
       const to = monthEnd(anchor);
@@ -96,12 +98,12 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
       const fc = forecast({ start: balances.totalBase, today: t, base, entries: world.entries, rules: world.rules, months: 2, owed: owed.net, accounts: world.accounts });
       const cards = world.accounts.filter(isCard).map((card) => ({ card, st: cardStatus(card, upToToday, world.rules, t) }));
       const banks = world.accounts.filter((a) => !isCard(a));
-      setV({ base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, salaryAccount: activeSalaryRule(world.rules, t)?.accountId });
+      setV({ base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, salaryAccount: activeSalaryRule(world.rules, t)?.accountId, defaults: settings.defaults });
     })();
   }, [store, rev, anchor]);
 
   if (!v) return null;
-  const { base, cur, prevTotal, stillDue, from, isCurrent, balances, owed, next, cards, banks, salaryAccount } = v;
+  const { base, cur, prevTotal, stillDue, from, isCurrent, balances, owed, next, cards, banks, salaryAccount, defaults } = v;
   const showAccounts = balances.accounts.length > 0 || balances.unassigned !== 0;
   const showOwed = owed.people.length > 0;
   const bottomCards = [showAccounts, showOwed, !!next].filter(Boolean).length;
@@ -153,7 +155,7 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
       )}
       {cards.length > 0 && (
         <div className={`grid ${cards.length % 3 === 0 ? "g3" : "g2"}`}>
-          {cards.map(({ card, st }) => <CardTile key={card.id} card={card} st={st} banks={banks} defaultBank={salaryAccount} />)}
+          {cards.map(({ card, st }) => <CardTile key={card.id} card={card} st={st} banks={banks} defaultBank={salaryAccount} defaults={defaults} />)}
         </div>
       )}
       <div className={`grid ${bottomCards === 3 ? "g3" : "g2"}`}>

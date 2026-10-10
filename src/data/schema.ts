@@ -131,11 +131,22 @@ export interface Account {
   deleted?: true;
 }
 
+/** What a new item starts with (account ids, a category). Optional, so older app copies keep reading settings. */
+export interface Defaults {
+  expense?: string;
+  income?: string;
+  cardPayment?: string;
+  category?: string;
+  /** Start with the last used account and category on this device instead (kept per device, not synced). */
+  lastUsed?: boolean;
+}
+
 export interface Settings {
   schemaVersion: number;
   baseCurrency: string;
   defaultCurrency: string;
   categories: string[];
+  defaults?: Defaults;
 }
 
 export interface Manifest {

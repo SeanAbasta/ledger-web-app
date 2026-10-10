@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getSettings, list, upsert } from "../../data/collections";
 import { CURRENCIES } from "../../data/currencies";
+import { startAccount, startCategory } from "../../data/defaults";
 import { addEntry, deleteEntry, updateEntry } from "../../data/months";
 import { formatMinor, parseMinor, splitEvenly } from "../../data/money";
 import { labelShort, today } from "../../data/dates";
@@ -11,6 +12,7 @@ import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { AccountOptions } from "../../ui/AccountOptions";
 import { useLedger } from "../../ui/Ledger";
+import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 
 type Kind = "one-off" | "recurring" | "installment";
 const KINDS = ["one-off", "recurring", "installment"] as const;
@@ -37,6 +39,8 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
   const [note, setNote] = useState(entry?.note ?? "");
   const [date, setDate] = useState(entry?.date ?? today());
   const [accountId, setAccountId] = useState(entry?.accountId ?? "");
+  // The account a new item started with, so the form can say it came from a default.
+  const [startAcct, setStartAcct] = useState({ id: "", from: "" });
   const [kind, setKind] = useState<Kind>("one-off");
   const [freq, setFreq] = useState<Frequency>("monthly");
   const [count, setCount] = useState("12");
@@ -57,7 +61,13 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
       setPeople(p);
       setAccounts(a);
       setCurrency((c) => c || s.defaultCurrency);
-      setCategory((c) => c || s.categories[0] || "");
+      const last = loadLastUsed();
+      setCategory((c) => c || (entry ? s.categories[0] ?? "" : startCategory(s.defaults, last, s.categories)));
+      if (!entry) {
+        const start = startAccount("expense", s.defaults, last, a);
+        setStartAcct({ id: start, from: s.defaults?.lastUsed && last.expense === start ? "last used" : "default" });
+        setAccountId((x) => x || start);
+      }
       if (entry?.split) {
         const ids = entry.split.shares.map((x) => x.personId).concat(entry.split.paidBy).filter((x) => x !== "me");
         setNames([...new Set(ids)].map((id) => p.find((x) => x.id === id)?.name ?? "").filter(Boolean).join(", "));
@@ -132,6 +142,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
       }
       changed();
       if (entry) return onDone?.();
+      rememberUsed({ expense: accountId, category });
       setAmount("");
       setNote("");
       // A plan that starts later is easy to lose, so say when it begins.
@@ -167,7 +178,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
       <label className="field"><b>Note</b><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" /></label>
       <label className="field"><b>{kind === "one-off" ? "Date" : "Starts"}</b><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
       {accounts.length > 0 && (
-        <label className="field"><b>Account</b>
+        <label className="field"><b>Account{!entry && accountId && accountId === startAcct.id && <span className="tag">{startAcct.from}</span>}</b>
           <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>
             {someoneElsePaid ? <option value="">None</option> : !accountId && <option value="" disabled>Pick an account</option>}
             <AccountOptions accounts={accounts} />

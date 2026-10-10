@@ -63,8 +63,10 @@ export function validateBundle(b: Bundle): string[] {
         if (!isObj(x) || typeof x.id !== "string" || typeof x.updatedAt !== "string") out.push(`${path} item ${i + 1}: missing id or timestamp`);
         else if (key === "accounts") { const p = accountProblem(x); if (p) out.push(`${path} item ${i + 1}: ${p}`); }
       });
-    } else if (doc.categories !== undefined && !(Array.isArray(doc.categories) && doc.categories.every((c) => typeof c === "string"))) {
-      out.push("settings.json: bad categories");
+    } else {
+      if (doc.categories !== undefined && !(Array.isArray(doc.categories) && doc.categories.every((c) => typeof c === "string"))) out.push("settings.json: bad categories");
+      const d = doc.defaults;
+      if (d !== undefined && !(isObj(d) && Object.entries(d).every(([k, v]) => (k === "lastUsed" ? typeof v === "boolean" : typeof v === "string")))) out.push("settings.json: bad defaults");
     }
   }
   return out;

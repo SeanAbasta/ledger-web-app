@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { upsert } from "../../data/collections";
 import type { CardStatus } from "../../data/cards";
+import { startAccount } from "../../data/defaults";
 import { labelShort, today } from "../../data/dates";
 import { addEntry } from "../../data/months";
 import { formatMinor, parseMinor } from "../../data/money";
-import type { Account } from "../../data/schema";
+import type { Account, Defaults } from "../../data/schema";
 import { useLedger } from "../../ui/Ledger";
+import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Sheet } from "../../ui/Sheet";
 
@@ -14,7 +16,7 @@ const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[
 type Choice = "statement" | "all" | "other";
 
 /** One credit card: the last statement, what is unbilled, the credit left, and paying the bill. */
-export function CardTile({ card, st, banks, defaultBank }: { card: Account; st: CardStatus; banks: Account[]; defaultBank?: string }) {
+export function CardTile({ card, st, banks, defaultBank, defaults }: { card: Account; st: CardStatus; banks: Account[]; defaultBank?: string; defaults?: Defaults }) {
   const { store, changed } = useLedger();
   const [sheet, setSheet] = useState<"pay" | "due">();
   const [from, setFrom] = useState("");
@@ -39,7 +41,8 @@ export function CardTile({ card, st, banks, defaultBank }: { card: Account; st: 
 
   function open(which: "pay" | "due") {
     setError("");
-    setFrom(payFrom.some((b) => b.id === defaultBank) ? defaultBank! : payFrom[0]?.id ?? "");
+    // "Card payments from" (or the last used), else the salary account, else the first bank.
+    setFrom(startAccount("cardPayment", defaults, loadLastUsed(), payFrom) || (payFrom.some((b) => b.id === defaultBank) ? defaultBank! : payFrom[0]?.id ?? ""));
     pick(st.remaining ? "statement" : st.unbilled > 0 ? "all" : "other");
     setDate(today());
     setDue(st.due);
@@ -54,6 +57,7 @@ export function CardTile({ card, st, banks, defaultBank }: { card: Account; st: 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError("Pick a date");
     try {
       await addEntry(store, { kind: "transfer", date, amount: minor, currency: cur, category: "Card payment", accountId: from, toAccountId: card.id });
+      rememberUsed({ cardPayment: from });
       setSheet(undefined);
       changed();
     } catch (e) {
