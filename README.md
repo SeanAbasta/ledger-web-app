@@ -43,17 +43,19 @@ After that you only need a browser.
 
 | | Feature | What you get |
 |---|---|---|
-| **Add** | Fast entry | Amount, currency, category, note, date and account in one small form. |
-| **Ledger** | History | Day, Week and Month views, newest first (inside each day too), search, and a quiet "Due soon" group for upcoming payments. Tap any entry to edit or delete it. For recurring payments you can change one payment, or this and every later one, so a price rise on a subscription is a single edit. |
-| **Dashboard** | Summary | Spent this month compared with last month, a category donut, daily bars, account balances, what is still due, and who owes you (tap a person to open their Splits page). |
+| **Add** | Fast entry | Amount, currency, category, note, date and account in one small form. Set default accounts and a default category in Settings, or start with the last ones you used. |
+| **Ledger** | History | Day, Week and Month views, newest first (inside each day too), search, and a Today button (or T on a computer) to jump back. The period that holds today shows a quiet "Next 30 days" group, and upcoming payments also appear on their own dates. Tap any entry to edit or delete it. For recurring payments you can change one payment, or this and every later one, so a price rise on a subscription is a single edit. |
+| **Dashboard** | Summary | Spent this month compared with last month, a category donut, daily bars, account balances, what is still due, and who owes you (tap a person to open their Splits page). A Today button returns to the current month. |
 | **Splits** | Shared costs | Choose who paid and how to split: they owe it all, you owe it all, 50/50, or custom amounts for 3 or more people. |
 | **Snapshot** | Easy settling | Turn a person's balance into a clean statement image you can copy or save, then record the settlement. |
 | **Currency** | Multi-currency | PHP by default. Foreign expenses keep their original amount and the exchange rate at the time, so history never shifts. |
-| **Credit cards** | Swipe once, pay once | Put an expense or an installment on a card. Each card shows its last statement and due date, what is unbilled, and the credit left (installments hold the full remaining amount). Pay the bill from a bank account in one tap: it is a transfer, so the spending is never counted twice. Refund a card expense from the Ledger, and move one statement's due date for a weekend or holiday. |
+| **Credit cards** | Swipe once, pay once | Put an expense or an installment on a card. Each card shows its last statement and due date, what is unbilled, and the credit left, with each installment plan's hold named (for example "iPhone hold"). Pay the statement, pay everything including what is unbilled, or pay ahead, from a bank account in one tap: it is a transfer, so the spending is never counted twice. Refund a card expense from the Ledger, and move one statement's due date for a weekend or holiday. |
+| **Statements** | Every number explained | Tap a card to see its statement line by line, what is unbilled, and its installment plans. The lists always add up to the card's numbers. |
+| **Reconcile** | Match your bank | Type what your bank app shows. Ledger says what matches and names the likely cause of a gap, such as charges the bank posted a day late, charges still pending, or a balance from before you started. A charge the bank bills on the next statement can be moved there with one switch. |
 | **Recurring** | Rules, not rows | One-off, recurring (weekly, monthly, yearly) and installments such as "3 of 12, 8,000 left". Stored once, generated when needed. |
 | **Forecast** | Look ahead | Enter your salary per month or repeat it, and see your balance projected 12 months out from income, recurring costs, your average spending, and money people owe you. Card spending leaves your bank on the statement's due date, not on the day you swiped. |
 | **Sync** | Two computers, one ledger | A verified handoff through a private GitHub repo. It shows when it is synced and only says "Safe to close" after checking. |
-| **Appearance** | Light or dark | Light by default. Switch to Dark, or Auto to follow your device, in Settings. It is a per-device choice and is not synced. |
+| **Appearance** | Light or dark | Light by default. Switch to Dark, or Auto to follow your device, in Settings. It is a per-device choice and is not synced. Sheets and buttons move gently, and only fade when your device asks for reduced motion. |
 | **Backup** | Your data, your files | Export everything as one file or as a spreadsheet, and import a backup. Nothing is deleted on import. |
 
 ---
@@ -196,7 +198,9 @@ Back up now and then with Settings, **Backup file**. The data repo's history is 
 
 ## Status
 
-Ledger is feature complete for its first version and deployed. Sync has been confirmed against a real GitHub repo from one computer; the full two-computer handoff is still being tried out, so expect rough edges and keep a backup.
+Ledger is deployed and in use. Sync between two computers has been confirmed against a real GitHub repo. The latest release is V1.2.0; see [CHANGELOG.md](CHANGELOG.md) for what changed in each version. It is still a personal project, so keep a backup.
+
+The first version was built in these milestones:
 
 | Milestone | Scope | Status |
 |---|---|---|
@@ -208,6 +212,8 @@ Ledger is feature complete for its first version and deployed. Sync has been con
 | 6 | GitHub sync layer | Done |
 | 7 | Token setup screen, sync status, conflict screen | Done |
 | 8 | Deployment to GitHub Pages, install as an app, export and import | Done |
+
+Later releases added dark mode, editing, credit cards, and in V1.2.0 card statements, bank reconcile, Pay all and default accounts.
 
 The author's own copy is live at `https://seanabasta.github.io/ledger-web-app/`.
 
