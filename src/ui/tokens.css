@@ -306,6 +306,9 @@ details { margin: 8px 0; font-size: 13px; color: var(--mute); }
 @keyframes period-prev { from { opacity: 0; transform: translateX(-12px); } }
 @media (prefers-reduced-motion: reduce) { .period.next, .period.prev { animation-name: fade-in; } }
 
+/* Tab change: the new screen fades in (150 ms). Already a fade, so Reduce Motion keeps it. */
+.tabfade { animation: fade-in 150ms ease-out; }
+
 /* Press feedback: held buttons shrink to 97% and dim; tappable rows only dim (a full-width row that
    shrinks looks like it jumps). Reduce Motion: dim only. Our own feedback replaces the grey tap flash. */
 .btn, .choice, .pill, .seg button, .side button, .nav button, .toggle, .chip button, .x, button.row {

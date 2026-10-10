@@ -59,7 +59,10 @@ function Shell() {
         )}
         <section className="body">
           <fieldset className="plain" disabled={locked}>
+            {/* Keyed on the tab so the new screen fades in (screens already remount on a tab change). */}
+            <div key={tab} className="tabfade">
             <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("Splits"); }} saved={saved} onSaved={setSaved} />
+            </div>
           </fieldset>
         </section>
       </main>
