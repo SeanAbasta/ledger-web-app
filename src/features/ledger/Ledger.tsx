@@ -201,6 +201,7 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
                     {it.type === "entry" && it.entry.kind === "transfer" && <span className="mute"> &nbsp;{accountName(it.entry.accountId)} to {accountName(it.entry.toAccountId)}</span>}
                     {x.split && <span className="tag">split</span>}
                     {it.type === "entry" && it.entry.refund && <span className="tag">refund</span>}
+                    {it.type === "entry" && it.entry.nextBill && <span className="tag">next bill</span>}
                     {it.type === "occurrence" && <span className="tag">{it.occ.type === "installment" ? `${it.occ.index} of ${it.occ.count}` : "recurring"}</span>}
                     {upcoming(it) && <span className="tag">upcoming</span>}
                   </span>

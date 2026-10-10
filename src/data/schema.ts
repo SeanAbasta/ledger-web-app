@@ -47,6 +47,9 @@ export interface Entry {
   refund?: true;
   /** Refunds: the id of the expense being refunded. */
   refundOf?: string;
+  /** Card expenses: the bank bills it on the following statement (posted after the cut-off). Only the
+   *  statement it counts toward changes; its date, spending and what the card owes do not. */
+  nextBill?: true;
   /** Set when generated or overridden from a rule. */
   ruleId?: string;
   split?: Split;

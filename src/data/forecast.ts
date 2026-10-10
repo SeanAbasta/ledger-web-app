@@ -1,5 +1,5 @@
 import { toBase } from "./base";
-import { cardStatus, dueFor, nextCutoff } from "./cards";
+import { billDate, cardStatus, dueFor, nextCutoff } from "./cards";
 import { addDays, addMonths, daysInMonth, monthEnd, monthStart, parts } from "./dates";
 import { ledgerItems, occurrences } from "./rules";
 import { isCard, type Account, type Entry, type IsoDate, type Minor, type Rule } from "./schema";
@@ -54,7 +54,8 @@ export function cardBills(cards: Account[], entries: Entry[], rules: Rule[], tod
   }
   for (const e of entries) {
     if (e.date <= today || e.date > until || !e.accountId) continue;
-    if (e.kind === "expense") future.push({ date: e.date, accountId: e.accountId, amount: spend(e, base) });
+    const card = cards.find((c) => c.id === e.accountId);
+    if (e.kind === "expense") future.push({ date: card ? billDate(card, e.date, e.nextBill) : e.date, accountId: e.accountId, amount: spend(e, base) });
     else if (e.kind === "income") future.push({ date: e.date, accountId: e.accountId, amount: -(toBase({ ...e, amount: myRefund(e, byId) }, base) ?? 0) });
   }
   for (const card of cards) {

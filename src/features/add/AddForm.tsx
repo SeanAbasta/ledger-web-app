@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { getSettings, list, upsert } from "../../data/collections";
+import { canBillNext, cutoffFor, dueFor, nextCutoff } from "../../data/cards";
 import { CURRENCIES } from "../../data/currencies";
 import { startAccount, startCategory } from "../../data/defaults";
 import { addEntry, deleteEntry, updateEntry } from "../../data/months";
 import { formatMinor, parseMinor, splitEvenly } from "../../data/money";
 import { labelShort, today } from "../../data/dates";
 import type { Account, Entry, Frequency, Person, Settings, SplitMode, SplitShare } from "../../data/schema";
-import { monthOf, DEFAULT_SETTINGS } from "../../data/schema";
+import { isCard, monthOf, DEFAULT_SETTINGS } from "../../data/schema";
 import { buildSplit } from "../../data/splits";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
@@ -46,6 +47,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
   const [count, setCount] = useState("12");
   const [end, setEnd] = useState("");
 
+  const [nextBill, setNextBill] = useState(!!entry?.nextBill);
   const [split, setSplit] = useState(!!entry?.split);
   const [paidBy, setPaidBy] = useState(entry?.split?.paidBy ?? "me");
   const [mode, setMode] = useState<SplitMode>(entry?.split?.mode ?? "half");
@@ -83,6 +85,12 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
   // When someone else paid a split, none of my money moved, so no account is needed.
   const someoneElsePaid = split && paidBy !== "me";
   const needsAccount = accounts.length > 0 && !someoneElsePaid;
+  // "Bill on next statement": one-off card expenses I paid, dated on the cut-off day or up to 2 days before
+  // (or already moved, so it can be turned off).
+  const card = accounts.find((a) => a.id === accountId && isCard(a));
+  const validDate = /^\d{4}-\d{2}-\d{2}$/.test(date);
+  const billable = !!card && validDate && entry?.kind !== "income" && (!!entry || kind === "one-off") && !someoneElsePaid && (canBillNext(card, date) || !!entry?.nextBill);
+  const nextCut = card && validDate ? nextCutoff(card, cutoffFor(card, date)) : undefined;
 
   async function resolvePeople(): Promise<Person[]> {
     const out: Person[] = [];
@@ -122,6 +130,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
         accountId: accountId || undefined,
         split: splitVal,
         rate: foreign ? rate : undefined,
+        nextBill: billable && nextBill ? (true as const) : undefined, // undefined clears it on an edit
       };
 
       if (entry) {
@@ -176,7 +185,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
       <label className="field"><b>Category</b>
         <select value={category} onChange={(e) => setCategory(e.target.value)}>{settings.categories.map((c) => <option key={c}>{c}</option>)}</select></label>
       <label className="field"><b>Note</b><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" /></label>
-      <label className="field"><b>{kind === "one-off" ? "Date" : "Starts"}</b><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+      <label className="field"><b>{kind === "one-off" ? "Date" : "Starts"}{card && validDate && cutoffFor(card, date) === date && <span className="tag">statement day</span>}</b><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
       {accounts.length > 0 && (
         <label className="field"><b>Account{!entry && accountId && accountId === startAcct.id && <span className="tag">{startAcct.from}</span>}</b>
           <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>
@@ -185,6 +194,10 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
           </select></label>
       )}
 
+      {billable && card && nextCut && (
+        <div className="field"><b>Bill on next statement<span className="mute small sub">{labelShort(nextCut)} statement, due {labelShort(dueFor(card, nextCut))}</span></b>
+          <button type="button" className={`toggle ${nextBill ? "on" : ""}`} aria-pressed={nextBill} aria-label="Bill on next statement" onClick={() => setNextBill(!nextBill)}><i /></button></div>
+      )}
       {!entry && (
         <div className="field"><b>Type</b><Segmented value={kind} options={KINDS} labels={KIND_LABEL} onChange={setKind} /></div>
       )}

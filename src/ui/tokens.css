@@ -317,6 +317,7 @@ details { margin: 8px 0; font-size: 13px; color: var(--mute); }
 .recon-head b { color: var(--ink); font-weight: 500; }
 .recon-cause { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 8px; }
 .recon-cause .btn { margin-top: 4px; }
+.recon-cause .acts { flex-wrap: wrap; }
 
 /* Period change: once the new period's data is in, the list slides 12 px from the arrow's side and
    fades in. Reduce Motion: fade only. */

@@ -23,12 +23,26 @@ export function lastCutoff(card: Card, d: IsoDate): IsoDate {
 export const prevCutoff = (card: Card, c: IsoDate) => cutoffIn(card, addMonths(monthStart(c), -1));
 export const nextCutoff = (card: Card, c: IsoDate) => cutoffIn(card, addMonths(monthStart(c), 1));
 
+/** The cut-off of the statement a charge dated `d` lands on: the first cut-off on or after `d`. */
+export function cutoffFor(card: Card, d: IsoDate): IsoDate {
+  const c = cutoffIn(card, d);
+  return c >= d ? c : nextCutoff(card, c);
+}
+
+/** The date a charge counts as for statements: its own date, or for "Bill on next statement" the day after its cut-off. */
+export const billDate = (card: Card, d: IsoDate, nextBill?: boolean): IsoDate => (nextBill ? addDays(cutoffFor(card, d), 1) : d);
+
+/** "Bill on next statement" is offered for card expenses dated on the cut-off day or up to 2 days before it. */
+export const canBillNext = (card: Card, d: IsoDate): boolean => addDays(d, 2) >= cutoffFor(card, d);
+
 /** When the statement that closes on `cutoff` is due: a date set by hand, else cut-off + due days. */
 export const dueFor = (card: Card, cutoff: IsoDate): IsoDate => card.dueOverrides?.[cutoff] ?? addDays(cutoff, card.dueDays ?? DEFAULT_DUE_DAYS);
 
 /** One dated change to what a card owes. `amount` > 0 adds to the debt. */
 export interface CardMove {
   date: IsoDate;
+  /** The date it counts as for statements (later than `date` only for "Bill on next statement"). */
+  bill: IsoDate;
   amount: Minor;
   /** A bill payment (a transfer into the card). Payments settle the statement; refunds do not. */
   payment: boolean;
@@ -37,7 +51,7 @@ export interface CardMove {
 }
 
 /** Everything that changed what the card owes, in the card's currency. Unconvertible amounts are counted in `skipped`. */
-export function cardMoves(card: Pick<Account, "id" | "currency">, items: LedgerItem[]): { moves: CardMove[]; skipped: number } {
+export function cardMoves(card: Pick<Account, "id" | "currency" | "statementDay">, items: LedgerItem[]): { moves: CardMove[]; skipped: number } {
   const moves: CardMove[] = [];
   let skipped = 0;
   for (const it of items) {
@@ -47,7 +61,7 @@ export function cardMoves(card: Pick<Account, "id" | "currency">, items: LedgerI
       if (f.accountId !== card.id) continue;
       const v = f.currency === card.currency ? f.amount : toBase({ amount: f.amount, currency: f.currency, rate: f.rate }, card.currency);
       if (v === undefined) skipped++;
-      else moves.push({ date: it.date, amount: -v, payment, item: it });
+      else moves.push({ date: it.date, bill: billDate(card, it.date, it.type === "entry" && it.entry.nextBill && !payment), amount: -v, payment, item: it });
     }
   }
   return { moves, skipped };
@@ -125,11 +139,13 @@ export function cardStatus(card: Account, items: LedgerItem[], rules: Rule[], to
   let skipped = found.skipped;
   const opening = -card.openingBalance;
   const cutoff = lastCutoff(card, today);
-  const owedAt = (d: IsoDate) => moves.reduce((n, m) => (m.date <= d ? n + m.amount : n), opening);
+  // Statements go by bill date (a charge moved to the next statement counts after its cut-off);
+  // what is owed today counts every move up to today, so moving a charge never changes it.
+  const owedAt = (d: IsoDate) => moves.reduce((n, m) => (m.bill <= d ? n + m.amount : n), opening);
   const statement = Math.max(0, owedAt(cutoff));
   const paidSince = -moves.reduce((n, m) => (m.payment && m.date > cutoff ? n + m.amount : n), 0);
   const remaining = Math.max(0, statement - paidSince);
-  const unbilled = owedAt(today) - remaining;
+  const unbilled = moves.reduce((n, m) => n + m.amount, opening) - remaining;
 
   const held = cardHolds(card, rules, today);
   skipped += held.skipped;
@@ -167,18 +183,19 @@ const lineOf = (m: CardMove): CardLine => ({ kind: m.payment ? "payment" : m.amo
 export function cardBreakdown(card: Account, items: LedgerItem[], today: IsoDate): CardBreakdown {
   // Oldest first, like a bank statement (items come newest first; reverse, then a stable sort by date).
   const moves = cardMoves(card, items.filter((it) => it.date <= today)).moves.reverse().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  // Cycles go by bill date, so a charge moved to the next statement is listed under Unbilled.
   const cutoff = lastCutoff(card, today);
   const prev = prevCutoff(card, cutoff);
   const opening = -card.openingBalance;
-  const before = moves.filter((m) => m.date <= prev);
+  const before = moves.filter((m) => m.bill <= prev);
   const carried = before.reduce((n, m) => n + m.amount, opening);
 
   const statement: CardLine[] = [];
   if (before.length) statement.push({ kind: "carried", amount: carried, date: prev });
   else if (opening) statement.push({ kind: "start", amount: opening });
-  statement.push(...moves.filter((m) => m.date > prev && m.date <= cutoff).map(lineOf));
+  statement.push(...moves.filter((m) => m.bill > prev && m.bill <= cutoff).map(lineOf));
 
-  const after = moves.filter((m) => m.date > cutoff);
+  const after = moves.filter((m) => m.bill > cutoff);
   const paidSince = after.filter((m) => m.payment).map(lineOf);
   const owedAtCutoff = sum(statement);
   const st = Math.max(0, owedAtCutoff);

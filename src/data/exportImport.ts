@@ -25,6 +25,7 @@ function entryProblem(e: unknown): string | undefined {
   if (typeof e.updatedAt !== "string" || typeof e.createdAt !== "string") return "missing timestamps";
   if (e.rate !== undefined && (typeof e.rate !== "string" || !/^\d+(\.\d+)?$/.test(e.rate))) return "bad rate";
   for (const k of ["accountId", "toAccountId", "refundOf"]) if (e[k] !== undefined && typeof e[k] !== "string") return `bad ${k}`;
+  if (e.nextBill !== undefined && e.nextBill !== true) return "bad nextBill";
   return shapeProblem(e as unknown as Entry)?.toLowerCase();
 }
 

@@ -39,6 +39,7 @@ export function CardView({ card, st, bd, banks, items, accounts, onOpenLedger, o
           {from && <span className="mute"> &nbsp;from {from}</span>}
           {it?.type === "occurrence" && <span className="tag">{it.occ.type === "installment" ? `${it.occ.index} of ${it.occ.count}` : "recurring"}</span>}
           {it?.type === "entry" && it.entry.refund && <span className="tag">refund</span>}
+          {it?.type === "entry" && it.entry.nextBill && <span className="tag">next bill</span>}
           {x?.split && <span className="tag">split</span>}
           {l.date && l.kind !== "carried" && l.kind !== "credit" && <span className="mute small"> &nbsp;{labelShort(l.date)}</span>}
         </span>
