@@ -165,6 +165,8 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 2px 16px; }
 .row { all: unset; box-sizing: border-box; width: 100%; display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
 .row:last-child { border-bottom: 0; }
+/* The last setting in a card draws no divider, or it looks like a row is cut off below it. */
+.card > .field:last-child { border-bottom: 0; }
 .tag { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--fill-2); color: var(--mute); margin-left: 6px; }
 .scrim { position: fixed; inset: 0; background: var(--scrim); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 5; padding: 16px; }
 .sheet { width: 440px; max-width: 100%; max-height: 90vh; overflow: auto; padding: 22px; }
