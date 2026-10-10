@@ -307,6 +307,17 @@ details { margin: 8px 0; font-size: 13px; color: var(--mute); }
 .cardview .card { margin-top: 10px; }
 .row .sub { display: block; }
 
+/* Reconcile results */
+.recon { margin-top: 14px; display: grid; gap: 10px; }
+.recon-item { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.recon-item p { margin: 4px 0; }
+.recon-item .recon-head { margin: 0; }
+.recon-item.matches .recon-head { color: var(--ok); }
+.recon-item.gap .recon-head { color: var(--pend); }
+.recon-head b { color: var(--ink); font-weight: 500; }
+.recon-cause { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 8px; }
+.recon-cause .btn { margin-top: 4px; }
+
 /* Period change: once the new period's data is in, the list slides 12 px from the arrow's side and
    fades in. Reduce Motion: fade only. */
 .period.next { animation: period-next 200ms ease-out; }

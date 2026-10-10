@@ -70,7 +70,7 @@ function CardRow({ a, base, onSave, onRemove }: { a: Account; base: string; onSa
     onSave({ ...a, name: name.trim() || "Card", currency: base, rate: undefined, statementDay: d, dueDays: dd, limit: lim, openingBalance: o ? -o : 0 });
   };
   return (
-    <div className="cardacct">
+    <div className="cardacct" id={`card-${a.id}`}>
       <div className="acct">
         <input aria-label="Card name" value={name} onChange={(e) => setName(e.target.value)} onBlur={commit} />
         <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}>✕</button>
@@ -84,7 +84,8 @@ function CardRow({ a, base, onSave, onRemove }: { a: Account; base: string; onSa
   );
 }
 
-export function Settings({ onSetup }: { onSetup: () => void }) {
+/** `focusCard` (from Reconcile, "Set as Owed at start") scrolls that card into view once loaded. */
+export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCard?: string }) {
   const { store, rev, changed } = useLedger();
   const { config, status, engine, disconnect, readOnly } = useSync();
   const [lastExported, setLastExported] = useState<string>();
@@ -114,6 +115,10 @@ export function Settings({ onSetup }: { onSetup: () => void }) {
       setLastExported(await store.getMeta<string>("lastExported"));
     })();
   }, [store, rev]);
+
+  useEffect(() => {
+    if (focusCard && accounts.length) document.getElementById(`card-${focusCard}`)?.scrollIntoView({ block: "center" });
+  }, [focusCard, accounts.length]);
 
   const save = async (patch: Partial<S>) => { await saveSettings(store, patch); changed(); };
   const saveDefault = (patch: Defaults) => save({ defaults: { ...s.defaults, ...patch } });

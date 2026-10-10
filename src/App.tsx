@@ -18,13 +18,13 @@ export type Tab = (typeof NAV)[number];
 /** The screens that are all about editing are locked as a whole while offline and read-only. */
 const EDIT_TABS: Tab[] = ["Add", "Forecast"]; // Settings locks its own edit controls so Export still works offline
 
-function Screen({ tab, go, setup, focusPerson, openPerson, saved, onSaved }: { tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void }) {
+function Screen({ tab, go, setup, focusPerson, openPerson, saved, onSaved, focusCard, openCard }: { tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; focusCard?: string; openCard: (id: string) => void }) {
   if (tab === "Add") return <div className="glasscard addcard"><AddForm onDone={(s) => { onSaved(s); go("Ledger"); }} /></div>;
   if (tab === "Ledger") return <Ledger key={saved?.date ?? ""} initialDate={saved?.date} notice={saved?.message} />;
-  if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} />;
+  if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); go("Ledger"); }} onOpenCardSettings={openCard} />;
   if (tab === "Splits") return <Splits key={focusPerson ?? ""} initialPerson={focusPerson} />;
   if (tab === "Forecast") return <Forecast />;
-  return <Settings onSetup={setup} />;
+  return <Settings onSetup={setup} focusCard={focusCard} />;
 }
 
 function Shell() {
@@ -34,6 +34,8 @@ function Shell() {
   const [focusPerson, setFocusPerson] = useState<string>();
   // Set when the Add form saves, so the Ledger opens where the new item is and says it was saved.
   const [saved, setSaved] = useState<SavedNote>();
+  // Set when Reconcile opens a card's settings ("Set as Owed at start"), so Settings scrolls to it.
+  const [focusCard, setFocusCard] = useState<string>();
   const { status, readOnly, editOffline, engine } = useSync();
   const locked = readOnly && EDIT_TABS.includes(tab);
 
@@ -42,7 +44,7 @@ function Shell() {
       <nav className="side">
         <div className="brand">Ledger</div>
         {NAV.map((n) => (
-          <button key={n} className={n === tab ? "on" : ""} onClick={() => { setFocusPerson(undefined); setSaved(undefined); setTab(n); }}>{n}</button>
+          <button key={n} className={n === tab ? "on" : ""} onClick={() => { setFocusPerson(undefined); setSaved(undefined); setFocusCard(undefined); setTab(n); }}>{n}</button>
         ))}
       </nav>
       <main>
@@ -61,7 +63,7 @@ function Shell() {
           <fieldset className="plain" disabled={locked}>
             {/* Keyed on the tab so the new screen fades in (screens already remount on a tab change). */}
             <div key={tab} className="tabfade">
-            <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("Splits"); }} saved={saved} onSaved={setSaved} />
+            <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("Splits"); }} saved={saved} onSaved={setSaved} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} />
             </div>
           </fieldset>
         </section>

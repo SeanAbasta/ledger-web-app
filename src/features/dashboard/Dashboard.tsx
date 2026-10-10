@@ -11,7 +11,7 @@ import { getSettings, list } from "../../data/collections";
 import { addDays, addMonths, labelMonth, monthEnd, monthStart, today } from "../../data/dates";
 import { loadEntries } from "../../data/months";
 import { formatMinor } from "../../data/money";
-import { ledgerItems, occurrences } from "../../data/rules";
+import { ledgerItems, occurrences, type LedgerItem } from "../../data/rules";
 import { myShare } from "../../data/splits";
 import { pctChange, summarize, topCategories, type Summary } from "../../data/summary";
 import { useLedger } from "../../ui/Ledger";
@@ -31,6 +31,9 @@ interface View {
   next?: { month: string; end: number };
   cards: { card: Account; st: CardStatus; bd: CardBreakdown }[];
   banks: Account[];
+  accounts: Account[];
+  /** Everything up to today, for Reconcile. */
+  items: LedgerItem[];
   salaryAccount?: string;
   defaults?: Defaults;
   /** Which way the month changed (1 = next), so the cards slide in from that side; 0 = no slide. */
@@ -68,7 +71,7 @@ function Bars({ days, from, todayIdx, base }: { days: number[]; from: string; to
   );
 }
 
-export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) => void }) {
+export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { onOpenPerson: (personId: string) => void; onOpenLedger: (date: string) => void; onOpenCardSettings: (cardId: string) => void }) {
   const { store, rev } = useLedger();
   const [anchor, setAnchor] = useState(today());
   const [v, setV] = useState<View>();
@@ -109,13 +112,13 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
       if (stale) return;
       const d = dir.current;
       dir.current = 0;
-      setV((old) => ({ dir: old && old.from !== from ? d : 0, base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, salaryAccount: activeSalaryRule(world.rules, t)?.accountId, defaults: settings.defaults }));
+      setV((old) => ({ dir: old && old.from !== from ? d : 0, base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, accounts: world.accounts, items: upToToday, salaryAccount: activeSalaryRule(world.rules, t)?.accountId, defaults: settings.defaults }));
     })();
     return () => { stale = true; };
   }, [store, rev, anchor]);
 
   if (!v) return null;
-  const { base, cur, prevTotal, stillDue, from, isCurrent, balances, owed, next, cards, banks, salaryAccount, defaults } = v;
+  const { base, cur, prevTotal, stillDue, from, isCurrent, balances, owed, next, cards, banks, accounts, items, salaryAccount, defaults } = v;
   const showAccounts = balances.accounts.length > 0 || balances.unassigned !== 0;
   const showOwed = owed.people.length > 0;
   const bottomCards = [showAccounts, showOwed, !!next].filter(Boolean).length;
@@ -133,7 +136,7 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
         <div className="toolrow">
           <span className="nav"><button className="title" onClick={() => { setV({ ...v, dir: 0 }); setOpenCard(undefined); }}>‹ Dashboard</button></span>
         </div>
-        <CardView card={opened.card} st={opened.st} bd={opened.bd} banks={banks} />
+        <CardView card={opened.card} st={opened.st} bd={opened.bd} banks={banks} items={items} accounts={accounts} onOpenLedger={onOpenLedger} onOpenCard={() => onOpenCardSettings(opened.card.id)} />
       </>
     );
   }

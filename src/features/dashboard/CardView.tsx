@@ -1,16 +1,22 @@
 import { useState } from "react";
 import type { CardBreakdown, CardLine, CardStatus } from "../../data/cards";
+import type { LedgerItem } from "../../data/rules";
 import { labelShort } from "../../data/dates";
 import { formatMinor } from "../../data/money";
 import type { Account } from "../../data/schema";
 import { Segmented } from "../../ui/Segmented";
+import { ReconcileSheet } from "./ReconcileSheet";
 
 const TABS = ["Statement", "Unbilled", "Plans"] as const;
 type Tab = (typeof TABS)[number];
 
 /** What makes up each number on a card tile. Read-only; every list adds up to the tile's figure. */
-export function CardView({ card, st, bd, banks }: { card: Account; st: CardStatus; bd: CardBreakdown; banks: Account[] }) {
+export function CardView({ card, st, bd, banks, items, accounts, onOpenLedger, onOpenCard }: {
+  card: Account; st: CardStatus; bd: CardBreakdown; banks: Account[]; items: LedgerItem[]; accounts: Account[];
+  onOpenLedger: (date: string) => void; onOpenCard: () => void;
+}) {
   const [tab, setTab] = useState<Tab>("Statement");
+  const [reconciling, setReconciling] = useState(false);
   const fmt = (n: number) => (n < 0 ? "-" : "") + formatMinor(Math.abs(n), card.currency);
   const bank = (id?: string) => banks.find((b) => b.id === id)?.name;
 
@@ -98,6 +104,11 @@ export function CardView({ card, st, bd, banks }: { card: Account; st: CardStatu
           )}
           <p className="mute small">Payments still to come. Each plan's hold shrinks as payments are charged. Recurring payments never hold the limit.</p>
         </>
+      )}
+
+      <div className="actions"><button className="btn ghost" onClick={() => setReconciling(true)}>Reconcile with bank</button></div>
+      {reconciling && (
+        <ReconcileSheet card={card} st={st} bd={bd} items={items} accounts={accounts} onClose={() => setReconciling(false)} onOpenLedger={onOpenLedger} onOpenCard={onOpenCard} />
       )}
     </div>
   );
