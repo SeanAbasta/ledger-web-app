@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { accountBalances } from "../src/data/accounts";
 import { forecast } from "../src/data/forecast";
-import { cardStatus, cutoffIn, dueFor, lastCutoff, nextCutoff, prevCutoff } from "../src/data/cards";
+import { cardHolds, cardStatus, cutoffIn, dueFor, lastCutoff, nextCutoff, prevCutoff } from "../src/data/cards";
 import { ledgerItems } from "../src/data/rules";
 import type { Account, Entry, Rule } from "../src/data/schema";
 import { summarize } from "../src/data/summary";
@@ -75,6 +75,53 @@ describe("the example card", () => {
     expect(status("2026-11-15", charges, { ...card, limit: undefined }).creditLeft).toBeUndefined();
     const skipped = { ...iphone, skipped: ["2027-01-20"] };
     expect(cardStatus(card, ledgerItems(charges, [skipped], "0000-01-01", "2026-11-15"), [skipped], "2026-11-15").futureInstallments).toBe(66000 * P);
+  });
+});
+
+describe("Pay all and installment holds", () => {
+  const payOf = (id: string, date: string, pesos: number) => e(id, date, pesos, { kind: "transfer", accountId: "B", toAccountId: "C", category: "Card payment" });
+
+  it("Pay all is the statement plus unbilled; paying it leaves Paid, nothing unbilled, and only the holds on the limit", () => {
+    const before = status("2026-12-04");
+    expect(before.remaining + before.unbilled).toBe(10000 * P);
+    const after = status("2026-12-04", [...charges, payOf("p", "2026-12-04", 10000)]);
+    expect(after).toMatchObject({ remaining: 0, paid: true, unbilled: 0, creditLeft: card.limit! - after.futureInstallments });
+    expect(after.creditLeft).toBe(34000 * P);
+  });
+  it("two payments that add up to the same total give the same result", () => {
+    const one = status("2026-12-04", [...charges, payOf("p", "2026-12-04", 10000)]);
+    const two = status("2026-12-04", [...charges, payOf("p", "2026-12-04", 6000), payOf("q", "2026-12-04", 4000)]);
+    expect(two).toEqual(one);
+  });
+  it("paying ahead after the statement is paid clears what is unbilled", () => {
+    const paid = status("2026-12-05", [...charges, pay]);
+    expect([paid.remaining, paid.unbilled]).toEqual([0, 3000 * P]);
+    const ahead = status("2026-12-05", [...charges, pay, payOf("q", "2026-12-05", 3000)]);
+    expect(ahead).toMatchObject({ remaining: 0, paid: true, unbilled: 0, creditLeft: card.limit! - ahead.futureInstallments });
+  });
+
+  const macbook: Rule = { ...iphone, id: "M", note: "MacBook Air", amount: 5000 * P, total: 10000 * P, count: 2, start: "2026-11-25" };
+  const unnamed: Rule = { ...iphone, id: "U", note: undefined, category: "Travel", amount: 1000 * P, total: 3000 * P, count: 3, start: "2026-12-01" };
+  const streaming: Rule = { id: "S", type: "recurring", kind: "expense", amount: 500 * P, currency: "PHP", category: "Bills", note: "Google AI Plus", accountId: "C", frequency: "monthly", start: "2026-10-01", updatedAt: "x" };
+  const elsewhere: Rule = { ...iphone, id: "E", note: "AirPods", accountId: "OTHER" };
+  const rules = [iphone, macbook, unnamed, streaming, elsewhere];
+
+  it("names each plan from its note (else its category), and the holds add up to the tile's total", () => {
+    const { holds } = cardHolds(card, rules, "2026-11-15");
+    expect(holds.map((h) => [h.name, h.amount, h.left])).toEqual([
+      ["iPhone", 69000 * P, 23],
+      ["MacBook Air", 10000 * P, 2],
+      ["Travel", 3000 * P, 3],
+    ]);
+    const st = cardStatus(card, ledgerItems(charges, rules, "0000-01-01", "2026-11-15"), rules, "2026-11-15");
+    expect(st.holds).toEqual(holds);
+    expect(holds.reduce((n, h) => n + h.amount, 0)).toBe(st.futureInstallments);
+  });
+  it("a hold shrinks as payments are charged and goes when the plan ends; recurring payments never hold", () => {
+    expect(cardHolds(card, rules, "2026-11-25").holds.find((h) => h.name === "MacBook Air")).toMatchObject({ amount: 5000 * P, left: 1 });
+    expect(cardHolds(card, rules, "2026-12-25").holds.map((h) => h.name)).toEqual(["iPhone", "Travel"]);
+    expect(cardHolds(card, [streaming], "2026-11-15").holds).toEqual([]);
+    expect(cardHolds({ id: "OTHER", currency: "PHP" }, rules, "2026-11-15").holds.map((h) => h.name)).toEqual(["AirPods"]);
   });
 });
 

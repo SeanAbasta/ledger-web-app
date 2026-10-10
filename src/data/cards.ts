@@ -51,6 +51,37 @@ export function cardMoves(card: Pick<Account, "id" | "currency">, items: LedgerI
   return { moves, skipped };
 }
 
+/** One installment plan holding part of a card's limit: its payments still to come after today. */
+export interface CardHold {
+  ruleId: string;
+  /** The plan's note ("iPhone 18 Pro Max"), else its category. */
+  name: string;
+  amount: Minor;
+  /** Payments still to come. */
+  left: number;
+}
+
+/** Installment plans billed to this card, with what each still holds. Recurring payments never hold the limit. */
+export function cardHolds(card: Pick<Account, "id" | "currency">, rules: Rule[], today: IsoDate): { holds: CardHold[]; skipped: number } {
+  const holds: CardHold[] = [];
+  let skipped = 0;
+  for (const r of rules) {
+    if (r.type !== "installment" || r.kind !== "expense") continue;
+    let amount = 0;
+    let left = 0;
+    for (const o of occurrences(r, addDays(today, 1), "9999-12-31")) {
+      if (o.accountId !== card.id || (o.split && o.split.paidBy !== "me")) continue;
+      if (o.currency !== card.currency) skipped++; // rules carry no rate
+      else {
+        amount += o.amount;
+        left++;
+      }
+    }
+    if (left) holds.push({ ruleId: r.id, name: r.note?.trim() || r.category || "Installment", amount, left });
+  }
+  return { holds, skipped };
+}
+
 export interface CardStatus {
   /** The last statement's cut-off and due date. */
   cutoff: IsoDate;
@@ -64,6 +95,8 @@ export interface CardStatus {
   unbilled: Minor;
   /** Installment payments on this card that have not happened yet. They hold the limit. */
   futureInstallments: Minor;
+  /** The same, per plan; adds up to `futureInstallments`. */
+  holds: CardHold[];
   /** limit - (remaining + unbilled + futureInstallments); undefined when there is no limit. */
   creditLeft?: Minor;
   skipped: number;
@@ -86,15 +119,9 @@ export function cardStatus(card: Account, items: LedgerItem[], rules: Rule[], to
   const remaining = Math.max(0, statement - paidSince);
   const unbilled = owedAt(today) - remaining;
 
-  let futureInstallments = 0;
-  for (const r of rules) {
-    if (r.type !== "installment" || r.kind !== "expense") continue;
-    for (const o of occurrences(r, addDays(today, 1), "9999-12-31")) {
-      if (o.accountId !== card.id || (o.split && o.split.paidBy !== "me")) continue;
-      if (o.currency !== card.currency) skipped++; // rules carry no rate
-      else futureInstallments += o.amount;
-    }
-  }
+  const held = cardHolds(card, rules, today);
+  skipped += held.skipped;
+  const futureInstallments = held.holds.reduce((n, h) => n + h.amount, 0);
   const creditLeft = card.limit === undefined ? undefined : card.limit - (remaining + unbilled + futureInstallments);
-  return { cutoff, due: dueFor(card, cutoff), statement, remaining, paid: statement > 0 && remaining === 0, unbilled, futureInstallments, creditLeft, skipped };
+  return { cutoff, due: dueFor(card, cutoff), statement, remaining, paid: statement > 0 && remaining === 0, unbilled, futureInstallments, holds: held.holds, creditLeft, skipped };
 }

@@ -11,6 +11,8 @@ import { Sheet } from "../../ui/Sheet";
 
 const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[^\d.]/g, "");
 
+type Choice = "statement" | "all" | "other";
+
 /** One credit card: the last statement, what is unbilled, the credit left, and paying the bill. */
 export function CardTile({ card, st, banks, defaultBank }: { card: Account; st: CardStatus; banks: Account[]; defaultBank?: string }) {
   const { store, changed } = useLedger();
@@ -20,15 +22,25 @@ export function CardTile({ card, st, banks, defaultBank }: { card: Account; st: 
   const [date, setDate] = useState(today());
   const [due, setDue] = useState("");
   const [error, setError] = useState("");
+  const [choice, setChoice] = useState<Choice>("statement");
+  const [showHolds, setShowHolds] = useState(false);
   const cur = card.currency;
   const fmt = (n: number) => formatMinor(n, cur);
   const payFrom = banks.filter((b) => b.currency === cur); // a bill is paid in the card's currency
   const moved = !!card.dueOverrides?.[st.cutoff];
+  const payAll = st.remaining + st.unbilled;
+  // After the statement is paid, paying again goes toward the next one, so no manual transfer is needed.
+  const payAhead = !st.remaining && (st.paid || st.unbilled > 0);
+
+  function pick(c: Choice) {
+    setChoice(c);
+    setAmount(c === "statement" ? plain(st.remaining, cur) : c === "all" ? plain(payAll, cur) : "");
+  }
 
   function open(which: "pay" | "due") {
     setError("");
     setFrom(payFrom.some((b) => b.id === defaultBank) ? defaultBank! : payFrom[0]?.id ?? "");
-    setAmount(plain(st.remaining, cur));
+    pick(st.remaining ? "statement" : st.unbilled > 0 ? "all" : "other");
     setDate(today());
     setDue(st.due);
     setSheet(which);
@@ -76,16 +88,37 @@ export function CardTile({ card, st, banks, defaultBank }: { card: Account; st: 
       {st.creditLeft !== undefined && (
         <div className="row static"><span>Credit left</span><span>{fmt(st.creditLeft)} <span className="mute small">of {fmt(card.limit!)}</span></span></div>
       )}
+      {st.creditLeft !== undefined && st.holds.length === 1 && (
+        <div className="row static hold"><span>{st.holds[0]!.name} hold</span><span>{fmt(st.holds[0]!.amount)}</span></div>
+      )}
+      {st.creditLeft !== undefined && st.holds.length > 1 && (
+        <>
+          <button className="row hold" aria-expanded={showHolds} title="Show each plan" onClick={() => setShowHolds(!showHolds)}>
+            <span>Installment holds</span><span>{fmt(st.futureInstallments)}</span>
+          </button>
+          {showHolds && st.holds.map((h) => (
+            <div key={h.ruleId} className="row static hold sub"><span>{h.name} <span className="small">{h.left} left</span></span><span>{fmt(h.amount)}</span></div>
+          ))}
+        </>
+      )}
       {st.skipped > 0 && <p className="mute small">{st.skipped} foreign {st.skipped === 1 ? "amount has" : "amounts have"} no rate and {st.skipped === 1 ? "is" : "are"} left out.</p>}
       {st.remaining > 0 && <div className="actions"><button className="btn sm" onClick={() => open("pay")}>Pay</button></div>}
+      {payAhead && <div className="actions"><button className="btn sm ghost" onClick={() => open("pay")}>Pay ahead</button></div>}
 
       {sheet === "pay" && (
         <Sheet locked onClose={() => setSheet(undefined)}>
-          <h3>Pay {card.name}</h3>
-          <p className="mute">Statement of {labelShort(st.cutoff)}, due {labelShort(st.due)}. Moves money from the bank to the card. Not counted as spending.</p>
+          <h3>{st.remaining ? "Pay" : "Pay ahead on"} {card.name}</h3>
+          <p className="mute">
+            {st.remaining ? `Statement of ${labelShort(st.cutoff)}, due ${labelShort(st.due)}.` : "Goes toward the next statement."} Moves money from the bank to the card. Not counted as spending.
+          </p>
           {payFrom.length ? (
             <form className="form" onSubmit={(e) => { e.preventDefault(); void pay(); }}>
-              <label className="field"><b>Amount</b><MoneyInput aria-label="Payment amount" value={amount} onChange={setAmount} currency={cur} /></label>
+              {(st.remaining > 0 || st.unbilled > 0) && <div className="choices" role="radiogroup" aria-label="How much">
+                {st.remaining > 0 && <button type="button" role="radio" aria-checked={choice === "statement"} className={choice === "statement" ? "choice on" : "choice"} onClick={() => pick("statement")}>Statement<small>{fmt(st.remaining)}</small></button>}
+                {st.unbilled > 0 && <button type="button" role="radio" aria-checked={choice === "all"} className={choice === "all" ? "choice on" : "choice"} onClick={() => pick("all")}>Pay all<small>{fmt(payAll)}</small></button>}
+                <button type="button" role="radio" aria-checked={choice === "other"} className={choice === "other" ? "choice on" : "choice"} onClick={() => pick("other")}>Other<small>type it</small></button>
+              </div>}
+              <label className="field"><b>Amount</b><MoneyInput aria-label="Payment amount" value={amount} onChange={(v) => { setAmount(v); setChoice("other"); }} currency={cur} /></label>
               <label className="field"><b>From</b>
                 <select value={from} onChange={(e) => setFrom(e.target.value)}>{payFrom.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
               <label className="field"><b>Date</b><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
