@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { accountBalances } from "../src/data/accounts";
 import { forecast } from "../src/data/forecast";
-import { cardHolds, cardStatus, cutoffIn, dueFor, lastCutoff, nextCutoff, prevCutoff } from "../src/data/cards";
+import { cardBreakdown, cardHolds, cardStatus, cutoffIn, type CardLine, dueFor, lastCutoff, nextCutoff, prevCutoff } from "../src/data/cards";
 import { ledgerItems } from "../src/data/rules";
 import type { Account, Entry, Rule } from "../src/data/schema";
 import { summarize } from "../src/data/summary";
@@ -122,6 +122,64 @@ describe("Pay all and installment holds", () => {
     expect(cardHolds(card, rules, "2026-12-25").holds.map((h) => h.name)).toEqual(["iPhone", "Travel"]);
     expect(cardHolds(card, [streaming], "2026-11-15").holds).toEqual([]);
     expect(cardHolds({ id: "OTHER", currency: "PHP" }, rules, "2026-11-15").holds.map((h) => h.name)).toEqual(["AirPods"]);
+  });
+});
+
+describe("per-card view adds up to the tile", () => {
+  const total = (ls: CardLine[]) => ls.reduce((n, l) => n + l.amount, 0);
+  const payOf = (id: string, date: string, pesos: number) => e(id, date, pesos, { kind: "transfer", accountId: "B", toAccountId: "C", category: "Card payment" });
+  /** Every list against cardStatus: statement, left to pay, unbilled and holds. */
+  const check = (today: string, entries: Entry[], c: Account = card) => {
+    const items = ledgerItems(entries, [iphone], "0000-01-01", today);
+    const st = cardStatus(c, items, [iphone], today);
+    const bd = cardBreakdown(c, items, today);
+    expect(bd.cutoff).toBe(st.cutoff);
+    expect(Math.max(0, total(bd.statement))).toBe(st.statement);
+    expect(Math.max(0, st.statement + total(bd.paidSince))).toBe(st.remaining);
+    expect(total(bd.unbilled)).toBe(st.unbilled);
+    expect(st.holds.reduce((n, h) => n + h.amount, 0)).toBe(st.futureInstallments);
+    return bd;
+  };
+  const kinds = (ls: CardLine[]) => ls.map((l) => [l.kind, l.amount / P]);
+
+  it("first statement: charges and installments up to the cut-off", () => {
+    const bd = check("2026-11-15", charges);
+    expect(kinds(bd.statement)).toEqual([["charge", 1000], ["charge", 3000], ["charge", 1000], ["charge", 1000], ["charge", 1000]]); // Oct 16, Oct 20 iPhone, Oct 25, Nov 3, Nov 15
+    expect(bd.paidSince).toEqual([]);
+  });
+  it("puts what was owed when the card was added on its own line", () => {
+    const bd = check("2026-11-15", charges, { ...card, openingBalance: -2000 * P });
+    expect(bd.statement[0]).toMatchObject({ kind: "start", amount: 2000 * P });
+  });
+  it("lists unbilled charges, and payments since the cut-off", () => {
+    expect(kinds(check("2026-12-04", charges).unbilled)).toEqual([["charge", 3000]]);
+    const paid = check("2026-12-05", [...charges, pay]);
+    expect(kinds(paid.paidSince)).toEqual([["payment", -7000]]);
+    expect(paid.paidSince[0]!.item).toMatchObject({ type: "entry" });
+  });
+  it("the next statement starts from what was owed at the previous cut-off", () => {
+    const bd = check("2026-12-15", [...charges, pay]);
+    expect(bd.statement[0]).toMatchObject({ kind: "carried", amount: 7000 * P, date: "2026-11-15" });
+    expect(kinds(bd.statement).slice(1)).toEqual([["charge", 3000], ["payment", -7000]]); // Nov 20 iPhone, Dec 5 payment
+  });
+  it("a refund after the cut-off is unbilled, not taken off the statement", () => {
+    const back = e("r", "2026-11-20", 500, { kind: "income", refund: true, refundOf: "c", category: "Shopping" });
+    expect(kinds(check("2026-12-04", [...charges, back]).unbilled)).toEqual([["charge", 3000], ["refund", -500]]);
+  });
+  it("paying more than the statement shows as paid ahead", () => {
+    const bd = check("2026-12-05", [...charges, payOf("p", "2026-12-05", 12000)]);
+    expect(kinds(bd.unbilled)).toEqual([["charge", 3000], ["ahead", -5000]]);
+  });
+  it("a credit at the cut-off carries to the unbilled side", () => {
+    const over = [e("a", "2026-10-20", 1000), payOf("p", "2026-11-01", 1500)];
+    const bd = cardBreakdown(card, ledgerItems(over, [], "0000-01-01", "2026-11-20"), "2026-11-20");
+    const st = cardStatus(card, ledgerItems(over, [], "0000-01-01", "2026-11-20"), [], "2026-11-20");
+    expect([st.statement, st.unbilled]).toEqual([0, -500 * P]);
+    expect(kinds(bd.unbilled)).toEqual([["credit", -500]]);
+    expect(total(bd.unbilled)).toBe(st.unbilled);
+  });
+  it("plans show payments made, the next one and its amount", () => {
+    expect(status("2026-11-25").holds).toEqual([{ ruleId: "I", name: "iPhone", amount: 66000 * P, left: 22, done: 2, count: 24, next: "2026-12-20", each: 3000 * P }]);
   });
 });
 

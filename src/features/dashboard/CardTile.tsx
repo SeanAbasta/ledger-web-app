@@ -16,7 +16,7 @@ const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[
 type Choice = "statement" | "all" | "other";
 
 /** One credit card: the last statement, what is unbilled, the credit left, and paying the bill. */
-export function CardTile({ card, st, banks, defaultBank, defaults }: { card: Account; st: CardStatus; banks: Account[]; defaultBank?: string; defaults?: Defaults }) {
+export function CardTile({ card, st, banks, defaultBank, defaults, onOpen }: { card: Account; st: CardStatus; banks: Account[]; defaultBank?: string; defaults?: Defaults; onOpen?: () => void }) {
   const { store, changed } = useLedger();
   const [sheet, setSheet] = useState<"pay" | "due">();
   const [from, setFrom] = useState("");
@@ -78,11 +78,13 @@ export function CardTile({ card, st, banks, defaultBank, defaults }: { card: Acc
 
   return (
     <div className="card pad">
-      <div className="mute">{card.name}</div>
-      <div className="big">{st.remaining ? fmt(st.remaining) : st.paid ? "Paid" : "Nothing due"}</div>
-      <div className="mute small">
-        {st.statement ? `statement of ${labelShort(st.cutoff)}${st.paid ? `, ${fmt(st.statement)}` : ""}` : `no statement on ${labelShort(st.cutoff)}`}
-      </div>
+      <button className="cardhead" title="See what makes up these numbers" onClick={onOpen}>
+        <div className="mute">{card.name}<span className="chev">›</span></div>
+        <div className="big">{st.remaining ? fmt(st.remaining) : st.paid ? "Paid" : "Nothing due"}</div>
+        <div className="mute small">
+          {st.statement ? `statement of ${labelShort(st.cutoff)}${st.paid ? `, ${fmt(st.statement)}` : ""}` : `no statement on ${labelShort(st.cutoff)}`}
+        </div>
+      </button>
       {st.statement > 0 && (
         <button className="row" title="Change the due date" onClick={() => open("due")}>
           <span>Due</span><span>{labelShort(st.due)}{moved && <span className="tag">moved</span>}</span>

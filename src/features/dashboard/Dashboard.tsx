@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { accountBalances, type Balances } from "../../data/accounts";
 import { owedSummary, type OwedSummary } from "../../data/balances";
 import { toBase } from "../../data/base";
-import { cardStatus, type CardStatus } from "../../data/cards";
+import { cardBreakdown, cardStatus, type CardBreakdown, type CardStatus } from "../../data/cards";
 import { activeSalaryRule } from "../../data/income";
 import { isCard, type Account, type Defaults } from "../../data/schema";
 import { forecast } from "../../data/forecast";
@@ -17,6 +17,7 @@ import { pctChange, summarize, topCategories, type Summary } from "../../data/su
 import { useLedger } from "../../ui/Ledger";
 import { useTodayKey } from "../../ui/useTodayKey";
 import { CardTile } from "./CardTile";
+import { CardView } from "./CardView";
 
 interface View {
   base: string;
@@ -28,7 +29,7 @@ interface View {
   balances: Balances;
   owed: OwedSummary;
   next?: { month: string; end: number };
-  cards: { card: Account; st: CardStatus }[];
+  cards: { card: Account; st: CardStatus; bd: CardBreakdown }[];
   banks: Account[];
   salaryAccount?: string;
   defaults?: Defaults;
@@ -71,6 +72,8 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
   const { store, rev } = useLedger();
   const [anchor, setAnchor] = useState(today());
   const [v, setV] = useState<View>();
+  // A card opened from its tile: the per-card statement view replaces the Dashboard until Back.
+  const [openCard, setOpenCard] = useState<string>();
   const dir = useRef<-1 | 0 | 1>(0);
   const go = (d: -1 | 0 | 1, next: (a: string) => string) => { dir.current = d; setAnchor(next); };
   const goToday = () => { const t = today(); go(monthStart(t) === monthStart(anchor) ? 0 : t > anchor ? 1 : -1, () => t); };
@@ -101,7 +104,7 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
       const balances = accountBalances(world.accounts, upToToday, base);
       const owed = owedSummary(world.people, upToToday, base);
       const fc = forecast({ start: balances.totalBase, today: t, base, entries: world.entries, rules: world.rules, months: 2, owed: owed.net, accounts: world.accounts });
-      const cards = world.accounts.filter(isCard).map((card) => ({ card, st: cardStatus(card, upToToday, world.rules, t) }));
+      const cards = world.accounts.filter(isCard).map((card) => ({ card, st: cardStatus(card, upToToday, world.rules, t), bd: cardBreakdown(card, upToToday, t) }));
       const banks = world.accounts.filter((a) => !isCard(a));
       if (stale) return;
       const d = dir.current;
@@ -122,6 +125,18 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
   const catTotal = cats.reduce((a, c) => a + c.amount, 0);
   const change = pctChange(cur.total, prevTotal);
   const todayIdx = isCurrent ? Number(today().slice(8)) - 1 : -1;
+  const opened = cards.find((c) => c.card.id === openCard);
+
+  if (opened) {
+    return (
+      <>
+        <div className="toolrow">
+          <span className="nav"><button className="title" onClick={() => { setV({ ...v, dir: 0 }); setOpenCard(undefined); }}>‹ Dashboard</button></span>
+        </div>
+        <CardView card={opened.card} st={opened.st} bd={opened.bd} banks={banks} />
+      </>
+    );
+  }
 
   return (
     <>
@@ -166,7 +181,7 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
       )}
       {cards.length > 0 && (
         <div className={`grid ${cards.length % 3 === 0 ? "g3" : "g2"}`}>
-          {cards.map(({ card, st }) => <CardTile key={card.id} card={card} st={st} banks={banks} defaultBank={salaryAccount} defaults={defaults} />)}
+          {cards.map(({ card, st }) => <CardTile key={card.id} card={card} st={st} banks={banks} defaultBank={salaryAccount} defaults={defaults} onOpen={() => setOpenCard(card.id)} />)}
         </div>
       )}
       <div className={`grid ${bottomCards === 3 ? "g3" : "g2"}`}>

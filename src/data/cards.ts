@@ -32,6 +32,8 @@ export interface CardMove {
   amount: Minor;
   /** A bill payment (a transfer into the card). Payments settle the statement; refunds do not. */
   payment: boolean;
+  /** The Ledger item it came from, so the per-card view can list it. */
+  item: LedgerItem;
 }
 
 /** Everything that changed what the card owes, in the card's currency. Unconvertible amounts are counted in `skipped`. */
@@ -45,7 +47,7 @@ export function cardMoves(card: Pick<Account, "id" | "currency">, items: LedgerI
       if (f.accountId !== card.id) continue;
       const v = f.currency === card.currency ? f.amount : toBase({ amount: f.amount, currency: f.currency, rate: f.rate }, card.currency);
       if (v === undefined) skipped++;
-      else moves.push({ date: it.date, amount: -v, payment });
+      else moves.push({ date: it.date, amount: -v, payment, item: it });
     }
   }
   return { moves, skipped };
@@ -59,6 +61,11 @@ export interface CardHold {
   amount: Minor;
   /** Payments still to come. */
   left: number;
+  /** Payments already charged (up to today), the plan's length, and the next payment. */
+  done: number;
+  count?: number;
+  next: IsoDate;
+  each: Minor;
 }
 
 /** Installment plans billed to this card, with what each still holds. Recurring payments never hold the limit. */
@@ -69,15 +76,20 @@ export function cardHolds(card: Pick<Account, "id" | "currency">, rules: Rule[],
     if (r.type !== "installment" || r.kind !== "expense") continue;
     let amount = 0;
     let left = 0;
+    let next: { date: IsoDate; amount: Minor } | undefined;
     for (const o of occurrences(r, addDays(today, 1), "9999-12-31")) {
       if (o.accountId !== card.id || (o.split && o.split.paidBy !== "me")) continue;
       if (o.currency !== card.currency) skipped++; // rules carry no rate
       else {
         amount += o.amount;
         left++;
+        next ??= o;
       }
     }
-    if (left) holds.push({ ruleId: r.id, name: r.note?.trim() || r.category || "Installment", amount, left });
+    if (left && next) {
+      const done = occurrences(r, r.start, today).length;
+      holds.push({ ruleId: r.id, name: r.note?.trim() || r.category || "Installment", amount, left, done, count: r.count, next: next.date, each: next.amount });
+    }
   }
   return { holds, skipped };
 }
@@ -124,4 +136,55 @@ export function cardStatus(card: Account, items: LedgerItem[], rules: Rule[], to
   const futureInstallments = held.holds.reduce((n, h) => n + h.amount, 0);
   const creditLeft = card.limit === undefined ? undefined : card.limit - (remaining + unbilled + futureInstallments);
   return { cutoff, due: dueFor(card, cutoff), statement, remaining, paid: statement > 0 && remaining === 0, unbilled, futureInstallments, holds: held.holds, creditLeft, skipped };
+}
+
+/** One line in the per-card view. Lines are signed like the card's debt: charges +, payments and refunds -. */
+export interface CardLine {
+  /** start: owed when the card was added; carried: what was owed at the previous cut-off; credit: a negative
+   *  balance at this cut-off, carried to the next bill; ahead: paid more than the statement. */
+  kind: "start" | "carried" | "charge" | "refund" | "payment" | "credit" | "ahead";
+  amount: Minor;
+  date?: IsoDate;
+  item?: LedgerItem;
+}
+
+export interface CardBreakdown {
+  cutoff: IsoDate;
+  /** The previous cut-off (the start of this statement's cycle). */
+  prev: IsoDate;
+  /** Adds up to what was owed at the cut-off; the statement is that, or 0 when it is below 0. */
+  statement: CardLine[];
+  /** Payments made after the cut-off (negative); the statement plus these is what is left to pay, floored at 0. */
+  paidSince: CardLine[];
+  /** Adds up to exactly `cardStatus(...).unbilled`. */
+  unbilled: CardLine[];
+}
+
+const sum = (lines: CardLine[]) => lines.reduce((n, l) => n + l.amount, 0);
+const lineOf = (m: CardMove): CardLine => ({ kind: m.payment ? "payment" : m.amount < 0 ? "refund" : "charge", amount: m.amount, date: m.date, item: m.item });
+
+/** What makes up each number on the card tile, line by line, from the same moves `cardStatus` uses. */
+export function cardBreakdown(card: Account, items: LedgerItem[], today: IsoDate): CardBreakdown {
+  // Oldest first, like a bank statement (items come newest first; reverse, then a stable sort by date).
+  const moves = cardMoves(card, items.filter((it) => it.date <= today)).moves.reverse().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  const cutoff = lastCutoff(card, today);
+  const prev = prevCutoff(card, cutoff);
+  const opening = -card.openingBalance;
+  const before = moves.filter((m) => m.date <= prev);
+  const carried = before.reduce((n, m) => n + m.amount, opening);
+
+  const statement: CardLine[] = [];
+  if (before.length) statement.push({ kind: "carried", amount: carried, date: prev });
+  else if (opening) statement.push({ kind: "start", amount: opening });
+  statement.push(...moves.filter((m) => m.date > prev && m.date <= cutoff).map(lineOf));
+
+  const after = moves.filter((m) => m.date > cutoff);
+  const paidSince = after.filter((m) => m.payment).map(lineOf);
+  const owedAtCutoff = sum(statement);
+  const st = Math.max(0, owedAtCutoff);
+  const paid = -sum(paidSince);
+  const unbilled = after.filter((m) => !m.payment).map(lineOf);
+  if (owedAtCutoff < 0) unbilled.unshift({ kind: "credit", amount: owedAtCutoff, date: cutoff });
+  if (paid > st) unbilled.push({ kind: "ahead", amount: st - paid });
+  return { cutoff, prev, statement, paidSince, unbilled };
 }
