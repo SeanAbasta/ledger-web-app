@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getSettings, list, upsert } from "../../data/collections";
 import { toBase } from "../../data/base";
 import { addDays, addMonths, contains, labelDay, labelMonth, labelShort, monthStart, periodOf, today } from "../../data/dates";
@@ -16,6 +16,7 @@ import { useTodayKey } from "../../ui/useTodayKey";
 
 const VIEWS = ["Day", "Week", "Month"] as const;
 type View = (typeof VIEWS)[number];
+type Dir = -1 | 0 | 1;
 
 function shift(view: View, anchor: string, dir: 1 | -1): string {
   return view === "Day" ? addDays(anchor, dir) : view === "Week" ? addDays(anchor, 7 * dir) : addMonths(monthStart(anchor), dir);
@@ -47,21 +48,35 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
   const [refundErr, setRefundErr] = useState("");
 
   const [from, to] = periodOf(view, anchor);
+  // The period whose data is on screen. The list keeps showing it until the next period has loaded,
+  // then swaps and slides in, so money figures never move or flash while loading.
+  const [shown, setShown] = useState<{ from: string; to: string; dir: Dir }>({ from, to, dir: 0 });
+  const dir = useRef<Dir>(0);
 
   useEffect(() => {
+    let stale = false; // a slower load for a period already left must not overwrite a newer one
     (async () => {
-      setEntries(await loadEntries(store, from, to));
-      setRules(await list(store, "rules"));
-      setPeople(await list(store, "people"));
-      setAccounts(await list(store, "accounts"));
-      setBase((await getSettings(store)).baseCurrency);
+      const [e, r, p, a, s] = await Promise.all([loadEntries(store, from, to), list(store, "rules"), list(store, "people"), list(store, "accounts"), getSettings(store)]);
+      if (stale) return;
+      setEntries(e);
+      setRules(r);
+      setPeople(p);
+      setAccounts(a);
+      setBase(s.baseCurrency);
+      const d = dir.current; // read now: the updater below runs later
+      dir.current = 0;
+      setShown((cur) => (cur.from === from && cur.to === to ? cur : { from, to, dir: d }));
     })();
+    return () => { stale = true; };
   }, [store, rev, from, to]);
+
+  const go = (d: Dir, next: (a: string) => string) => { dir.current = d; setAnchor(next); };
 
   const t = today();
   // "Next 30 days" counts from today, so it only shows on the period that holds today (it repeated upcoming rows elsewhere).
   const hasToday = contains([from, to], t);
-  const goToday = () => setAnchor(today());
+  const listHasToday = contains([shown.from, shown.to], t);
+  const goToday = () => { const n = today(); go(contains([from, to], n) ? 0 : n > from ? 1 : -1, () => n); };
   useTodayKey(goToday);
   const match = (it: LedgerItem) => {
     if (!q.trim()) return true;
@@ -71,7 +86,7 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
   };
 
   // Generated payments after today show too (as upcoming), so a plan that starts later can be found and fixed.
-  const items = useMemo(() => ledgerItems(entries, rules, from, to).filter(match), [entries, rules, from, to, t, q]);
+  const items = useMemo(() => ledgerItems(entries, rules, shown.from, shown.to).filter(match), [entries, rules, shown, t, q]);
   const upcoming = (it: LedgerItem) => it.type === "occurrence" && it.date > t;
   const due = useMemo(
     () => rules.flatMap((r) => occurrences(r, addDays(t, 1), addDays(t, 30))).sort((a, b) => (a.date < b.date ? -1 : 1)).filter((o) => o.kind === "expense"),
@@ -142,11 +157,11 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
   return (
     <>
       <div className="toolrow">
-        <Segmented value={view} options={VIEWS} onChange={setView} />
+        <Segmented value={view} options={VIEWS} onChange={(v) => { dir.current = 0; setView(v); }} />
         <span className="nav">
-          <button aria-label="Previous" onClick={() => setAnchor(shift(view, anchor, -1))}>‹</button>
+          <button aria-label="Previous" onClick={() => go(-1, (a) => shift(view, a, -1))}>‹</button>
           <button className="title" title="Go to today" onClick={goToday}>{title(view, anchor)}</button>
-          <button aria-label="Next" onClick={() => setAnchor(shift(view, anchor, 1))}>›</button>
+          <button aria-label="Next" onClick={() => go(1, (a) => shift(view, a, 1))}>›</button>
           <button className={hasToday ? "today off" : "today"} onClick={goToday}>Today</button>
         </span>
         <input className="search" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -155,7 +170,8 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
       {notice && <p className="mute small hint" role="status">{notice}</p>}
       {groups.length > 0 && !notice && <p className="mute small hint">Tap an entry to edit it</p>}
 
-      {hasToday && due.length > 0 && !q && (
+      <div key={`${shown.from}/${shown.to}`} className={shown.dir === 1 ? "period next" : shown.dir === -1 ? "period prev" : "period"}>
+      {listHasToday && due.length > 0 && !q && (
         <>
           <div className="grp">Next 30 days</div>
           <div className="card">
@@ -198,6 +214,7 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
           </div>
         </div>
       ))}
+      </div>
 
       {editing && (
         <Sheet locked onClose={() => setEditing(undefined)}>

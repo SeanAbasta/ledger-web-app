@@ -298,6 +298,14 @@ details { margin: 8px 0; font-size: 13px; color: var(--mute); }
 .row:not(.static) > :first-child { flex: 1; min-width: 0; }
 .owedline { display: block; }
 
+/* Period change: once the new period's data is in, the list slides 12 px from the arrow's side and
+   fades in. Reduce Motion: fade only. */
+.period.next { animation: period-next 200ms ease-out; }
+.period.prev { animation: period-prev 200ms ease-out; }
+@keyframes period-next { from { opacity: 0; transform: translateX(12px); } }
+@keyframes period-prev { from { opacity: 0; transform: translateX(-12px); } }
+@media (prefers-reduced-motion: reduce) { .period.next, .period.prev { animation-name: fade-in; } }
+
 /* Press feedback: held buttons shrink to 97% and dim; tappable rows only dim (a full-width row that
    shrinks looks like it jumps). Reduce Motion: dim only. Our own feedback replaces the grey tap flash. */
 .btn, .choice, .pill, .seg button, .side button, .nav button, .toggle, .chip button, .x, button.row {

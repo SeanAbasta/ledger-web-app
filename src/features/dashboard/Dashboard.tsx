@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { accountBalances, type Balances } from "../../data/accounts";
 import { owedSummary, type OwedSummary } from "../../data/balances";
 import { toBase } from "../../data/base";
@@ -32,6 +32,8 @@ interface View {
   banks: Account[];
   salaryAccount?: string;
   defaults?: Defaults;
+  /** Which way the month changed (1 = next), so the cards slide in from that side; 0 = no slide. */
+  dir: -1 | 0 | 1;
 }
 
 const C = 2 * Math.PI * 40;
@@ -69,10 +71,13 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
   const { store, rev } = useLedger();
   const [anchor, setAnchor] = useState(today());
   const [v, setV] = useState<View>();
-  const goToday = () => setAnchor(today());
+  const dir = useRef<-1 | 0 | 1>(0);
+  const go = (d: -1 | 0 | 1, next: (a: string) => string) => { dir.current = d; setAnchor(next); };
+  const goToday = () => { const t = today(); go(monthStart(t) === monthStart(anchor) ? 0 : t > anchor ? 1 : -1, () => t); };
   useTodayKey(goToday);
 
   useEffect(() => {
+    let stale = false; // a slower load for a month already left must not overwrite a newer one
     (async () => {
       const t = today();
       const settings = await getSettings(store);
@@ -98,8 +103,12 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
       const fc = forecast({ start: balances.totalBase, today: t, base, entries: world.entries, rules: world.rules, months: 2, owed: owed.net, accounts: world.accounts });
       const cards = world.accounts.filter(isCard).map((card) => ({ card, st: cardStatus(card, upToToday, world.rules, t) }));
       const banks = world.accounts.filter((a) => !isCard(a));
-      setV({ base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, salaryAccount: activeSalaryRule(world.rules, t)?.accountId, defaults: settings.defaults });
+      if (stale) return;
+      const d = dir.current;
+      dir.current = 0;
+      setV((old) => ({ dir: old && old.from !== from ? d : 0, base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, salaryAccount: activeSalaryRule(world.rules, t)?.accountId, defaults: settings.defaults }));
     })();
+    return () => { stale = true; };
   }, [store, rev, anchor]);
 
   if (!v) return null;
@@ -118,13 +127,15 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
     <>
       <div className="toolrow">
         <span className="nav">
-          <button aria-label="Previous month" onClick={() => setAnchor(addMonths(from, -1))}>‹</button>
-          <button className="title" title="Go to this month" onClick={goToday}>{labelMonth(from)}</button>
-          <button aria-label="Next month" onClick={() => setAnchor(addMonths(from, 1))}>›</button>
+          <button aria-label="Previous month" onClick={() => go(-1, (a) => addMonths(monthStart(a), -1))}>‹</button>
+          <button className="title" title="Go to this month" onClick={goToday}>{labelMonth(anchor)}</button>
+          <button aria-label="Next month" onClick={() => go(1, (a) => addMonths(monthStart(a), 1))}>›</button>
           <button className={monthStart(anchor) === monthStart(today()) ? "today off" : "today"} onClick={goToday}>Today</button>
         </span>
       </div>
 
+      {/* Keyed on the loaded month: the cards swap and slide in only once the new month's numbers are ready. */}
+      <div key={from} className={v.dir === 1 ? "period next" : v.dir === -1 ? "period prev" : "period"}>
       <div className="grid g3">
         <div className="card stat"><div className="mute">Spent</div><div className="big">{formatMinor(cur.total, base)}</div>
           <div className="mute small">{change === null ? "No earlier data" : change === 0 ? "Same as last month" : `${Math.abs(change)}% ${change < 0 ? "less" : "more"} than last month`}</div></div>
@@ -193,6 +204,7 @@ export function Dashboard({ onOpenPerson }: { onOpenPerson: (personId: string) =
         )}
       </div>
       {cur.unconverted > 0 && <p className="mute small">{cur.unconverted} foreign {cur.unconverted === 1 ? "amount has" : "amounts have"} no rate and {cur.unconverted === 1 ? "is" : "are"} left out.</p>}
+      </div>
     </>
   );
 }
