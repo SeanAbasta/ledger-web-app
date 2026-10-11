@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertMinor, formatMinor, parseMinor, splitEvenly } from "../src/data/money";
+import { convertMinor, formatMinor, moneyParts, parseMinor, splitEvenly } from "../src/data/money";
 
 describe("money", () => {
   it("parses input into minor units", () => {
@@ -23,6 +23,16 @@ describe("money", () => {
     expect(formatMinor(-7)).toBe("-₱0.07");
     expect(formatMinor(1250, "JPY")).toBe("¥1,250");
     expect(formatMinor(21000, "USD")).toBe("$210.00");
+  });
+  it("splits a formatted amount into parts that join back to formatMinor", () => {
+    expect(moneyParts(812265)).toEqual({ sign: "", symbol: "₱", whole: "8,122", cents: ".65" });
+    expect(moneyParts(-7)).toEqual({ sign: "-", symbol: "₱", whole: "0", cents: ".07" });
+    expect(moneyParts(1250, "JPY")).toEqual({ sign: "", symbol: "¥", whole: "1,250", cents: "" });
+    expect(moneyParts(500, "CHF")).toEqual({ sign: "", symbol: "CHF ", whole: "5", cents: ".00" });
+    for (const [m, c] of [[0, "PHP"], [123456789, "PHP"], [-100000, "USD"], [999, "KRW"], [42, "SGD"]] as const) {
+      const p = moneyParts(m, c);
+      expect(p.sign + p.symbol + p.whole + p.cents).toBe(formatMinor(m, c));
+    }
   });
   it("converts with a decimal rate", () => {
     expect(convertMinor(10000, "56.25", "USD", "PHP")).toBe(562500); // $100 -> ₱5,625.00

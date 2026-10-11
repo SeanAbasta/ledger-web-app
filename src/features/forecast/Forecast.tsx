@@ -8,6 +8,7 @@ import { activeSalaryRule, salaryFor, setRepeat, setSalary } from "../../data/in
 import { formatMinor, parseMinor } from "../../data/money";
 import { itemsToDate, loadWorld, type World } from "../../data/world";
 import { isCard } from "../../data/schema";
+import { BigAmount } from "../../ui/Amount";
 import { useLedger } from "../../ui/Ledger";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 import { MoneyInput } from "../../ui/MoneyInput";
@@ -89,13 +90,13 @@ export function Forecast() {
   return (
     <>
       <div className={`grid ${owed?.net ? "g3" : "g2"}`}>
-        <div className="card stat"><div className="mute">Balance today</div><div className="big">{formatMinor(start, base)}</div>
+        <div className="card stat"><div className="mute">Balance today</div><BigAmount minor={start} currency={base} />
           <div className="mute small">{!w.accounts.length ? "add accounts in Settings" : w.accounts.some(isCard) ? "bank accounts, cards not included" : "all accounts"}{skipped ? ` · ${skipped} left out (no rate)` : ""}</div></div>
         {!!owed?.net && (
-          <div className="card stat"><div className="mute">{owed.net > 0 ? "Owed to you" : "You owe"}</div><div className="big">{formatMinor(Math.abs(owed.net), base)}</div>
+          <div className="card stat"><div className="mute">{owed.net > 0 ? "Owed to you" : "You owe"}</div><BigAmount minor={Math.abs(owed.net)} currency={base} />
             <div className="mute small">net, {owed.net > 0 ? "expected back" : "to pay"} this month</div></div>
         )}
-        <div className="card stat"><div className="mute">In 12 months</div><div className="big">{formatMinor(f.months[11]?.end ?? start, base)}</div>
+        <div className="card stat"><div className="mute">In 12 months</div><BigAmount minor={f.months[11]?.end ?? start} currency={base} />
           <div className="mute small">{f.basis ? `spending averaged over ${f.basis} ${f.basis === 1 ? "month" : "months"}` : "no spending history yet"}</div></div>
       </div>
 

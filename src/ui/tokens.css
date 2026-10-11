@@ -1,22 +1,27 @@
+/* Apple's grouped look: a plain grey (light) or true black (dark) background, cards one step lighter,
+   a very faint blue glow at the top only. Glass is for bars that content scrolls under. */
 :root {
-  --bg: #eef0f5;
+  --bg: #f2f2f7;
   --ink: #1d1d1f;
   --mute: #6e6e73;
-  --line: rgba(0, 0, 0, 0.08);
+  --line: rgba(60, 60, 67, 0.12);
   --accent: #0a84ff;
   --accent-ink: #0a84ff; /* accent as text */
   --good: #2fb457;
+  --good-ink: #248a3d; /* green as text, readable on white */
   --warn: #ff9f0a;
   --glass: rgba(255, 255, 255, 0.62);
   --glass-line: rgba(255, 255, 255, 0.85);
   --glass-hi: rgba(255, 255, 255, 0.9);
   --shadow: 0 10px 30px rgba(30, 40, 70, 0.1);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --glow: rgba(10, 132, 255, 0.13);
   --surface: #fff;
   --seg-on: #fff;
   --fill: rgba(0, 0, 0, 0.05);
   --fill-2: rgba(0, 0, 0, 0.06);
   --fill-3: rgba(0, 0, 0, 0.15);
-  --scrim: rgba(240, 243, 250, 0.55);
+  --scrim: rgba(242, 242, 247, 0.55);
   --choice: rgba(255, 255, 255, 0.8);
   --ok: #1d8a40;
   --off: #555;
@@ -26,19 +31,46 @@
   --track: rgba(0, 0, 0, 0.05);
   --c5: #c7c7cc;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  /* Big figures: SF Pro Rounded where the system has it (Safari), else the normal font. */
+  --rounded: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  /* Type scale. Use these, not one-off sizes. */
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-base: 15px;
+  --fs-lg: 17px;
+  --fs-xl: 22px;
+  --fs-2xl: 28px;
+  --fs-3xl: 34px;
+  /* Spacing, on an 8 px rhythm (4 for tight spots). */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --radius-card: 18px;
+  --gutter: 24px;
+  /* Width of the content column on big screens; lists read better narrower. */
+  --content-max: 1120px;
+  --reading-max: 760px;
   color-scheme: light;
 }
-/* Dark is opt-in (Settings, Appearance). public/theme.js sets data-theme before first paint. */
+/* Dark is opt-in (Settings, Appearance). public/theme.js sets data-theme before first paint.
+   True black background; cards and sheets are lighter greys, so depth comes from the surfaces. */
 :root[data-theme="dark"] {
-  --bg: #0e0f12;
+  --bg: #000;
   --ink: #f5f5f7;
-  --mute: #98989d;
-  --line: rgba(255, 255, 255, 0.1);
+  --mute: #8e8e93;
+  --line: rgba(84, 84, 88, 0.45);
   --accent-ink: #4da3ff;
+  --good-ink: #30d158;
   --glass: rgba(44, 44, 46, 0.6);
   --glass-line: rgba(255, 255, 255, 0.12);
   --glass-hi: rgba(255, 255, 255, 0.08);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  --card-shadow: none;
+  --glow: rgba(10, 132, 255, 0.2);
   --surface: #1c1c1e;
   --seg-on: #48484a;
   --fill: rgba(255, 255, 255, 0.08);
@@ -55,6 +87,7 @@
   --c5: #636366;
   color-scheme: dark;
 }
+@media (max-width: 700px) { :root { --gutter: 16px; } }
 * { box-sizing: border-box; }
 /* No double-tap zoom, and no font inflation when the phone turns. */
 html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -62,10 +95,24 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 400 14px/1.4 var(--font);
+  font: 400 var(--fs-base)/1.4 var(--font);
+  /* after the font shorthand, which would reset it: digits line up in columns and totals do not jiggle */
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
 }
-.win { display: grid; grid-template-columns: 180px 1fr; min-height: 100vh; }
+/* The faint glow at the top. It scrolls away with the page (iOS ignores fixed backgrounds anyway). */
+body::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 520px;
+  background: radial-gradient(140% 100% at 50% -22%, var(--glow), transparent 62%);
+  pointer-events: none;
+  z-index: -1;
+}
+.win { display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 100vh; }
 .side {
   background: var(--glass);
   backdrop-filter: blur(24px) saturate(1.6);
@@ -76,7 +123,7 @@ body {
   flex-direction: column;
   gap: 2px;
 }
-.brand { font-weight: 600; font-size: 15px; padding: 4px 10px 14px; }
+.brand { font-weight: 600; font-size: var(--fs-base); padding: 4px 10px 14px; }
 .side button {
   all: unset;
   padding: 7px 10px;
@@ -84,22 +131,27 @@ body {
   cursor: pointer;
 }
 .side button.on { background: rgba(10, 132, 255, 0.14); color: var(--accent-ink); font-weight: 500; }
+/* Big screens: the page content stays in a centred column (--col), the background fills the rest.
+   The top bar and the banner span the width but line their contents up with that column. */
+main { --col: var(--content-max); }
+main.reading { --col: var(--reading-max); }
 .bar {
   height: 48px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 18px;
+  padding: 0 max(var(--gutter), calc((100% - var(--col)) / 2));
   background: var(--glass);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-bottom: 1px solid var(--glass-line);
 }
-.bar h1 { font-size: 15px; font-weight: 600; margin: 0; }
-.body { padding: 20px 24px; }
+.bar h1 { font-size: var(--fs-base); font-weight: 600; margin: 0; }
+.body { padding: var(--sp-5) var(--gutter); }
+.win .body > * { max-width: var(--col); margin-inline: auto; } /* .win: outranks fieldset.plain's margin: 0 */
 .mute { color: var(--mute); }
 .pill {
-  font-size: 12px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   padding: 4px 10px;
   border-radius: 999px;
@@ -123,7 +175,7 @@ input, select {
 input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 /* iPhone zooms into any field with text under 16 px when it is tapped, so phones get 16 px fields. */
 @media (max-width: 700px) { input, select, textarea { font-size: 16px; } }
-.small { font-size: 12px; }
+.small { font-size: var(--fs-sm); }
 .err { color: var(--err); margin: 8px 0 0; }
 .empty { text-align: center; margin-top: 48px; }
 .glasscard {
@@ -136,20 +188,20 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 }
 .addcard { max-width: 460px; margin: 0 auto; padding: 22px; }
 .main, main { min-width: 0; }
-.field { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.field { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 1px solid var(--line); }
 .field > b { font-weight: 500; }
 .field > b .sub { display: block; font-weight: 400; }
 .field input, .field select { text-align: right; max-width: 60%; }
 .amt { display: flex; justify-content: center; gap: 8px; align-items: center; margin-bottom: 8px; }
-.amt input { font-size: 30px; font-weight: 600; flex: 1; min-width: 0; max-width: 300px; text-align: center; background: none; }
+.amt input { font-size: var(--fs-2xl); font-weight: 600; flex: 1; min-width: 0; max-width: 300px; text-align: center; background: none; }
 .amt select { flex: none; }
-@media (max-width: 480px) { .amt input { font-size: 22px; } }
-.actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+@media (max-width: 480px) { .amt input { font-size: var(--fs-xl); } }
+.actions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-3); }
 .btn { background: var(--accent); color: #fff; border: 0; font-weight: 500; padding: 8px 18px; border-radius: 999px; cursor: pointer; }
 .btn.ghost { background: var(--fill-2); color: var(--ink); }
 .btn.danger { color: var(--err); }
 .seg { display: inline-flex; background: var(--fill-2); border-radius: 9px; padding: 2px; }
-.seg button { all: unset; padding: 4px 12px; border-radius: 7px; font-size: 13px; font-weight: 500; color: var(--mute); cursor: pointer; white-space: nowrap; }
+.seg button { all: unset; padding: 4px 12px; border-radius: 7px; font-size: var(--fs-md); font-weight: 500; color: var(--mute); cursor: pointer; white-space: nowrap; }
 @media (max-width: 400px) { .seg button { padding: 4px 9px; } }
 /* A segmented control too wide for its row (split Mode on small phones) moves to its own line, right aligned. */
 .field:has(> .seg) { flex-wrap: wrap; row-gap: 6px; }
@@ -159,26 +211,26 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .toggle i { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: left 0.15s; }
 .toggle.on { background: var(--good); }
 .toggle.on i { left: 20px; }
-.toolrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.toolrow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
 .nav { display: inline-flex; align-items: center; gap: 10px; color: var(--mute); }
 .nav button { all: unset; cursor: pointer; font-size: 18px; padding: 0 6px; }
 .nav button.title { font-size: inherit; padding: 0; }
-.nav button.today { font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 999px; background: rgba(10, 132, 255, 0.14); color: var(--accent-ink); }
+.nav button.today { font-size: var(--fs-sm); font-weight: 600; padding: 4px 11px; border-radius: 999px; background: rgba(10, 132, 255, 0.14); color: var(--accent-ink); }
 .nav button:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); border-radius: 6px; }
 /* The pill keeps its space while hidden, so the arrows never move under the pointer when it appears. */
 .nav button.today.off { visibility: hidden; }
 .search { width: 150px; }
-.grp { font-size: 12px; font-weight: 600; color: var(--mute); text-transform: uppercase; letter-spacing: 0.04em; margin: 18px 0 6px; display: flex; justify-content: space-between; }
-.grp .r { text-transform: none; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 2px 16px; }
-.row { all: unset; box-sizing: border-box; width: 100%; display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.grp { font-size: var(--fs-md); font-weight: 600; color: var(--ink); margin: var(--sp-5) 0 var(--sp-2); display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); }
+.grp .r { color: var(--mute); font-weight: 500; }
+.card { background: var(--surface); border-radius: var(--radius-card); box-shadow: var(--card-shadow); padding: 2px var(--sp-4); }
+.row { all: unset; box-sizing: border-box; width: 100%; display: flex; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) 0; border-bottom: 1px solid var(--line); cursor: pointer; }
 .row:last-child { border-bottom: 0; }
 /* The last setting in a card draws no divider, or it looks like a row is cut off below it. */
 .card > .field:last-child { border-bottom: 0; }
-.tag { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--fill-2); color: var(--mute); margin-left: 6px; white-space: nowrap; display: inline-block; }
+.tag { font-size: var(--fs-xs); padding: 2px 7px; border-radius: 6px; background: var(--fill-2); color: var(--mute); margin-left: 6px; white-space: nowrap; display: inline-block; }
 .scrim { position: fixed; inset: 0; background: var(--scrim); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 5; padding: 16px; }
 .sheet { width: 440px; max-width: 100%; max-height: 90vh; overflow: auto; padding: 22px; }
-.sheet h3 { margin: 0 0 8px; font-size: 17px; }
+.sheet h3 { margin: 0 0 var(--sp-2); font-size: var(--fs-lg); }
 /* Sheets slide in, and slide away when dismissed (150 to 250 ms). Phones get a bottom sheet with a
    drag handle. Reduce Motion: fade only. Transforms and opacity only, so nothing reflows. */
 .drawer { animation: fade-in 200ms ease-out; transition: opacity 200ms ease-in; }
@@ -222,11 +274,14 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 }
 
 /* dashboard */
-.grid { display: grid; gap: 14px; margin-top: 14px; }
+.grid { display: grid; gap: var(--sp-3); margin-top: var(--sp-3); }
 .g3 { grid-template-columns: repeat(3, 1fr); }
 .g2 { grid-template-columns: 1fr 1fr; }
-.stat, .pad { padding: 16px; }
-.big { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 2px 0; }
+.stat, .pad { padding: var(--sp-4); }
+/* Big figures: rounded digits, the currency sign and the cents smaller and lighter (BigAmount). */
+.big { font-family: var(--rounded); font-size: var(--fs-2xl); font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; margin: 2px 0; white-space: nowrap; }
+.big .cur { font-size: 0.62em; font-weight: 600; color: var(--mute); margin-right: 1px; }
+.big .cents { font-size: 0.6em; font-weight: 600; color: var(--mute); }
 .donut { display: flex; justify-content: center; margin: 8px 0; }
 .legend { list-style: none; margin: 0; padding: 0; }
 .legend li { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
@@ -245,20 +300,20 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .row.sel .who b { color: var(--accent-ink); }
 .who { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .acts { display: flex; gap: 6px; }
-.btn.sm { padding: 5px 12px; font-size: 12px; white-space: nowrap; }
+.btn.sm { padding: 5px 12px; font-size: var(--fs-sm); white-space: nowrap; }
 /* A setting's buttons wrap as a group on small phones instead of breaking words ("Re-pull"). */
 .field .acts { flex-wrap: wrap; justify-content: flex-end; }
 /* card tile: installment holds, and the Pay sheet's amount choices */
-.row.hold { color: var(--mute); font-size: 13px; }
+.row.hold { color: var(--mute); font-size: var(--fs-md); }
 .row.hold.sub { padding-left: 12px; }
 .choices { display: flex; gap: 6px; margin: 4px 0 2px; }
-.choice { all: unset; box-sizing: border-box; flex: 1; min-width: 0; text-align: center; padding: 7px 8px; border-radius: 12px; background: var(--fill); border: 1px solid var(--line); cursor: pointer; font-size: 13px; font-weight: 500; }
-.choice small { display: block; font-size: 11px; font-weight: 400; color: var(--mute); overflow-wrap: anywhere; }
+.choice { all: unset; box-sizing: border-box; flex: 1; min-width: 0; text-align: center; padding: 7px 8px; border-radius: 12px; background: var(--fill); border: 1px solid var(--line); cursor: pointer; font-size: var(--fs-md); font-weight: 500; }
+.choice small { display: block; font-size: var(--fs-xs); font-weight: 400; color: var(--mute); overflow-wrap: anywhere; }
 .choice.on { border-color: var(--accent); background: rgba(10, 132, 255, 0.1); color: var(--accent-ink); }
 .choice.on small { color: var(--accent-ink); }
 .choice:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .btn:disabled { opacity: 0.4; cursor: default; }
-.pos { color: var(--good); }
+.pos { color: var(--good-ink); }
 .snap { width: 100%; border-radius: 12px; display: block; }
 
 /* settings, forecast */
@@ -286,7 +341,7 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .chips.editing { gap: 10px; }
 .chips.editing .chip { padding: 0 0 0 12px; }
 .chip button { all: unset; cursor: pointer; color: var(--mute); width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
-.grp button.link { all: unset; cursor: pointer; color: var(--accent-ink); font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.grp button.link { all: unset; cursor: pointer; color: var(--accent-ink); font-size: var(--fs-md); font-weight: 500; letter-spacing: 0; text-transform: none; }
 .grp button.link:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); border-radius: 6px; }
 fieldset:disabled .grp button.link { opacity: 0.5; cursor: default; }
 .line { stroke: var(--c0); }
@@ -294,23 +349,23 @@ fieldset:disabled .grp button.link { opacity: 0.5; cursor: default; }
 .frow { display: grid; grid-template-columns: 1fr 1.3fr 1fr 1fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); text-align: right; }
 .frow:last-child { border-bottom: 0; }
 .frow span:first-child { text-align: left; }
-.frow.head { color: var(--mute); font-size: 12px; }
+.frow.head { color: var(--mute); font-size: var(--fs-sm); }
 .tag.warn { background: rgba(255, 159, 10, 0.18); color: var(--pend); margin: 0; }
-.grid.g2 + .grid.g2, .g2 + .small { margin-top: 14px; }
+.grid.g2 + .grid.g2, .g2 + .small { margin-top: var(--sp-3); }
 
 /* sync */
 .pill { border: 0; cursor: pointer; font-family: inherit; }
 fieldset.plain { border: 0; margin: 0; padding: 0; min-width: 0; }
 fieldset.plain:disabled { opacity: 0.55; }
-.banner { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 18px; background: rgba(255, 159, 10, 0.15); color: var(--banner); font-size: 13px; }
+.banner { display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap; padding: var(--sp-2) max(var(--gutter), calc((100% - var(--col)) / 2)); background: rgba(255, 159, 10, 0.15); color: var(--banner); font-size: var(--fs-md); }
 .center { text-align: center; }
 .check { width: 44px; height: 44px; border-radius: 50%; background: rgba(47, 180, 87, 0.15); color: var(--good); display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 10px; }
 .spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid rgba(10, 132, 255, 0.2); border-top-color: var(--accent); margin: 0 auto 12px; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .choice { display: block; width: 100%; padding: 10px; border-radius: 12px; background: var(--choice); border: 1px solid var(--line); margin-bottom: 8px; font-weight: 500; cursor: pointer; }
 .choice small { display: block; color: var(--mute); font-weight: 400; }
-.note { font-size: 12px; color: var(--mute); text-align: left; background: rgba(255, 159, 10, 0.12); border-radius: 10px; padding: 8px 10px; margin: 12px 0; }
-details { margin: 8px 0; font-size: 13px; color: var(--mute); }
+.note { font-size: var(--fs-sm); color: var(--mute); text-align: left; background: rgba(255, 159, 10, 0.12); border-radius: 10px; padding: 8px 10px; margin: 12px 0; }
+details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 .steps { margin: 6px 0 0; padding-left: 18px; }
 .steps li { margin: 3px 0; }
 .sheet .field input[type="password"], .sheet .field input[type="date"] { max-width: 60%; }
@@ -323,7 +378,7 @@ details { margin: 8px 0; font-size: 13px; color: var(--mute); }
 .row:not(.static) { align-items: center; }
 .row:not(.static)::after { content: "›"; color: var(--mute); opacity: 0.6; font-size: 18px; line-height: 1; }
 /* A row that edits a value in place (the card's due date) says "Change"; › means it opens a page. */
-.row.edit::after { content: "Change"; color: var(--accent-ink); opacity: 1; font-size: 13px; font-weight: 500; line-height: inherit; }
+.row.edit::after { content: "Change"; color: var(--accent-ink); opacity: 1; font-size: var(--fs-md); font-weight: 500; line-height: inherit; }
 .hint { margin: 10px 0 0; }
 .row:not(.static) > :first-child { flex: 1; min-width: 0; }
 .owedline { display: block; }
@@ -335,15 +390,15 @@ details { margin: 8px 0; font-size: 13px; color: var(--mute); }
 .cardhead:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .cardhead .chev { float: right; color: var(--mute); }
 /* Settings sub-page title, same size as the per-card view's */
-.ptitle { font-size: 22px; font-weight: 600; margin: 14px 0 0; }
+.ptitle { font-size: var(--fs-xl); font-weight: 600; margin: var(--sp-3) 0 0; }
 .ptitle + fieldset > .card:first-child { margin-top: 14px; }
-.cardview .cvtitle { font-size: 22px; font-weight: 600; margin: 14px 0 10px; }
+.cardview .cvtitle { font-size: var(--fs-xl); font-weight: 600; margin: var(--sp-3) 0 var(--sp-2); }
 .cardview .seg { margin-bottom: 12px; }
 .cardview .card { margin-top: 10px; }
 .row .sub { display: block; }
 
 /* Reconcile results */
-.recon { margin-top: 14px; display: grid; gap: 10px; }
+.recon { margin-top: var(--sp-3); display: grid; gap: var(--sp-2); }
 .recon-item { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
 .recon-item p { margin: 4px 0; }
 .recon-item .recon-head { margin: 0; }

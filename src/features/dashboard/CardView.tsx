@@ -4,6 +4,7 @@ import type { LedgerItem } from "../../data/rules";
 import { labelShort } from "../../data/dates";
 import { formatMinor } from "../../data/money";
 import type { Account } from "../../data/schema";
+import { BigAmount } from "../../ui/Amount";
 import { Segmented } from "../../ui/Segmented";
 import { ReconcileSheet } from "./ReconcileSheet";
 
@@ -56,7 +57,7 @@ export function CardView({ card, st, bd, banks, items, accounts, onOpenLedger, o
       {tab === "Statement" && (
         <>
           <p className="mute">{st.statement || bd.statement.length ? `Statement of ${labelShort(st.cutoff)} · due ${labelShort(st.due)}` : `No statement on ${labelShort(st.cutoff)}`}</p>
-          <div className="big">{fmt(st.statement)}</div>
+          <BigAmount minor={st.statement} currency={card.currency} />
           {bd.statement.length > 0 ? (
             <div className="card">{bd.statement.map(line)}</div>
           ) : (
@@ -78,7 +79,7 @@ export function CardView({ card, st, bd, banks, items, accounts, onOpenLedger, o
       {tab === "Unbilled" && (
         <>
           <p className="mute">Since {labelShort(st.cutoff)}, on the next statement</p>
-          <div className="big">{fmt(st.unbilled)}</div>
+          <BigAmount minor={st.unbilled} currency={card.currency} />
           {bd.unbilled.length > 0 ? (
             <div className="card">{bd.unbilled.map(line)}</div>
           ) : (
@@ -90,7 +91,7 @@ export function CardView({ card, st, bd, banks, items, accounts, onOpenLedger, o
       {tab === "Plans" && (
         <>
           <p className="mute">Holding the limit</p>
-          <div className="big">{fmt(st.futureInstallments)}</div>
+          <BigAmount minor={st.futureInstallments} currency={card.currency} />
           {st.holds.length > 0 ? (
             <div className="card">
               {st.holds.map((h) => (

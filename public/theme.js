@@ -16,7 +16,7 @@
     var dark = p === "dark" || (p === "auto" && !!mq && mq.matches);
     document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
     var m = document.querySelector('meta[name="theme-color"]');
-    if (m) m.setAttribute("content", dark ? "#0e0f12" : "#eef0f5");
+    if (m) m.setAttribute("content", dark ? "#000000" : "#f2f2f7");
   }
   apply();
   if (mq && mq.addEventListener) mq.addEventListener("change", apply); // "auto" follows the system live

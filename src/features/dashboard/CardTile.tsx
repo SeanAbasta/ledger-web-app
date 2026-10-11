@@ -6,6 +6,7 @@ import { labelShort, today } from "../../data/dates";
 import { addEntry } from "../../data/months";
 import { formatMinor, parseMinor } from "../../data/money";
 import type { Account, Defaults } from "../../data/schema";
+import { BigAmount } from "../../ui/Amount";
 import { useLedger } from "../../ui/Ledger";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 import { MoneyInput } from "../../ui/MoneyInput";
@@ -80,7 +81,7 @@ export function CardTile({ card, st, banks, defaultBank, defaults, onOpen }: { c
     <div className="card pad">
       <button className="cardhead" title="See what makes up these numbers" onClick={onOpen}>
         <div className="mute">{card.name}<span className="chev">›</span></div>
-        <div className="big">{st.remaining ? fmt(st.remaining) : st.paid ? "Paid" : "Nothing due"}</div>
+        {st.remaining ? <BigAmount minor={st.remaining} currency={cur} /> : <BigAmount currency={cur} word={st.paid ? "Paid" : "Nothing due"} />}
         <div className="mute small">
           {st.statement ? `statement of ${labelShort(st.cutoff)}${st.paid ? `, ${fmt(st.statement)}` : ""}` : `no statement on ${labelShort(st.cutoff)}`}
         </div>

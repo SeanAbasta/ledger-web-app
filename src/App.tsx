@@ -18,6 +18,9 @@ export type Tab = (typeof NAV)[number];
 /** The screens that are all about editing are locked as a whole while offline and read-only. */
 const EDIT_TABS: Tab[] = ["Add", "Forecast"]; // Settings locks its own edit controls so Export still works offline
 
+/** Lists read better in a narrower column on big screens; Dashboard and Forecast use the full one. */
+const READING_TABS: Tab[] = ["Add", "Ledger", "Splits", "Settings"];
+
 function Screen({ tab, go, setup, focusPerson, openPerson, saved, onSaved, focusCard, openCard }: { tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; focusCard?: string; openCard: (id: string) => void }) {
   if (tab === "Add") return <div className="glasscard addcard"><AddForm onDone={(s) => { onSaved(s); go("Ledger"); }} /></div>;
   if (tab === "Ledger") return <Ledger key={saved?.date ?? ""} initialDate={saved?.date} notice={saved?.message} />;
@@ -47,7 +50,7 @@ function Shell() {
           <button key={n} className={n === tab ? "on" : ""} onClick={() => { setFocusPerson(undefined); setSaved(undefined); setFocusCard(undefined); setTab(n); }}>{n}</button>
         ))}
       </nav>
-      <main>
+      <main className={READING_TABS.includes(tab) ? "reading" : undefined}>
         <header className="bar">
           <h1>{tab}</h1>
           <Pill status={status} onClick={() => setSheet("sync")} />

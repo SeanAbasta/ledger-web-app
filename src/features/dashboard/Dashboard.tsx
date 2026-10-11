@@ -14,6 +14,7 @@ import { formatMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem } from "../../data/rules";
 import { myShare } from "../../data/splits";
 import { pctChange, summarize, topCategories, type Summary } from "../../data/summary";
+import { BigAmount } from "../../ui/Amount";
 import { useLedger } from "../../ui/Ledger";
 import { useTodayKey } from "../../ui/useTodayKey";
 import { CardTile } from "./CardTile";
@@ -155,11 +156,11 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
       {/* Keyed on the loaded month: the cards swap and slide in only once the new month's numbers are ready. */}
       <div key={from} className={v.dir === 1 ? "period next" : v.dir === -1 ? "period prev" : "period"}>
       <div className="grid g3">
-        <div className="card stat"><div className="mute">Spent</div><div className="big">{formatMinor(cur.total, base)}</div>
+        <div className="card stat"><div className="mute">Spent</div><BigAmount minor={cur.total} currency={base} />
           <div className="mute small">{change === null ? "No earlier data" : change === 0 ? "Same as last month" : `${Math.abs(change)}% ${change < 0 ? "less" : "more"} than last month`}</div></div>
-        <div className="card stat"><div className="mute">Still due</div><div className="big">{formatMinor(stillDue, base)}</div>
+        <div className="card stat"><div className="mute">Still due</div><BigAmount minor={stillDue} currency={base} />
           <div className="mute small">{isCurrent ? "rest of this month" : "current month only"}</div></div>
-        <div className="card stat"><div className="mute">Last month</div><div className="big">{formatMinor(prevTotal, base)}</div>
+        <div className="card stat"><div className="mute">Last month</div><BigAmount minor={prevTotal} currency={base} />
           <div className="mute small">{isCurrent ? "same days" : "full month"}</div></div>
       </div>
 
@@ -201,7 +202,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
         {showOwed && (
           <div className="card pad">
             <div className="mute">{owed.net >= 0 ? "Owed to you" : "You owe"}</div>
-            <div className="big">{formatMinor(Math.abs(owed.net), base)}</div>
+            <BigAmount minor={Math.abs(owed.net)} currency={base} />
             <div className="mute small">
               {owed.owedToMe && owed.iOwe ? `${formatMinor(owed.owedToMe, base)} owed to you, ${formatMinor(owed.iOwe, base)} you owe` : "net"}
             </div>
@@ -218,7 +219,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
           </div>
         )}
         {next && (
-          <div className="card stat"><div className="mute">End of {labelMonth(next.month)}</div><div className="big">{formatMinor(next.end, base)}</div><div className="mute small">{owed.net ? "forecast, after everyone settles up" : "forecast"}</div></div>
+          <div className="card stat"><div className="mute">End of {labelMonth(next.month)}</div><BigAmount minor={next.end} currency={base} /><div className="mute small">{owed.net ? "forecast, after everyone settles up" : "forecast"}</div></div>
         )}
       </div>
       {cur.unconverted > 0 && <p className="mute small">{cur.unconverted} foreign {cur.unconverted === 1 ? "amount has" : "amounts have"} no rate and {cur.unconverted === 1 ? "is" : "are"} left out.</p>}

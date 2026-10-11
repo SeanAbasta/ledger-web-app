@@ -20,14 +20,32 @@ export function parseMinor(input: string, currency = "PHP"): number | null {
 
 const SYMBOL: Record<string, string> = { PHP: "₱", USD: "$", EUR: "€", JPY: "¥", GBP: "£", SGD: "S$" };
 
-export function formatMinor(minor: number, currency = "PHP"): string {
+/** The pieces of a formatted amount, so big figures can draw the symbol and the cents smaller. */
+export interface MoneyParts {
+  sign: "" | "-";
+  symbol: string;
+  /** Whole units with thousands separators. */
+  whole: string;
+  /** "" for currencies without minor units, else "." and the minor digits. */
+  cents: string;
+}
+
+export function moneyParts(minor: number, currency = "PHP"): MoneyParts {
   const digits = minorDigits(currency);
-  const sign = minor < 0 ? "-" : "";
   const abs = Math.abs(minor);
   const whole = Math.trunc(abs / 10 ** digits);
   const frac = digits ? String(abs % 10 ** digits).padStart(digits, "0") : "";
-  const w = whole.toLocaleString("en-US");
-  return `${sign}${SYMBOL[currency] ?? currency + " "}${w}${digits ? "." + frac : ""}`;
+  return {
+    sign: minor < 0 ? "-" : "",
+    symbol: SYMBOL[currency] ?? currency + " ",
+    whole: whole.toLocaleString("en-US"),
+    cents: digits ? "." + frac : "",
+  };
+}
+
+export function formatMinor(minor: number, currency = "PHP"): string {
+  const p = moneyParts(minor, currency);
+  return `${p.sign}${p.symbol}${p.whole}${p.cents}`;
 }
 
 /**
