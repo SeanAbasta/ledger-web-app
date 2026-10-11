@@ -56,6 +56,8 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+/* No double-tap zoom, and no font inflation when the phone turns. */
+html { touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
   margin: 0;
   background: var(--bg);
@@ -119,6 +121,8 @@ input, select {
   border: 0; border-radius: 8px; padding: 6px 10px; min-width: 0;
 }
 input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
+/* iPhone zooms into any field with text under 16 px when it is tapped, so phones get 16 px fields. */
+@media (max-width: 700px) { input, select, textarea { font-size: 16px; } }
 .small { font-size: 12px; }
 .err { color: var(--err); margin: 8px 0 0; }
 .empty { text-align: center; margin-top: 48px; }
