@@ -10,7 +10,10 @@
   --good: #2fb457;
   --good-ink: #248a3d; /* green as text, readable on white */
   --warn: #ff9f0a;
-  --glass: rgba(255, 255, 255, 0.62);
+  /* Glass must read on its own: some browsers draw these colours but skip the blur behind them (seen on
+     Windows, where a 60% sheet showed the cards behind it sharply). So sheets and bars are mostly
+     opaque, and the blur only softens what little shows through. */
+  --glass: rgba(255, 255, 255, 0.96);
   --glass-line: rgba(255, 255, 255, 0.85);
   --glass-hi: rgba(255, 255, 255, 0.9);
   --shadow: 0 10px 30px rgba(30, 40, 70, 0.1);
@@ -54,10 +57,10 @@
   --content-max: 1120px;
   --reading-max: 760px;
   /* Bars that content scrolls under: the page colour, slightly see-through, blurred behind. */
-  --bar-bg: rgba(242, 242, 247, 0.8);
+  --bar-bg: rgba(242, 242, 247, 0.94);
   --bar-h: 52px;
   --side-bg: rgba(255, 255, 255, 0.55);
-  --tab-bg: rgba(255, 255, 255, 0.8);
+  --tab-bg: rgba(255, 255, 255, 0.94);
   --tab-shadow: 0 8px 30px rgba(0, 0, 0, 0.14);
   --tabbar-h: 62px; /* phone tab bar, for the space kept free under the content */
   /* Stacking: pinned day headers < top bar < phone tab bar < sheets. */
@@ -79,15 +82,15 @@
   --line: rgba(84, 84, 88, 0.45);
   --accent-ink: #4da3ff;
   --good-ink: #30d158;
-  --glass: rgba(44, 44, 46, 0.6);
+  --glass: rgba(36, 36, 38, 0.96);
   --glass-line: rgba(255, 255, 255, 0.12);
   --glass-hi: rgba(255, 255, 255, 0.08);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   --card-shadow: none;
   --glow: rgba(10, 132, 255, 0.2);
-  --bar-bg: rgba(0, 0, 0, 0.72);
+  --bar-bg: rgba(0, 0, 0, 0.92);
   --side-bg: rgba(28, 28, 30, 0.55);
-  --tab-bg: rgba(36, 36, 38, 0.8);
+  --tab-bg: rgba(36, 36, 38, 0.94);
   --tab-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
   --t-red: #ff453a; --t-orange: #ff9f0a; --t-yellow: #ffd60a; --t-green: #30d158; --t-mint: #63e6e2; --t-teal: #40c8e0; --t-cyan: #64d2ff;
   --t-blue: #0a84ff; --t-indigo: #5e5ce6; --t-purple: #bf5af2; --t-pink: #ff375f; --t-brown: #ac8e68; --t-gray: #8e8e93;
@@ -192,6 +195,7 @@ main.reading { --col: var(--reading-max); }
 @media (prefers-reduced-transparency: reduce) { .bar::before { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { @media (max-width: 700px) { .side::before { background: var(--surface); } } }
 @media (max-width: 700px) and (prefers-reduced-transparency: reduce) { .side::before { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+@media (prefers-reduced-transparency: reduce) { .glasscard { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .bar h1 { font-size: var(--fs-lg); font-weight: 600; color: var(--ink); margin: 0; }
 .body { padding: var(--sp-5) max(var(--gutter), env(safe-area-inset-right)) var(--sp-5) var(--gutter); }
 .win .body > * { max-width: var(--col); margin-inline: auto; } /* .win: outranks fieldset.plain's margin: 0 */
