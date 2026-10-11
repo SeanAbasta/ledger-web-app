@@ -70,7 +70,7 @@ export function cardMoves(card: Pick<Account, "id" | "currency" | "statementDay"
 /** One installment plan holding part of a card's limit: its payments still to come after today. */
 export interface CardHold {
   ruleId: string;
-  /** The plan's note ("iPhone 18 Pro Max"), else its category. */
+  /** The plan's note ("Laptop"), else its category. */
   name: string;
   amount: Minor;
   /** Payments still to come. */

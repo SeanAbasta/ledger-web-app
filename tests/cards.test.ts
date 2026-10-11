@@ -100,17 +100,17 @@ describe("Pay all and installment holds", () => {
     expect(ahead).toMatchObject({ remaining: 0, paid: true, unbilled: 0, creditLeft: card.limit! - ahead.futureInstallments });
   });
 
-  const macbook: Rule = { ...iphone, id: "M", note: "MacBook Air", amount: 5000 * P, total: 10000 * P, count: 2, start: "2026-11-25" };
+  const laptop: Rule = { ...iphone, id: "M", note: "Laptop", amount: 5000 * P, total: 10000 * P, count: 2, start: "2026-11-25" };
   const unnamed: Rule = { ...iphone, id: "U", note: undefined, category: "Travel", amount: 1000 * P, total: 3000 * P, count: 3, start: "2026-12-01" };
-  const streaming: Rule = { id: "S", type: "recurring", kind: "expense", amount: 500 * P, currency: "PHP", category: "Bills", note: "Google AI Plus", accountId: "C", frequency: "monthly", start: "2026-10-01", updatedAt: "x" };
+  const streaming: Rule = { id: "S", type: "recurring", kind: "expense", amount: 500 * P, currency: "PHP", category: "Bills", note: "Streaming", accountId: "C", frequency: "monthly", start: "2026-10-01", updatedAt: "x" };
   const elsewhere: Rule = { ...iphone, id: "E", note: "AirPods", accountId: "OTHER" };
-  const rules = [iphone, macbook, unnamed, streaming, elsewhere];
+  const rules = [iphone, laptop, unnamed, streaming, elsewhere];
 
   it("names each plan from its note (else its category), and the holds add up to the tile's total", () => {
     const { holds } = cardHolds(card, rules, "2026-11-15");
     expect(holds.map((h) => [h.name, h.amount, h.left])).toEqual([
       ["iPhone", 69000 * P, 23],
-      ["MacBook Air", 10000 * P, 2],
+      ["Laptop", 10000 * P, 2],
       ["Travel", 3000 * P, 3],
     ]);
     const st = cardStatus(card, ledgerItems(charges, rules, "0000-01-01", "2026-11-15"), rules, "2026-11-15");
@@ -118,7 +118,7 @@ describe("Pay all and installment holds", () => {
     expect(holds.reduce((n, h) => n + h.amount, 0)).toBe(st.futureInstallments);
   });
   it("a hold shrinks as payments are charged and goes when the plan ends; recurring payments never hold", () => {
-    expect(cardHolds(card, rules, "2026-11-25").holds.find((h) => h.name === "MacBook Air")).toMatchObject({ amount: 5000 * P, left: 1 });
+    expect(cardHolds(card, rules, "2026-11-25").holds.find((h) => h.name === "Laptop")).toMatchObject({ amount: 5000 * P, left: 1 });
     expect(cardHolds(card, rules, "2026-12-25").holds.map((h) => h.name)).toEqual(["iPhone", "Travel"]);
     expect(cardHolds(card, [streaming], "2026-11-15").holds).toEqual([]);
     expect(cardHolds({ id: "OTHER", currency: "PHP" }, rules, "2026-11-15").holds.map((h) => h.name)).toEqual(["AirPods"]);

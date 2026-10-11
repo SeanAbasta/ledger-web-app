@@ -58,8 +58,8 @@ describe("reconcile with the bank", () => {
     expect(c!.causes[0]).toEqual({ kind: "pending", amount: 300 * P });
   });
   it("nothing matching means an earlier balance, interest or a fee", () => {
-    const [c] = run({ available: 9666407 }); // like the Oct 9 case: 1,035.93 that Ledger did not know about
-    expect(c!.diff).toBe(-103593);
+    const [c] = run({ available: 9700000 }); // the bank shows 700 less credit than Ledger expects, and nothing explains it
+    expect(c!.diff).toBe(-70000);
     expect(c!.causes).toEqual([{ kind: "unknown" }]);
   });
 });

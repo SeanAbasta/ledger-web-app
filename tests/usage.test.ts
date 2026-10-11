@@ -11,32 +11,32 @@ const items = (entries: Entry[], rules: Rule[] = []) => ledgerItems(entries, rul
 
 describe("what refers to a person", () => {
   const entries = [
-    entry({ id: "a", split: { paidBy: "me", mode: "half", shares: [{ personId: "mom", amount: 500 }] } }),
-    entry({ id: "b", amount: 300, split: { paidBy: "mom", mode: "half", shares: [{ personId: "me", amount: 150 }] } }),
-    entry({ id: "c", kind: "settlement", amount: 100, personId: "mom", direction: "in" }),
-    entry({ id: "d", split: { paidBy: "me", mode: "half", shares: [{ personId: "mom", amount: 500 }] }, deleted: true }),
+    entry({ id: "a", split: { paidBy: "me", mode: "half", shares: [{ personId: "alex", amount: 500 }] } }),
+    entry({ id: "b", amount: 300, split: { paidBy: "alex", mode: "half", shares: [{ personId: "me", amount: 150 }] } }),
+    entry({ id: "c", kind: "settlement", amount: 100, personId: "alex", direction: "in" }),
+    entry({ id: "d", split: { paidBy: "me", mode: "half", shares: [{ personId: "alex", amount: 500 }] }, deleted: true }),
     entry({ id: "e", split: { paidBy: "me", mode: "half", shares: [{ personId: "jon", amount: 500 }] } }),
     entry({ id: "f" }),
   ];
   const rules = [
-    rule({ id: "r1", split: { paidBy: "me", mode: "they-owe", shares: [{ personId: "mom", amount: 500 }] } }),
-    rule({ id: "r2", split: { paidBy: "me", mode: "they-owe", shares: [{ personId: "mom", amount: 500 }] }, deleted: true }),
+    rule({ id: "r1", split: { paidBy: "me", mode: "they-owe", shares: [{ personId: "alex", amount: 500 }] } }),
+    rule({ id: "r2", split: { paidBy: "me", mode: "they-owe", shares: [{ personId: "alex", amount: 500 }] }, deleted: true }),
     rule({ id: "r3" }),
   ];
 
   it("counts live split entries, payer entries, settlements and plans", () => {
-    const u = personUsage("mom", entries, rules, items(entries));
+    const u = personUsage("alex", entries, rules, items(entries));
     expect(u.entries).toBe(3); // a, b, c; not the deleted one or Jon's
     expect(u.plans).toBe(1);
   });
   it("gives the balance per currency, positive when they owe me", () => {
-    expect(personUsage("mom", entries, [], items(entries)).owed).toEqual({ PHP: 500 - 150 - 100 });
+    expect(personUsage("alex", entries, [], items(entries)).owed).toEqual({ PHP: 500 - 150 - 100 });
   });
   it("is negative when I owe them, and empty when settled or unused", () => {
-    const owe = [entry({ id: "b", amount: 300, split: { paidBy: "mom", mode: "half", shares: [{ personId: "me", amount: 150 }] } })];
-    expect(personUsage("mom", owe, [], items(owe)).owed).toEqual({ PHP: -150 });
-    const settled = [entries[0]!, entry({ id: "s", kind: "settlement", amount: 500, personId: "mom", direction: "in" })];
-    expect(personUsage("mom", settled, [], items(settled)).owed).toEqual({});
+    const owe = [entry({ id: "b", amount: 300, split: { paidBy: "alex", mode: "half", shares: [{ personId: "me", amount: 150 }] } })];
+    expect(personUsage("alex", owe, [], items(owe)).owed).toEqual({ PHP: -150 });
+    const settled = [entries[0]!, entry({ id: "s", kind: "settlement", amount: 500, personId: "alex", direction: "in" })];
+    expect(personUsage("alex", settled, [], items(settled)).owed).toEqual({});
     expect(personUsage("nobody", entries, rules, items(entries))).toEqual({ entries: 0, plans: 0, owed: {} });
   });
 });

@@ -8,11 +8,11 @@ import { removedInSplit, splitForSave } from "../src/data/splits";
 
 let store: LedgerStore;
 let n = 0;
-let mom: Person;
+let alex: Person;
 let jon: Person;
 beforeEach(async () => {
   store = await LedgerStore.open(`removed-${n++}`);
-  mom = await upsert(store, "people", { name: "Mom" });
+  alex = await upsert(store, "people", { name: "Alex" });
   jon = await upsert(store, "people", { name: "Jon" });
 });
 
@@ -32,53 +32,53 @@ async function openAndSave(e: Entry, change: (f: ReturnType<typeof splitFormOf>)
 
 describe("editing a split with someone who was removed", () => {
   it("keeps the same split after opening and saving it unchanged (50/50)", async () => {
-    const e = await expense(100001, { paidBy: "me", mode: "half", shares: [{ personId: mom.id, amount: 33334 }, { personId: jon.id, amount: 33333 }] });
-    await remove(store, "people", mom.id);
+    const e = await expense(100001, { paidBy: "me", mode: "half", shares: [{ personId: alex.id, amount: 33334 }, { personId: jon.id, amount: 33333 }] });
+    await remove(store, "people", alex.id);
     const saved = await openAndSave(e);
     expect(saved.split).toEqual(e.split);
     expect(saved.note).toBe("Pizza night");
   });
 
   it("keeps a custom split and an I-owe split where the removed person paid", async () => {
-    const c = await expense(90000, { paidBy: "me", mode: "custom", shares: [{ personId: mom.id, amount: 50000 }, { personId: jon.id, amount: 10000 }] });
-    const o = await expense(30000, { paidBy: mom.id, mode: "i-owe", shares: [{ personId: "me", amount: 30000 }] });
-    await remove(store, "people", mom.id);
+    const c = await expense(90000, { paidBy: "me", mode: "custom", shares: [{ personId: alex.id, amount: 50000 }, { personId: jon.id, amount: 10000 }] });
+    const o = await expense(30000, { paidBy: alex.id, mode: "i-owe", shares: [{ personId: "me", amount: 30000 }] });
+    await remove(store, "people", alex.id);
     expect((await openAndSave(c)).split).toEqual(c.split);
     expect((await openAndSave(o)).split).toEqual(o.split);
   });
 
   it("names the removed person from the removed record, else 'Removed person'", async () => {
-    const split: Split = { paidBy: "me", mode: "they-owe", shares: [{ personId: mom.id, amount: 100 }, { personId: "GONE", amount: 100 }, { personId: jon.id, amount: 100 }] };
-    await remove(store, "people", mom.id);
+    const split: Split = { paidBy: "me", mode: "they-owe", shares: [{ personId: alex.id, amount: 100 }, { personId: "GONE", amount: 100 }, { personId: jon.id, amount: 100 }] };
+    await remove(store, "people", alex.id);
     const live = await list(store, "people");
-    expect(removedInSplit(split, live, await listAll(store, "people"))).toEqual([{ id: mom.id, name: "Mom" }, { id: "GONE", name: "Removed person" }]);
+    expect(removedInSplit(split, live, await listAll(store, "people"))).toEqual([{ id: alex.id, name: "Alex" }, { id: "GONE", name: "Removed person" }]);
     const f = splitFormOf(split, "PHP", live, await listAll(store, "people"));
     expect(f.names).toBe("Jon"); // only live people can be typed
-    expect(f.custom[keptKey(mom.id)]).toBe("1.00");
+    expect(f.custom[keptKey(alex.id)]).toBe("1.00");
   });
 
   it("changing the total recomputes the shares and the removed person stays in", async () => {
-    const e = await expense(100000, { paidBy: "me", mode: "half", shares: [{ personId: mom.id, amount: 33334 }, { personId: jon.id, amount: 33333 }] });
-    await remove(store, "people", mom.id);
+    const e = await expense(100000, { paidBy: "me", mode: "half", shares: [{ personId: alex.id, amount: 33334 }, { personId: jon.id, amount: 33333 }] });
+    await remove(store, "people", alex.id);
     const saved = await openAndSave(e, () => {}, 120000);
-    expect(saved.split!.shares).toEqual([{ personId: mom.id, amount: 40000 }, { personId: jon.id, amount: 40000 }]);
+    expect(saved.split!.shares).toEqual([{ personId: alex.id, amount: 40000 }, { personId: jon.id, amount: 40000 }]);
   });
 
   it("only the removed person's custom share changes when it is edited", async () => {
-    const e = await expense(90000, { paidBy: "me", mode: "custom", shares: [{ personId: mom.id, amount: 50000 }, { personId: jon.id, amount: 10000 }] });
-    await remove(store, "people", mom.id);
-    const saved = await openAndSave(e, (f) => { f.custom[keptKey(mom.id)] = "400"; });
-    expect(saved.split!.shares).toEqual([{ personId: mom.id, amount: 40000 }, { personId: jon.id, amount: 10000 }]);
+    const e = await expense(90000, { paidBy: "me", mode: "custom", shares: [{ personId: alex.id, amount: 50000 }, { personId: jon.id, amount: 10000 }] });
+    await remove(store, "people", alex.id);
+    const saved = await openAndSave(e, (f) => { f.custom[keptKey(alex.id)] = "400"; });
+    expect(saved.split!.shares).toEqual([{ personId: alex.id, amount: 40000 }, { personId: jon.id, amount: 10000 }]);
   });
 });
 
 describe("names in the Ledger", () => {
   it("names a removed person or account with (removed), and something with no record at all by the fallback", async () => {
     const bank = await upsert(store, "accounts", { name: "Old wallet", currency: "PHP", openingBalance: 0 });
-    await remove(store, "people", mom.id);
+    await remove(store, "people", alex.id);
     await remove(store, "accounts", bank.id);
     const people = await listAll(store, "people");
-    expect(nameOf(mom.id, people, "Removed person")).toBe("Mom (removed)");
+    expect(nameOf(alex.id, people, "Removed person")).toBe("Alex (removed)");
     expect(nameOf(jon.id, people, "Removed person")).toBe("Jon");
     expect(nameOf("GONE", people, "Removed person")).toBe("Removed person");
     expect(nameOf(bank.id, await listAll(store, "accounts"), "Removed account")).toBe("Old wallet (removed)");

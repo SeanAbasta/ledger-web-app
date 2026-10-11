@@ -8,7 +8,7 @@ import { mergeDocs } from "../src/sync/merge";
 import { CARD_COLORS, cardColor } from "../src/ui/cardColor";
 
 const card = (id: string, extra: Partial<Account> = {}): Account => ({ id, name: id, currency: "PHP", openingBalance: 0, type: "card", statementDay: 8, updatedAt: "2026-10-11T00:00:00.000Z", ...extra });
-const bank: Account = { id: "01A", name: "RCBC", currency: "PHP", openingBalance: 0, updatedAt: "2026-10-11T00:00:00.000Z" };
+const bank: Account = { id: "01A", name: "Bank A", currency: "PHP", openingBalance: 0, updatedAt: "2026-10-11T00:00:00.000Z" };
 
 let store: LedgerStore;
 let n = 0;
@@ -44,8 +44,8 @@ describe("card colours", () => {
     expect((merged.accounts as Account[])[0]!.color).toBe("teal");
 
     const saved = await upsert(store, "accounts", card("01B", { color: "orange" }));
-    await upsert(store, "accounts", { ...saved, name: "UB MC", limit: 5000000 }); // an older copy's Settings or due date edit
-    expect((await list(store, "accounts"))[0]).toMatchObject({ name: "UB MC", color: "orange" });
+    await upsert(store, "accounts", { ...saved, name: "Card A", limit: 5000000 }); // an older copy's Settings or due date edit
+    expect((await list(store, "accounts"))[0]).toMatchObject({ name: "Card A", color: "orange" });
 
     const other = await LedgerStore.open(`cc-${n++}`);
     await importBundle(other, await exportBundle(store));
