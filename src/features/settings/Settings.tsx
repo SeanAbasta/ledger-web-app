@@ -89,7 +89,12 @@ function CardRow({ a, base, onSave, onRemove }: { a: Account; base: string; onSa
   );
 }
 
-/** `focusCard` (from Reconcile, "Set as Owed at start") scrolls that card into view once loaded. */
+type Page = "accounts" | "people" | "general" | "sync";
+/** Settings opens on a short list of pages, each a group of the old long page. */
+const PAGES: [Page, string][] = [["accounts", "Accounts"], ["people", "People and categories"], ["general", "General"], ["sync", "Sync and backup"]];
+const THEME_LABEL: Record<Theme, string> = { light: "Light", dark: "Dark", auto: "Auto" };
+
+/** `focusCard` (from Reconcile, "Set as Owed at start") opens Accounts and scrolls that card into view once loaded. */
 export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCard?: string }) {
   const { store, rev, changed } = useLedger();
   const { config, status, engine, disconnect, readOnly } = useSync();
@@ -107,6 +112,7 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
   const [cat, setCat] = useState("");
   // Category chips show their ✕ only in Edit mode, so a stray tap cannot remove one.
   const [editCats, setEditCats] = useState(false);
+  const [page, setPage] = useState<Page | undefined>(focusCard ? "accounts" : undefined);
   const [person, setPerson] = useState("");
 
   useEffect(() => {
@@ -121,6 +127,7 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
     })();
   }, [store, rev]);
 
+  useEffect(() => { if (focusCard) setPage("accounts"); }, [focusCard]);
   useEffect(() => {
     if (focusCard && accounts.length) document.getElementById(`card-${focusCard}`)?.scrollIntoView({ block: "center" });
   }, [focusCard, accounts.length]);
@@ -200,132 +207,16 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
     setIncoming(undefined);
   }
 
-  return (
-    <div className="stack">
-      <div className="grp">Backup</div>
-      <div className="card">
-        <div className="field"><b>Export</b>
-          <span className="acts">
-            <button className="btn ghost sm" onClick={() => void exportJson()}>Backup file</button>
-            <button className="btn ghost sm" onClick={() => void exportCsv()}>Spreadsheet</button>
-          </span></div>
-        <fieldset className="plain" disabled={readOnly}>
-          <div className="field"><b>Import</b>
-            <label className="btn ghost sm filebtn">Choose file<input type="file" accept=".json,application/json" onChange={(e) => { void pickFile(e.target.files?.[0]); e.target.value = ""; }} /></label></div>
-        </fieldset>
-        <div className="field"><b>Last exported</b><span className="mute">{sinceText(lastExported)}</span></div>
-        {backupMsg && <p className="mute small" role="status">{backupMsg}</p>}
-      </div>
-
-      <fieldset className="plain" disabled={readOnly}>
-      <div className="grp">Sync</div>
-      <div className="card">
-        <div className="field"><b>Status</b><span className="mute">{pillOf(status).label}</span></div>
-        {config ? (
-          <>
-            <div className="field"><b>Data repo</b><span className="mute">{config.owner}/{config.repo}</span></div>
-            <div className="field"><b>Token</b><span className="mute">{tokenLine(daysLeft(config), config.tokenExpires)}</span></div>
-            <div className="field"><b>Connection</b>
-              <span className="acts">
-                <button className="btn ghost sm" onClick={onSetup}>Replace token</button>
-                <button className="btn ghost sm" onClick={() => setConfirm("pull")}>Re-pull</button>
-                <button className="btn ghost sm danger" onClick={() => setConfirm("remove")}>Remove</button>
-              </span></div>
-          </>
-        ) : (
-          <div className="field"><b>GitHub</b><button className="btn sm" onClick={onSetup}>Connect</button></div>
-        )}
-      </div>
-
-      <div className="grp">General</div>
-      <div className="card">
-        <label className="field"><b>Default currency</b>
-          <select value={s.defaultCurrency} onChange={(e) => void save({ defaultCurrency: e.target.value })}>
-            {[...new Set([...CURRENCIES, s.defaultCurrency])].map((c) => <option key={c}>{c}</option>)}
-          </select></label>
-        <div className="field"><b>Base currency</b><span className="mute">{s.baseCurrency}</span></div>
-        <div className="field"><b>Appearance</b>
-          <Segmented value={theme} options={THEMES} labels={{ light: "Light", dark: "Dark", auto: "Auto" }} onChange={(t) => { setThemeState(t); saveTheme(t); applyTheme(t); }} /></div>
-      </div>
-
-      <div className="grp">Bank accounts</div>
-      <div className="card pad">
-        {!accounts.some((a) => !isCard(a)) && <p className="mute">No bank accounts yet</p>}
-        {accounts.filter((a) => !isCard(a)).map((a) => (
-          <AccountRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency}
-            onSave={async (x) => { await upsert(store, "accounts", x); changed(); }}
-            onRemove={() => askRemoveAccount(a)} />
-        ))}
-        <button className="btn ghost sm" onClick={async () => { await upsert(store, "accounts", { name: "New account", currency: s.baseCurrency, openingBalance: 0 }); changed(); }}>Add account</button>
-      </div>
-
-      <div className="grp">Credit cards</div>
-      <div className="card pad">
-        {!accounts.some(isCard) && <p className="mute">No cards yet</p>}
-        {accounts.filter(isCard).map((a) => (
-          <CardRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency}
-            onSave={async (x) => { await upsert(store, "accounts", x); changed(); }}
-            onRemove={() => askRemoveAccount(a)} />
-        ))}
-        <button className="btn ghost sm" onClick={async () => { await upsert(store, "accounts", { name: "New card", currency: s.baseCurrency, openingBalance: 0, type: "card", statementDay: 15, dueDays: DEFAULT_DUE_DAYS }); changed(); }}>Add card</button>
-      </div>
-
-      <div className="grp">People</div>
-      <div className="card pad">
-        {people.map((p) => (
-          <div key={p.id} className="acct">
-            <input aria-label="Name" defaultValue={p.name} onBlur={async (e) => { const n = e.target.value.trim(); if (n && n !== p.name) { await upsert(store, "people", { ...p, name: n }); changed(); } }} />
-            <button className="x" aria-label={`Remove ${p.name}`} onClick={() => askRemovePerson(p)}>✕</button>
-          </div>
-        ))}
-        <form className="acct" onSubmit={async (e) => { e.preventDefault(); if (!person.trim()) return; await upsert(store, "people", { name: person.trim() }); setPerson(""); changed(); }}>
-          <input placeholder="Add person" value={person} onChange={(e) => setPerson(e.target.value)} />
-          <button className="btn ghost sm" type="submit">Add</button>
-        </form>
-      </div>
-
-      <div className="grp">Defaults</div>
-      <div className="card">
-        {accounts.length > 0 && (
-          <label className="field"><b>Expenses</b>
-            <select value={shown(s.defaults?.expense, accounts)} onChange={(e) => void saveDefault({ expense: e.target.value || undefined })}>
-              <option value="">Pick each time</option><AccountOptions accounts={accounts} />
-            </select></label>
-        )}
-        {banks.length > 0 && (
-          <>
-            <label className="field"><b>Income</b>
-              <select value={shown(s.defaults?.income, banks)} onChange={(e) => void saveDefault({ income: e.target.value || undefined })}>
-                <option value="">First bank account</option>{banks.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select></label>
-            <label className="field"><b>Card payments from</b>
-              <select value={shown(s.defaults?.cardPayment, banks)} onChange={(e) => void saveDefault({ cardPayment: e.target.value || undefined })}>
-                <option value="">Salary account</option>{banks.filter((a) => a.currency === s.baseCurrency).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select></label>
-          </>
-        )}
-        <label className="field"><b>Category</b>
-          <select value={s.defaults?.category && s.categories.includes(s.defaults.category) ? s.defaults.category : s.categories[0] ?? ""} onChange={(e) => void saveDefault({ category: e.target.value })}>
-            {s.categories.map((c) => <option key={c}>{c}</option>)}
-          </select></label>
-        <div className="field"><b>Use last used instead<span className="mute small sub">Overrides the defaults above, on this device</span></b>
-          <button type="button" className={`toggle ${s.defaults?.lastUsed ? "on" : ""}`} aria-pressed={!!s.defaults?.lastUsed} aria-label="Use last used instead" onClick={() => void saveDefault({ lastUsed: !s.defaults?.lastUsed || undefined })}><i /></button></div>
-      </div>
-
-      <div className="grp">Categories<button type="button" className="r link" aria-pressed={editCats} onClick={() => setEditCats(!editCats)}>{editCats ? "Done" : "Edit"}</button></div>
-      <div className="card pad">
-        <div className={`chips${editCats ? " editing" : ""}`}>
-          {s.categories.map((c) => (
-            <span key={c} className="chip">{c}{editCats && <button type="button" aria-label={`Remove ${c}`} onClick={() => void save({ categories: s.categories.filter((x) => x !== c) })}>✕</button>}</span>
-          ))}
-        </div>
-        <form className="acct" onSubmit={async (e) => { e.preventDefault(); const n = cat.trim(); if (!n || s.categories.includes(n)) return; await save({ categories: [...s.categories, n] }); setCat(""); }}>
-          <input placeholder="Add category" value={cat} onChange={(e) => setCat(e.target.value)} />
-          <button className="btn ghost sm" type="submit">Add</button>
-        </form>
-      </div>
-      </fieldset>
-
+  const go = (p?: Page) => { setPage(p); setEditCats(false); window.scrollTo(0, 0); };
+  const n = (k: number, one: string, many: string) => `${k} ${k === 1 ? one : many}`;
+  const summary: Record<Page, string> = {
+    accounts: `${n(banks.length, "bank account", "bank accounts")}, ${n(accounts.length - banks.length, "card", "cards")}`,
+    people: `${n(people.length, "person", "people")}, ${n(s.categories.length, "category", "categories")}`,
+    general: `${s.defaultCurrency}, ${THEME_LABEL[theme]}`,
+    sync: `${pillOf(status).label}, ${lastExported ? `exported ${sinceText(lastExported).toLowerCase()}` : "never exported"}`,
+  };
+  const sheets = (
+    <>
       {incoming && (
         <Sheet onClose={() => setIncoming(undefined)}>
           <h3>Import backup</h3>
@@ -367,6 +258,165 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
           </div>
         </Sheet>
       )}
+    </>
+  );
+
+  if (!page) {
+    return (
+      <div className="stack">
+        <div className="card">
+          {PAGES.map(([p, title]) => (
+            <button key={p} className="row" onClick={() => go(p)}><span>{title}<span className="mute small sub">{summary[p]}</span></span></button>
+          ))}
+        </div>
+        {sheets}
+      </div>
+    );
+  }
+
+  return (
+    <div className="stack">
+      <div className="toolrow"><span className="nav"><button className="title" onClick={() => go()}>‹ Settings</button></span></div>
+      <h2 className="ptitle">{PAGES.find(([p]) => p === page)![1]}</h2>
+      {page === "sync" && (
+        <>
+          <fieldset className="plain" disabled={readOnly}>
+            <div className="grp">Sync</div>
+            <div className="card">
+              <div className="field"><b>Status</b><span className="mute">{pillOf(status).label}</span></div>
+              {config ? (
+                <>
+                  <div className="field"><b>Data repo</b><span className="mute">{config.owner}/{config.repo}</span></div>
+                  <div className="field"><b>Token</b><span className="mute">{tokenLine(daysLeft(config), config.tokenExpires)}</span></div>
+                  <div className="field"><b>Connection</b>
+                    <span className="acts">
+                      <button className="btn ghost sm" onClick={onSetup}>Replace token</button>
+                      <button className="btn ghost sm" onClick={() => setConfirm("pull")}>Re-pull</button>
+                      <button className="btn ghost sm danger" onClick={() => setConfirm("remove")}>Remove</button>
+                    </span></div>
+                </>
+              ) : (
+                <div className="field"><b>GitHub</b><button className="btn sm" onClick={onSetup}>Connect</button></div>
+              )}
+            </div>
+          </fieldset>
+          <div className="grp">Backup</div>
+          <div className="card">
+            <div className="field"><b>Export</b>
+              <span className="acts">
+                <button className="btn ghost sm" onClick={() => void exportJson()}>Backup file</button>
+                <button className="btn ghost sm" onClick={() => void exportCsv()}>Spreadsheet</button>
+              </span></div>
+            <fieldset className="plain" disabled={readOnly}>
+              <div className="field"><b>Import</b>
+                <label className="btn ghost sm filebtn">Choose file<input type="file" accept=".json,application/json" onChange={(e) => { void pickFile(e.target.files?.[0]); e.target.value = ""; }} /></label></div>
+            </fieldset>
+            <div className="field"><b>Last exported</b><span className="mute">{sinceText(lastExported)}</span></div>
+            {backupMsg && <p className="mute small" role="status">{backupMsg}</p>}
+          </div>
+        </>
+      )}
+      {page !== "sync" && (
+        <fieldset className="plain" disabled={readOnly}>
+          {page === "general" && (
+            <>
+              <div className="card">
+                <label className="field"><b>Default currency</b>
+                  <select value={s.defaultCurrency} onChange={(e) => void save({ defaultCurrency: e.target.value })}>
+                    {[...new Set([...CURRENCIES, s.defaultCurrency])].map((c) => <option key={c}>{c}</option>)}
+                  </select></label>
+                <div className="field"><b>Base currency</b><span className="mute">{s.baseCurrency}</span></div>
+                <div className="field"><b>Appearance</b>
+                  <Segmented value={theme} options={THEMES} labels={THEME_LABEL} onChange={(t) => { setThemeState(t); saveTheme(t); applyTheme(t); }} /></div>
+              </div>
+            </>
+          )}
+          {page === "accounts" && (
+            <>
+              <div className="grp">Bank accounts</div>
+              <div className="card pad">
+                {!accounts.some((a) => !isCard(a)) && <p className="mute">No bank accounts yet</p>}
+                {accounts.filter((a) => !isCard(a)).map((a) => (
+                  <AccountRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency}
+                    onSave={async (x) => { await upsert(store, "accounts", x); changed(); }}
+                    onRemove={() => askRemoveAccount(a)} />
+                ))}
+                <button className="btn ghost sm" onClick={async () => { await upsert(store, "accounts", { name: "New account", currency: s.baseCurrency, openingBalance: 0 }); changed(); }}>Add account</button>
+              </div>
+
+              <div className="grp">Credit cards</div>
+              <div className="card pad">
+                {!accounts.some(isCard) && <p className="mute">No cards yet</p>}
+                {accounts.filter(isCard).map((a) => (
+                  <CardRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency}
+                    onSave={async (x) => { await upsert(store, "accounts", x); changed(); }}
+                    onRemove={() => askRemoveAccount(a)} />
+                ))}
+                <button className="btn ghost sm" onClick={async () => { await upsert(store, "accounts", { name: "New card", currency: s.baseCurrency, openingBalance: 0, type: "card", statementDay: 15, dueDays: DEFAULT_DUE_DAYS }); changed(); }}>Add card</button>
+              </div>
+
+              <div className="grp">Defaults</div>
+              <div className="card">
+                {accounts.length > 0 && (
+                  <label className="field"><b>Expenses</b>
+                    <select value={shown(s.defaults?.expense, accounts)} onChange={(e) => void saveDefault({ expense: e.target.value || undefined })}>
+                      <option value="">Pick each time</option><AccountOptions accounts={accounts} />
+                    </select></label>
+                )}
+                {banks.length > 0 && (
+                  <>
+                    <label className="field"><b>Income</b>
+                      <select value={shown(s.defaults?.income, banks)} onChange={(e) => void saveDefault({ income: e.target.value || undefined })}>
+                        <option value="">First bank account</option>{banks.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                      </select></label>
+                    <label className="field"><b>Card payments from</b>
+                      <select value={shown(s.defaults?.cardPayment, banks)} onChange={(e) => void saveDefault({ cardPayment: e.target.value || undefined })}>
+                        <option value="">Salary account</option>{banks.filter((a) => a.currency === s.baseCurrency).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                      </select></label>
+                  </>
+                )}
+                <label className="field"><b>Category</b>
+                  <select value={s.defaults?.category && s.categories.includes(s.defaults.category) ? s.defaults.category : s.categories[0] ?? ""} onChange={(e) => void saveDefault({ category: e.target.value })}>
+                    {s.categories.map((c) => <option key={c}>{c}</option>)}
+                  </select></label>
+                <div className="field"><b>Use last used instead<span className="mute small sub">Overrides the defaults above, on this device</span></b>
+                  <button type="button" className={`toggle ${s.defaults?.lastUsed ? "on" : ""}`} aria-pressed={!!s.defaults?.lastUsed} aria-label="Use last used instead" onClick={() => void saveDefault({ lastUsed: !s.defaults?.lastUsed || undefined })}><i /></button></div>
+              </div>
+            </>
+          )}
+          {page === "people" && (
+            <>
+              <div className="grp">People</div>
+              <div className="card pad">
+                {people.map((p) => (
+                  <div key={p.id} className="acct">
+                    <input aria-label="Name" defaultValue={p.name} onBlur={async (e) => { const n = e.target.value.trim(); if (n && n !== p.name) { await upsert(store, "people", { ...p, name: n }); changed(); } }} />
+                    <button className="x" aria-label={`Remove ${p.name}`} onClick={() => askRemovePerson(p)}>✕</button>
+                  </div>
+                ))}
+                <form className="acct" onSubmit={async (e) => { e.preventDefault(); if (!person.trim()) return; await upsert(store, "people", { name: person.trim() }); setPerson(""); changed(); }}>
+                  <input placeholder="Add person" value={person} onChange={(e) => setPerson(e.target.value)} />
+                  <button className="btn ghost sm" type="submit">Add</button>
+                </form>
+              </div>
+
+              <div className="grp">Categories<button type="button" className="r link" aria-pressed={editCats} onClick={() => setEditCats(!editCats)}>{editCats ? "Done" : "Edit"}</button></div>
+              <div className="card pad">
+                <div className={`chips${editCats ? " editing" : ""}`}>
+                  {s.categories.map((c) => (
+                    <span key={c} className="chip">{c}{editCats && <button type="button" aria-label={`Remove ${c}`} onClick={() => void save({ categories: s.categories.filter((x) => x !== c) })}>✕</button>}</span>
+                  ))}
+                </div>
+                <form className="acct" onSubmit={async (e) => { e.preventDefault(); const n = cat.trim(); if (!n || s.categories.includes(n)) return; await save({ categories: [...s.categories, n] }); setCat(""); }}>
+                  <input placeholder="Add category" value={cat} onChange={(e) => setCat(e.target.value)} />
+                  <button className="btn ghost sm" type="submit">Add</button>
+                </form>
+              </div>
+            </>
+          )}
+        </fieldset>
+      )}
+      {sheets}
     </div>
   );
 }
