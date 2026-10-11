@@ -15,6 +15,8 @@ import { ledgerItems, occurrences, type LedgerItem } from "../../data/rules";
 import { myShare } from "../../data/splits";
 import { pctChange, summarize, topCategories, type Summary } from "../../data/summary";
 import { BigAmount } from "../../ui/Amount";
+import { Empty } from "../../ui/Empty";
+import { DashboardIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
 import { useTodayKey } from "../../ui/useTodayKey";
 import { CardTile } from "./CardTile";
@@ -165,7 +167,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
       </div>
 
       {catTotal <= 0 ? (
-        <p className="mute empty">Nothing spent yet</p>
+        <Empty icon={<DashboardIcon />} title="Nothing spent yet" note={labelMonth(from)} />
       ) : (
         <div className="grid g2">
           <div className="card pad">

@@ -6,6 +6,8 @@ import { addEntry, loadAllEntries } from "../../data/months";
 import { formatMinor } from "../../data/money";
 import { ledgerItems } from "../../data/rules";
 import { isCard, type Account, type Person, type Rule } from "../../data/schema";
+import { Empty } from "../../ui/Empty";
+import { SplitsIcon } from "../../ui/icons";
 import { Sheet } from "../../ui/Sheet";
 import { useLedger } from "../../ui/Ledger";
 import { copyImage, downloadImage, renderStatement } from "./snapshot";
@@ -66,7 +68,7 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
     changed();
   }
 
-  if (!rows.length) return <p className="mute empty">No splits yet</p>;
+  if (!rows.length) return <Empty icon={<SplitsIcon />} title="No splits yet" note="Turn on Split when you add an expense" />;
 
   return (
     <>

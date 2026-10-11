@@ -12,6 +12,9 @@ import { OccurrenceForm } from "./OccurrenceForm";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { Sheet } from "../../ui/Sheet";
+import { categoryTone } from "../../ui/categoryColor";
+import { Empty } from "../../ui/Empty";
+import { LedgerIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
 import { useTodayKey } from "../../ui/useTodayKey";
 
@@ -153,8 +156,10 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
       return sum + (toBase(x, base) ?? 0);
     }, 0);
 
-  // Spending shows as a minus; a day where refunds outweigh spending shows a plus.
-  const dayTotal = (n: number) => (n > 0 ? "-" + formatMinor(n, base) : n < 0 ? "+" + formatMinor(-n, base) : "");
+  // Spending reads plain (the list is spending); a day where refunds outweigh it shows a green plus.
+  const dayTotal = (n: number) => (n > 0 ? formatMinor(n, base) : n < 0 ? <span className="in">+{formatMinor(-n, base)}</span> : "");
+  // Money in (income, refunds, someone paying me back) is green with a plus; money out is plain.
+  const moneyIn = (x: Entry | Occurrence) => x.kind === "income" || (x.kind === "settlement" && "direction" in x && x.direction === "in");
 
   return (
     <>
@@ -187,29 +192,37 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
         </>
       )}
 
-      {groups.length === 0 && <p className="mute empty">Nothing yet</p>}
+      {groups.length === 0 && (q.trim()
+        ? <Empty icon={<LedgerIcon />} title="No matches" note={`Nothing in ${title(view, shown.from)} has "${q.trim()}"`} />
+        : <Empty icon={<LedgerIcon />} title="Nothing logged" note={title(view, shown.from)} />)}
       {groups.map(([date, its]) => (
         <div key={date}>
-          <div className="grp">{labelDay(date)}<span className="r">{dayTotal(total(its))}</span></div>
+          {/* The day stays pinned under the top bar while its rows scroll. */}
+          <div className="grp day">{labelDay(date)}<span className="r">{dayTotal(total(its))}</span></div>
           <div className="card">
             {its.map((it) => {
               const x = it.type === "entry" ? it.entry : it.occ;
               const b = toBase(x, base);
+              const transfer = it.type === "entry" && it.entry.kind === "transfer";
+              const later = upcoming(it);
               return (
-                <button key={it.type === "entry" ? it.entry.id : it.occ.ruleId + it.date} className="row" title="Edit" onClick={() => (it.type === "entry" ? (it.entry.kind === "settlement" || it.entry.kind === "transfer" ? setPaid(it.entry) : setEditing(it.entry)) : setOcc(it.occ))}>
-                  <span>
-                    {x.category}
-                    {x.note && <span className="mute"> &nbsp;{x.note}</span>}
-                    {it.type === "entry" && it.entry.kind === "transfer" && <span className="mute"> &nbsp;{accountName(it.entry.accountId)} to {accountName(it.entry.toAccountId)}</span>}
-                    {x.split && <span className="tag">split</span>}
-                    {it.type === "entry" && it.entry.refund && <span className="tag">refund</span>}
-                    {it.type === "entry" && it.entry.nextBill && <span className="tag">next bill</span>}
-                    {it.type === "occurrence" && <span className="tag">{it.occ.type === "installment" ? `${it.occ.index} of ${it.occ.count}` : "recurring"}</span>}
-                    {upcoming(it) && <span className="tag">upcoming</span>}
+                <button key={it.type === "entry" ? it.entry.id : it.occ.ruleId + it.date} className="row item" title="Edit" onClick={() => (it.type === "entry" ? (it.entry.kind === "settlement" || it.entry.kind === "transfer" ? setPaid(it.entry) : setEditing(it.entry)) : setOcc(it.occ))}>
+                  {/* What it was first; then its colour, category (or the two accounts of a transfer) and tags. */}
+                  <span className="main">
+                    <span className="l1">{x.note || x.category || "Transfer"}</span>
+                    <span className="l2">
+                      <i className={`dot tone-${categoryTone(x.category)}`} aria-hidden="true" />
+                      <span>{transfer ? `${accountName(it.entry.accountId)} to ${accountName(it.entry.toAccountId)}` : x.category || "Other"}</span>
+                      {x.split && <span className="tag">split</span>}
+                      {it.type === "entry" && it.entry.refund && <span className="tag">refund</span>}
+                      {it.type === "entry" && it.entry.nextBill && <span className="tag">next bill</span>}
+                      {it.type === "occurrence" && <span className="tag">{it.occ.type === "installment" ? `${it.occ.index} of ${it.occ.count}` : "recurring"}</span>}
+                      {later && <span className="tag">upcoming</span>}
+                    </span>
                   </span>
-                  <span className={upcoming(it) ? "mute" : undefined}>
-                    {x.kind === "expense" || (x.kind === "settlement" && "direction" in x && x.direction === "out") ? "-" : it.type === "entry" && it.entry.refund ? "+" : ""}{formatMinor(x.amount, x.currency)}
-                    {x.currency !== base && b !== undefined && <span className="mute small"> ≈ {formatMinor(b, base)}</span>}
+                  <span className={later ? "money later" : moneyIn(x) ? "money in" : "money"}>
+                    <span>{moneyIn(x) ? "+" : ""}{formatMinor(x.amount, x.currency)}</span>
+                    {x.currency !== base && b !== undefined && <span className="approx">≈ {formatMinor(b, base)}</span>}
                   </span>
                 </button>
               );

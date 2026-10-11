@@ -66,6 +66,9 @@
   --z-bar: 3;
   --z-tabs: 4;
   --z-scrim: 10;
+  /* Category colours (Apple's system colours). src/ui/categoryColor.ts picks one per category. */
+  --t-red: #ff3b30; --t-orange: #ff9500; --t-yellow: #ffcc00; --t-green: #34c759; --t-mint: #00c7be; --t-teal: #30b0c7; --t-cyan: #32ade6;
+  --t-blue: #007aff; --t-indigo: #5856d6; --t-purple: #af52de; --t-pink: #ff2d55; --t-brown: #a2845e; --t-gray: #8e8e93;
   color-scheme: light;
 }
 /* Dark is opt-in (Settings, Appearance). public/theme.js sets data-theme before first paint.
@@ -87,6 +90,8 @@
   --side-bg: rgba(28, 28, 30, 0.55);
   --tab-bg: rgba(36, 36, 38, 0.8);
   --tab-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  --t-red: #ff453a; --t-orange: #ff9f0a; --t-yellow: #ffd60a; --t-green: #30d158; --t-mint: #63e6e2; --t-teal: #40c8e0; --t-cyan: #64d2ff;
+  --t-blue: #0a84ff; --t-indigo: #5e5ce6; --t-purple: #bf5af2; --t-pink: #ff375f; --t-brown: #ac8e68; --t-gray: #8e8e93;
   --surface: #1c1c1e;
   --seg-on: #48484a;
   --fill: rgba(255, 255, 255, 0.08);
@@ -220,7 +225,12 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 @media (max-width: 700px) { input, select, textarea { font-size: 16px; } }
 .small { font-size: var(--fs-sm); }
 .err { color: var(--err); margin: 8px 0 0; }
-.empty { text-align: center; margin-top: 48px; }
+/* Empty states: a soft icon and a short line. */
+.emptystate { text-align: center; margin: var(--sp-6) auto; color: var(--mute); }
+.emptyicon { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background: var(--fill-2); margin-bottom: var(--sp-3); }
+.emptyicon .icon { width: 26px; height: 26px; }
+.emptytitle { margin: 0 0 var(--sp-1); font-size: var(--fs-lg); font-weight: 600; color: var(--ink); }
+.emptystate .small { margin: 0; }
 .glasscard {
   background: var(--glass);
   backdrop-filter: blur(28px) saturate(1.5);
@@ -465,6 +475,33 @@ details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 .row.edit::after { content: "Change"; color: var(--accent-ink); opacity: 1; font-size: var(--fs-md); font-weight: 500; line-height: inherit; }
 .hint { margin: 10px 0 0; }
 .row:not(.static) > :first-child { flex: 1; min-width: 0; }
+/* One class per category colour; each sets --tone, which dots and chart segments use. */
+.tone-red { --tone: var(--t-red); } .tone-orange { --tone: var(--t-orange); } .tone-yellow { --tone: var(--t-yellow); }
+.tone-green { --tone: var(--t-green); } .tone-mint { --tone: var(--t-mint); } .tone-teal { --tone: var(--t-teal); }
+.tone-cyan { --tone: var(--t-cyan); } .tone-blue { --tone: var(--t-blue); } .tone-indigo { --tone: var(--t-indigo); }
+.tone-purple { --tone: var(--t-purple); } .tone-pink { --tone: var(--t-pink); } .tone-brown { --tone: var(--t-brown); }
+.tone-gray { --tone: var(--t-gray); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--tone, var(--t-gray)); flex: none; }
+/* Ledger rows: what it was on top, then the colour dot, category and tags. Amounts carry no minus;
+   money in is green with a plus. */
+.row.item .main { display: flex; flex-direction: column; gap: 2px; }
+.row.item .l1 { overflow-wrap: anywhere; }
+.row.item .l2 { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: var(--fs-sm); color: var(--mute); }
+.row.item .l2 .tag { margin-left: 0; }
+.money { display: flex; flex-direction: column; align-items: flex-end; white-space: nowrap; font-weight: 500; }
+.money .approx { font-size: var(--fs-xs); font-weight: 400; color: var(--mute); }
+.money.in, .grp .in { color: var(--good-ink); }
+.money.later { color: var(--mute); }
+/* Ledger day headers stay pinned under the top bar while their rows scroll, on the page colour and
+   full width, so rows slide under them. */
+.grp.day {
+  position: sticky;
+  top: calc(var(--bar-h) + env(safe-area-inset-top));
+  z-index: var(--z-day);
+  background: var(--bg);
+  margin: var(--sp-3) calc(-1 * var(--gutter)) 0;
+  padding: var(--sp-3) var(--gutter) var(--sp-2);
+}
 .owedline { display: block; }
 /* People removed since an entry was split: listed in its edit form, kept in the split. */
 .kept { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 10px; text-align: right; }
