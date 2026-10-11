@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { list, listAll, remove, upsert } from "../src/data/collections";
+import { list, listAll, nameOf, remove, upsert } from "../src/data/collections";
 import { LedgerStore } from "../src/data/db";
 import { addEntry, listMonth, updateEntry } from "../src/data/months";
 import type { Entry, Person, Split } from "../src/data/schema";
@@ -69,6 +69,20 @@ describe("editing a split with someone who was removed", () => {
     await remove(store, "people", mom.id);
     const saved = await openAndSave(e, (f) => { f.custom[keptKey(mom.id)] = "400"; });
     expect(saved.split!.shares).toEqual([{ personId: mom.id, amount: 40000 }, { personId: jon.id, amount: 10000 }]);
+  });
+});
+
+describe("names in the Ledger", () => {
+  it("names a removed person or account with (removed), and something with no record at all by the fallback", async () => {
+    const bank = await upsert(store, "accounts", { name: "Old wallet", currency: "PHP", openingBalance: 0 });
+    await remove(store, "people", mom.id);
+    await remove(store, "accounts", bank.id);
+    const people = await listAll(store, "people");
+    expect(nameOf(mom.id, people, "Removed person")).toBe("Mom (removed)");
+    expect(nameOf(jon.id, people, "Removed person")).toBe("Jon");
+    expect(nameOf("GONE", people, "Removed person")).toBe("Removed person");
+    expect(nameOf(bank.id, await listAll(store, "accounts"), "Removed account")).toBe("Old wallet (removed)");
+    expect(nameOf(undefined, people, "Removed account")).toBe("Removed account");
   });
 });
 

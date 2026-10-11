@@ -54,6 +54,9 @@ export function buildSplit(opts: {
   return { paidBy, mode, shares };
 }
 
+/** What to call someone in a split when even their removed record is gone. */
+export const REMOVED_PERSON = "Removed person";
+
 /** Everyone in a split other than me: the people who owe (in share order), then the payer. */
 export function participants(split: Split): string[] {
   return [...new Set([...split.shares.map((s) => s.personId), split.paidBy])].filter((id) => id !== "me");
@@ -66,7 +69,7 @@ export function participants(split: Split): string[] {
 export function removedInSplit(split: Split, live: Person[], all: Person[]): { id: string; name: string }[] {
   return participants(split)
     .filter((id) => !live.some((p) => p.id === id))
-    .map((id) => ({ id, name: all.find((p) => p.id === id)?.name ?? "Removed person" }));
+    .map((id) => ({ id, name: all.find((p) => p.id === id)?.name ?? REMOVED_PERSON }));
 }
 
 /**

@@ -38,6 +38,15 @@ export async function listAll<K extends Named>(store: LedgerStore, kind: K): Pro
   return ((doc?.[kind] as (ItemOf[K] & { deleted?: true })[] | undefined) ?? []);
 }
 
+/**
+ * What to call a person or account in lists: its name, with "(removed)" after it once removed, or
+ * `missing` when there is no record at all. Pass `listAll` items so removed ones can still be named.
+ */
+export function nameOf(id: string | undefined, all: { id: string; name: string; deleted?: true }[], missing: string): string {
+  const x = id ? all.find((a) => a.id === id) : undefined;
+  return !x ? missing : x.deleted ? `${x.name} (removed)` : x.name;
+}
+
 /** Insert or replace by id. Returns the stored item. */
 export async function upsert<K extends Named>(
   store: LedgerStore,

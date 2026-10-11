@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getSettings, list, upsert } from "../../data/collections";
+import { getSettings, list, listAll, nameOf, upsert } from "../../data/collections";
 import { toBase } from "../../data/base";
 import { addDays, addMonths, contains, labelDay, labelMonth, labelShort, monthStart, periodOf, today } from "../../data/dates";
 import { addRefund, deleteEntry, loadAllEntries, loadEntries, refundable } from "../../data/months";
 import { formatMinor, parseMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem, type Occurrence } from "../../data/rules";
+import { REMOVED_PERSON } from "../../data/splits";
 import { isCard, type Account, type Entry, type Person, type Rule } from "../../data/schema";
 import { AddForm } from "../add/AddForm";
 import { OccurrenceForm } from "./OccurrenceForm";
@@ -35,6 +36,7 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
   const [q, setQ] = useState("");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
+  // People and accounts including removed ones, so old entries still show their names.
   const [people, setPeople] = useState<Person[]>([]);
   const [base, setBase] = useState("PHP");
   const [editing, setEditing] = useState<Entry>();
@@ -56,7 +58,7 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
   useEffect(() => {
     let stale = false; // a slower load for a period already left must not overwrite a newer one
     (async () => {
-      const [e, r, p, a, s] = await Promise.all([loadEntries(store, from, to), list(store, "rules"), list(store, "people"), list(store, "accounts"), getSettings(store)]);
+      const [e, r, p, a, s] = await Promise.all([loadEntries(store, from, to), list(store, "rules"), listAll(store, "people"), listAll(store, "accounts"), getSettings(store)]);
       if (stale) return;
       setEntries(e);
       setRules(r);
@@ -99,8 +101,8 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
     return [...g.entries()];
   }, [items]);
 
-  const accountName = (id?: string) => accounts.find((a) => a.id === id)?.name ?? "?";
-  const onCard = (e: Entry) => accounts.some((a) => a.id === e.accountId && isCard(a));
+  const accountName = (id?: string) => nameOf(id, accounts, "Removed account");
+  const onCard = (e: Entry) => accounts.some((a) => a.id === e.accountId && !a.deleted && isCard(a));
 
   async function openRefund(e: Entry) {
     const left = refundable(e, await loadAllEntries(store));
@@ -126,7 +128,7 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
     }
   }
 
-  const personName = (id: string) => (id === "me" ? "me" : people.find((p) => p.id === id)?.name ?? "?");
+  const personName = (id: string) => (id === "me" ? "me" : nameOf(id, people, REMOVED_PERSON));
 
   async function skipOcc(o: Occurrence) {
     const r = rules.find((x) => x.id === o.ruleId);
