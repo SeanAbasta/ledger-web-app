@@ -157,12 +157,19 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
 
       {/* Keyed on the loaded month: the cards swap and slide in only once the new month's numbers are ready. */}
       <div key={from} className={v.dir === 1 ? "period next" : v.dir === -1 ? "period prev" : "period"}>
-      <div className="grid g3">
-        <div className="card stat"><div className="mute">Spent</div><BigAmount minor={cur.total} currency={base} />
+      {/* Spent leads; Still due and Last month sit side by side under it on phones, beside it on computers. */}
+      <div className="statrow">
+        <div className="card stat hero"><div className="mute">Spent</div><BigAmount minor={cur.total} currency={base} />
+          {prevTotal > 0 && (
+            // This month so far against last month's same days: full and orange once past it.
+            <div className={cur.total > prevTotal ? "spentbar over" : "spentbar"} aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(1, cur.total / prevTotal)) * 100}%` }} /></div>
+          )}
           <div className="mute small">{change === null ? "No earlier data" : change === 0 ? "Same as last month" : `${Math.abs(change)}% ${change < 0 ? "less" : "more"} than last month`}</div></div>
         <div className="card stat"><div className="mute">Still due</div><BigAmount minor={stillDue} currency={base} />
           <div className="mute small">{isCurrent ? "rest of this month" : "current month only"}</div></div>
-        <div className="card stat"><div className="mute">Last month</div><BigAmount minor={prevTotal} currency={base} />
+        <div className="card stat"><div className="mute">Last month</div>
+          {/* Nothing to compare (same rule as Spent's "No earlier data"): say so instead of ₱0.00. */}
+          {prevTotal > 0 ? <BigAmount minor={prevTotal} currency={base} /> : <BigAmount currency={base} word="No data" className="nodata" />}
           <div className="mute small">{isCurrent ? "same days" : "full month"}</div></div>
       </div>
 

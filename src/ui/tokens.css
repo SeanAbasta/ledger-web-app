@@ -388,6 +388,18 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 rect.bar { fill: var(--c0); opacity: 0.45; }
 rect.bar.now { opacity: 1; }
 @media (max-width: 700px) { .g3, .g2 { grid-template-columns: 1fr; } }
+/* Dashboard top row: Spent as the hero, Still due and Last month as two smaller tiles. One row on
+   computers; on phones and narrow windows the hero takes the full width and the tiles share a row. */
+.statrow { display: grid; gap: var(--sp-3); margin-top: var(--sp-3); grid-template-columns: 2fr 1fr 1fr; }
+.statrow .hero .big { font-size: var(--fs-3xl); }
+.statrow .stat:not(.hero) .big { font-size: var(--fs-xl); }
+.big.word.nodata { color: var(--mute); }
+.spentbar { height: 6px; border-radius: 3px; background: var(--fill-2); margin: var(--sp-2) 0 var(--sp-1); overflow: hidden; }
+.spentbar i { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+.spentbar.over i { background: var(--warn); }
+@media (max-width: 1000px) { .statrow { grid-template-columns: 1fr 1fr; } .statrow .hero { grid-column: 1 / -1; } }
+/* Small phones: ₱9,999,999.99 still fits a tile at 375 px, with a little to spare. */
+@media (max-width: 400px) { .statrow .stat:not(.hero) { padding-inline: 14px; } .statrow .stat:not(.hero) .big { font-size: 20px; } }
 
 /* splits */
 .row.static { cursor: default; align-items: center; }
