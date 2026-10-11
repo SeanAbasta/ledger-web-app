@@ -54,6 +54,14 @@
   /* Width of the content column on big screens; lists read better narrower. */
   --content-max: 1120px;
   --reading-max: 760px;
+  /* Bars that content scrolls under: the page colour, slightly see-through, blurred behind. */
+  --bar-bg: rgba(242, 242, 247, 0.8);
+  --bar-h: 52px;
+  /* Stacking: pinned day headers < top bar < phone tab bar < sheets. */
+  --z-day: 2;
+  --z-bar: 3;
+  --z-tabs: 4;
+  --z-scrim: 10;
   color-scheme: light;
 }
 /* Dark is opt-in (Settings, Appearance). public/theme.js sets data-theme before first paint.
@@ -71,6 +79,7 @@
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   --card-shadow: none;
   --glow: rgba(10, 132, 255, 0.2);
+  --bar-bg: rgba(0, 0, 0, 0.72);
   --surface: #1c1c1e;
   --seg-on: #48484a;
   --fill: rgba(255, 255, 255, 0.08);
@@ -136,17 +145,32 @@ body::before {
 main { --col: var(--content-max); }
 main.reading { --col: var(--reading-max); }
 .bar {
-  height: 48px;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-bar);
+  height: calc(var(--bar-h) + env(safe-area-inset-top));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 max(var(--gutter), calc((100% - var(--col)) / 2));
-  background: var(--glass);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-bottom: 1px solid var(--glass-line);
+  padding: env(safe-area-inset-top) max(var(--gutter), calc((100% - var(--col)) / 2)) 0;
 }
-.bar h1 { font-size: var(--fs-base); font-weight: 600; margin: 0; }
+/* The glass is a layer behind the bar's text, never the element that holds the text. iPhone drew the
+   title and pill soft until the page was pulled down when they sat inside the blurred layer
+   (V1.2.1 QA item 4). The bar itself has no filter and no opacity. */
+.bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--bar-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  backdrop-filter: blur(20px) saturate(1.8);
+  border-bottom: 0.5px solid var(--line);
+}
+/* No blur available, or Reduce Transparency: a solid bar. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .bar::before { background: var(--bg); } }
+@media (prefers-reduced-transparency: reduce) { .bar::before { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+.bar h1 { font-size: var(--fs-lg); font-weight: 600; color: var(--ink); margin: 0; }
 .body { padding: var(--sp-5) var(--gutter); }
 .win .body > * { max-width: var(--col); margin-inline: auto; } /* .win: outranks fieldset.plain's margin: 0 */
 .mute { color: var(--mute); }
@@ -228,7 +252,7 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 /* The last setting in a card draws no divider, or it looks like a row is cut off below it. */
 .card > .field:last-child { border-bottom: 0; }
 .tag { font-size: var(--fs-xs); padding: 2px 7px; border-radius: 6px; background: var(--fill-2); color: var(--mute); margin-left: 6px; white-space: nowrap; display: inline-block; }
-.scrim { position: fixed; inset: 0; background: var(--scrim); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 5; padding: 16px; }
+.scrim { position: fixed; inset: 0; background: var(--scrim); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: var(--z-scrim); padding: 16px; }
 .sheet { width: 440px; max-width: 100%; max-height: 90vh; overflow: auto; padding: 22px; }
 .sheet h3 { margin: 0 0 var(--sp-2); font-size: var(--fs-lg); }
 /* Sheets slide in, and slide away when dismissed (150 to 250 ms). Phones get a bottom sheet with a
@@ -291,8 +315,9 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 :root { --c0: #0a84ff; --c1: #5ac8fa; --c2: #34c759; --c3: #ff9f0a; --c4: #af52de; }
 .s0 { stroke: var(--c0); } .s1 { stroke: var(--c1); } .s2 { stroke: var(--c2); } .s3 { stroke: var(--c3); } .s4 { stroke: var(--c4); } .s5 { stroke: var(--c5); }
 .k0 { background: var(--c0); } .k1 { background: var(--c1); } .k2 { background: var(--c2); } .k3 { background: var(--c3); } .k4 { background: var(--c4); } .k5 { background: var(--c5); }
-.bar { fill: var(--c0); opacity: 0.45; }
-.bar.now { opacity: 1; }
+/* Scoped to the chart: as plain .bar it also hit <header class="bar"> and drew the page title at 45%. */
+rect.bar { fill: var(--c0); opacity: 0.45; }
+rect.bar.now { opacity: 1; }
 @media (max-width: 700px) { .g3, .g2 { grid-template-columns: 1fr; } }
 
 /* splits */
