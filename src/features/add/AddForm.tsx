@@ -167,7 +167,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
   return (
     <form className="form" onSubmit={(e) => { e.preventDefault(); void save(); }}>
       <div className="amt">
-        <MoneyInput aria-label="Amount" placeholder="0.00" value={amount} onChange={setAmount} currency={currency || settings.defaultCurrency} autoFocus />
+        <MoneyInput aria-label="Amount" placeholder="0.00" value={amount} onChange={setAmount} currency={currency || settings.defaultCurrency} autoFocus={!entry} />
         <select aria-label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value)}>
           {[...new Set([settings.defaultCurrency, ...CURRENCIES, currency].filter(Boolean))].map((c) => <option key={c}>{c}</option>)}
         </select>
