@@ -40,13 +40,13 @@ function AccountRow({ a, base, onSave, onRemove }: { a: Account; base: string; o
     onSave({ ...a, name: (over.name ?? name).trim() || "Account", currency: cur, openingBalance: neg ? -o : o, rate: cur !== base && /^\d+(\.\d+)?$/.test(r) ? r : undefined });
   };
   return (
-    <div className="acct">
+    <div className="acct bank">
       <input aria-label="Account name" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => commit()} />
       <select aria-label="Currency" value={currency} onChange={(e) => { setCurrency(e.target.value); commit({ currency: e.target.value }); }}>
         {[...new Set([...CURRENCIES, currency])].map((c) => <option key={c}>{c}</option>)}
       </select>
-      <MoneyInput aria-label="Opening balance" placeholder="Opening" allowNegative currency={currency} value={opening} onChange={setOpening} onBlur={() => commit()} />
-      {currency !== base && <input aria-label={`${base} per 1 ${currency}`} inputMode="decimal" placeholder={`${base} rate`} value={rate} onChange={(e) => setRate(e.target.value)} onBlur={() => commit()} />}
+      <MoneyInput className="bal" aria-label="Opening balance" placeholder="Opening" allowNegative currency={currency} value={opening} onChange={setOpening} onBlur={() => commit()} />
+      {currency !== base && <input className="rate" aria-label={`${base} per 1 ${currency}`} inputMode="decimal" placeholder={`${base} rate`} value={rate} onChange={(e) => setRate(e.target.value)} onBlur={() => commit()} />}
       <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}>✕</button>
     </div>
   );
