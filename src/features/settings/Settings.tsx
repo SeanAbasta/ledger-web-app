@@ -105,6 +105,8 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
   const [people, setPeople] = useState<Person[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [cat, setCat] = useState("");
+  // Category chips show their ✕ only in Edit mode, so a stray tap cannot remove one.
+  const [editCats, setEditCats] = useState(false);
   const [person, setPerson] = useState("");
 
   useEffect(() => {
@@ -310,11 +312,11 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
           <button type="button" className={`toggle ${s.defaults?.lastUsed ? "on" : ""}`} aria-pressed={!!s.defaults?.lastUsed} onClick={() => void saveDefault({ lastUsed: !s.defaults?.lastUsed || undefined })}><i /></button></div>
       </div>
 
-      <div className="grp">Categories</div>
+      <div className="grp">Categories<button type="button" className="r link" aria-pressed={editCats} onClick={() => setEditCats(!editCats)}>{editCats ? "Done" : "Edit"}</button></div>
       <div className="card pad">
-        <div className="chips">
+        <div className={`chips${editCats ? " editing" : ""}`}>
           {s.categories.map((c) => (
-            <span key={c} className="chip">{c}<button aria-label={`Remove ${c}`} onClick={() => void save({ categories: s.categories.filter((x) => x !== c) })}>✕</button></span>
+            <span key={c} className="chip">{c}{editCats && <button type="button" aria-label={`Remove ${c}`} onClick={() => void save({ categories: s.categories.filter((x) => x !== c) })}>✕</button>}</span>
           ))}
         </div>
         <form className="acct" onSubmit={async (e) => { e.preventDefault(); const n = cat.trim(); if (!n || s.categories.includes(n)) return; await save({ categories: [...s.categories, n] }); setCat(""); }}>
