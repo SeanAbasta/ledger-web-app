@@ -130,6 +130,9 @@ export interface Account {
   limit?: Minor;
   /** Cards: a statement's due date moved by hand (weekends, holidays), keyed by its cut-off date. */
   dueOverrides?: Record<IsoDate, IsoDate>;
+  /** Cards: the colour of the card face on the Dashboard, a key such as "blue" (src/ui/cardColor.ts).
+   *  Display only. Absent means a colour by the card's order. Older app copies ignore it and keep it. */
+  color?: string;
   updatedAt: Stamp;
   deleted?: true;
 }

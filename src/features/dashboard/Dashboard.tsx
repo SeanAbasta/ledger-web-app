@@ -15,6 +15,7 @@ import { ledgerItems, occurrences, type LedgerItem } from "../../data/rules";
 import { myShare } from "../../data/splits";
 import { pctChange, summarize, topCategories, type Summary } from "../../data/summary";
 import { BigAmount } from "../../ui/Amount";
+import { cardColor } from "../../ui/cardColor";
 import { Empty } from "../../ui/Empty";
 import { DashboardIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
@@ -194,7 +195,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
       )}
       {cards.length > 0 && (
         <div className={`grid ${cards.length % 3 === 0 ? "g3" : "g2"}`}>
-          {cards.map(({ card, st }) => <CardTile key={card.id} card={card} st={st} banks={banks} defaultBank={salaryAccount} defaults={defaults} onOpen={() => setOpenCard(card.id)} />)}
+          {cards.map(({ card, st }) => <CardTile key={card.id} card={card} color={cardColor(card, accounts)} st={st} banks={banks} defaultBank={salaryAccount} defaults={defaults} onOpen={() => setOpenCard(card.id)} />)}
         </div>
       )}
       <div className={`grid ${bottomCards === 3 ? "g3" : "g2"}`}>

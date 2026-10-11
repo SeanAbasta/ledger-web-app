@@ -5,6 +5,7 @@ import { formatMinor, parseMinor } from "../../data/money";
 import type { Account, Defaults, Entry, Person, Rule, Settings as S } from "../../data/schema";
 import { DEFAULT_DUE_DAYS, DEFAULT_SETTINGS, isCard } from "../../data/schema";
 import { getSettings } from "../../data/collections";
+import { CARD_COLORS, CARD_COLOR_LABEL, cardColor, type CardColor } from "../../ui/cardColor";
 import { useLedger } from "../../ui/Ledger";
 import { daysLeft } from "../../sync/config";
 import { bundleText, parseBundle, type Bundle } from "../../data/bundle";
@@ -54,15 +55,16 @@ function AccountRow({ a, base, onSave, onRemove }: { a: Account; base: string; o
 
 const dayOk = (n: number, lo: number, hi: number) => Number.isInteger(n) && n >= lo && n <= hi;
 
-/** A credit card: cut-off day, due days, optional limit and what was owed when it was added. Always in the base currency. */
-function CardRow({ a, base, onSave, onRemove }: { a: Account; base: string; onSave: (a: Account) => void; onRemove: () => void }) {
+/** A credit card: cut-off day, due days, optional limit, what was owed when it was added and its colour. Always in the base currency. */
+function CardRow({ a, base, color, onSave, onRemove }: { a: Account; base: string; color: CardColor; onSave: (a: Account) => void; onRemove: () => void }) {
   const [name, setName] = useState(a.name);
   const [day, setDay] = useState(String(a.statementDay ?? ""));
   const [dueDays, setDueDays] = useState(String(a.dueDays ?? DEFAULT_DUE_DAYS));
   const [limit, setLimit] = useState(a.limit !== undefined ? plain(a.limit, base) : "");
   const [owed, setOwed] = useState(a.openingBalance ? plain(-a.openingBalance, base) : "");
   const [error, setError] = useState("");
-  const commit = () => {
+  // Saves from the fields as typed, so tapping a colour right after typing a name keeps the name.
+  const commit = (extra: Partial<Account> = {}) => {
     setError("");
     const d = Number(day);
     const dd = Number(dueDays);
@@ -72,18 +74,25 @@ function CardRow({ a, base, onSave, onRemove }: { a: Account; base: string; onSa
     if (lim === null) return setError("Enter a valid limit");
     const o = owed.trim() ? parseMinor(owed, base) : 0;
     if (o === null) return setError("Enter a valid amount owed");
-    onSave({ ...a, name: name.trim() || "Card", currency: base, rate: undefined, statementDay: d, dueDays: dd, limit: lim, openingBalance: o ? -o : 0 });
+    onSave({ ...a, name: name.trim() || "Card", currency: base, rate: undefined, statementDay: d, dueDays: dd, limit: lim, openingBalance: o ? -o : 0, ...extra });
   };
   return (
     <div className="cardacct" id={`card-${a.id}`}>
       <div className="acct">
-        <input aria-label="Card name" value={name} onChange={(e) => setName(e.target.value)} onBlur={commit} />
+        <input aria-label="Card name" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => commit()} />
         <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}>✕</button>
       </div>
-      <label className="field"><b>Cut-off day</b><input aria-label="Cut-off day" inputMode="numeric" placeholder="1 to 31" value={day} onChange={(e) => setDay(e.target.value)} onBlur={commit} /></label>
-      <label className="field"><b>Days until due</b><input aria-label="Days from cut-off to due date" inputMode="numeric" value={dueDays} onChange={(e) => setDueDays(e.target.value)} onBlur={commit} /></label>
-      <label className="field"><b>Credit limit</b><MoneyInput aria-label="Credit limit" placeholder="Optional" currency={base} value={limit} onChange={setLimit} onBlur={commit} /></label>
-      <label className="field"><b>Owed at start</b><MoneyInput aria-label="Owed at start" placeholder="0" currency={base} value={owed} onChange={setOwed} onBlur={commit} /></label>
+      <label className="field"><b>Cut-off day</b><input aria-label="Cut-off day" inputMode="numeric" placeholder="1 to 31" value={day} onChange={(e) => setDay(e.target.value)} onBlur={() => commit()} /></label>
+      <label className="field"><b>Days until due</b><input aria-label="Days from cut-off to due date" inputMode="numeric" value={dueDays} onChange={(e) => setDueDays(e.target.value)} onBlur={() => commit()} /></label>
+      <label className="field"><b>Credit limit</b><MoneyInput aria-label="Credit limit" placeholder="Optional" currency={base} value={limit} onChange={setLimit} onBlur={() => commit()} /></label>
+      <label className="field"><b>Owed at start</b><MoneyInput aria-label="Owed at start" placeholder="0" currency={base} value={owed} onChange={setOwed} onBlur={() => commit()} /></label>
+      <div className="field"><b>Colour</b>
+        <div className="swatches" role="radiogroup" aria-label={`${a.name} colour`}>
+          {CARD_COLORS.map((c) => (
+            <button key={c} type="button" role="radio" aria-checked={c === color} aria-label={CARD_COLOR_LABEL[c]} className={c === color ? `swatch face-${c} on` : `swatch face-${c}`} onClick={() => c !== color && commit({ color: c })} />
+          ))}
+        </div>
+      </div>
       {error && <p className="err" role="alert">{error}</p>}
     </div>
   );
@@ -348,7 +357,7 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
               <div className="card pad">
                 {!accounts.some(isCard) && <p className="mute">No cards yet</p>}
                 {accounts.filter(isCard).map((a) => (
-                  <CardRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency}
+                  <CardRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency} color={cardColor(a, accounts)}
                     onSave={async (x) => { await upsert(store, "accounts", x); changed(); }}
                     onRemove={() => askRemoveAccount(a)} />
                 ))}

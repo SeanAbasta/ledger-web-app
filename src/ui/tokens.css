@@ -518,10 +518,51 @@ details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 /* People removed since an entry was split: listed in its edit form, kept in the split. */
 .kept { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 10px; text-align: right; }
 
-/* card tile head opens the per-card view */
-.cardhead { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; border-radius: 8px; }
-.cardhead:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); }
-.cardhead .chev { float: right; color: var(--mute); }
+/* Card tiles: the top is a card face in the card's colour (picked in Settings, src/ui/cardColor.ts),
+   like Apple Wallet. Tapping it opens the per-card view. White text on the darker left of each gradient. */
+.face-blue { --face: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #60a5fa 100%); }
+.face-green { --face: linear-gradient(135deg, #065f46 0%, #059669 60%, #34d399 100%); }
+.face-purple { --face: linear-gradient(135deg, #4c1d95 0%, #7c3aed 60%, #a78bfa 100%); }
+.face-orange { --face: linear-gradient(135deg, #9a3412 0%, #ea580c 60%, #fb923c 100%); }
+.face-red { --face: linear-gradient(135deg, #7f1d1d 0%, #dc2626 60%, #f87171 100%); }
+.face-pink { --face: linear-gradient(135deg, #831843 0%, #db2777 60%, #f472b6 100%); }
+.face-teal { --face: linear-gradient(135deg, #134e4a 0%, #0d9488 60%, #2dd4bf 100%); }
+.face-graphite { --face: linear-gradient(135deg, #111827 0%, #374151 60%, #6b7280 100%); }
+.cardhead {
+  all: unset;
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: var(--sp-4);
+  margin: 0 0 var(--sp-2);
+  background: var(--face, var(--fill-2));
+  color: #fff;
+}
+/* a soft circle in the corner, for a little depth */
+.cardhead::after { content: ""; position: absolute; right: -30px; top: -40px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); pointer-events: none; }
+.cardhead:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.6); outline-offset: 2px; }
+.cardhead .mute, .cardhead .chev { color: rgba(255, 255, 255, 0.82); }
+.cardhead .chev { float: right; }
+.cardhead .big { font-size: var(--fs-3xl); color: #fff; }
+.cardhead .big .cur, .cardhead .big .cents { color: rgba(255, 255, 255, 0.75); }
+/* Credit used: a bar under Credit left, in place of that row's divider; orange from 90%. */
+.row.credit { border-bottom: 0; padding-bottom: var(--sp-1); }
+.usedrow { padding: var(--sp-1) 0 var(--sp-3); border-bottom: 1px solid var(--line); }
+.usedrow:last-child { border-bottom: 0; }
+.usedbar { height: 6px; border-radius: 3px; background: var(--fill-2); overflow: hidden; }
+.usedbar i { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+.usedbar.high i { background: var(--warn); }
+/* Settings: a card's colour. The swatches stay on one line and move under the label when narrow. */
+.field:has(> .swatches) { flex-wrap: wrap; row-gap: var(--sp-2); }
+.swatches { display: flex; gap: 6px; margin-left: auto; }
+.swatch { all: unset; box-sizing: border-box; width: 28px; height: 28px; border-radius: 50%; background: var(--face); cursor: pointer; }
+.swatch.on { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+.swatch:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.6); outline-offset: 3px; }
+fieldset:disabled .swatch { cursor: default; }
 /* Settings sub-page title, same size as the per-card view's */
 .ptitle { font-size: var(--fs-xl); font-weight: 600; margin: var(--sp-3) 0 0; }
 .ptitle + fieldset > .card:first-child { margin-top: 14px; }
@@ -555,16 +596,16 @@ details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 
 /* Press feedback: held buttons shrink to 97% and dim; tappable rows only dim (a full-width row that
    shrinks looks like it jumps). Reduce Motion: dim only. Our own feedback replaces the grey tap flash. */
-.btn, .choice, .pill, .seg button, .side button, .nav button, .toggle, .chip button, .x, button.row, .cardhead {
+.btn, .choice, .pill, .seg button, .side button, .nav button, .toggle, .chip button, .x, button.row, .cardhead, .swatch {
   transition: transform 150ms ease-out, opacity 150ms ease-out;
   -webkit-tap-highlight-color: transparent;
 }
 .btn:active:not(:disabled), .choice:active:not(:disabled), .pill:active, .seg button:active:not(:disabled),
-.side button:active, .nav button:active, .toggle:active:not(:disabled), .chip button:active:not(:disabled), .x:active:not(:disabled) {
+.side button:active, .nav button:active, .toggle:active:not(:disabled), .chip button:active:not(:disabled), .x:active:not(:disabled), .swatch:active:not(:disabled) {
   transform: scale(0.97);
   opacity: 0.7;
 }
 button.row:active:not(:disabled), .cardhead:active { opacity: 0.55; }
 @media (prefers-reduced-motion: reduce) {
-  .btn:active, .choice:active, .pill:active, .seg button:active, .side button:active, .nav button:active, .toggle:active, .chip button:active, .x:active { transform: none; }
+  .btn:active, .choice:active, .pill:active, .seg button:active, .side button:active, .nav button:active, .toggle:active, .chip button:active, .x:active, .swatch:active { transform: none; }
 }

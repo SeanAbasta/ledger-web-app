@@ -7,6 +7,7 @@ import { addEntry } from "../../data/months";
 import { formatMinor, parseMinor } from "../../data/money";
 import type { Account, Defaults } from "../../data/schema";
 import { BigAmount } from "../../ui/Amount";
+import type { CardColor } from "../../ui/cardColor";
 import { useLedger } from "../../ui/Ledger";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 import { MoneyInput } from "../../ui/MoneyInput";
@@ -17,7 +18,7 @@ const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[
 type Choice = "statement" | "all" | "other";
 
 /** One credit card: the last statement, what is unbilled, the credit left, and paying the bill. */
-export function CardTile({ card, st, banks, defaultBank, defaults, onOpen }: { card: Account; st: CardStatus; banks: Account[]; defaultBank?: string; defaults?: Defaults; onOpen?: () => void }) {
+export function CardTile({ card, color, st, banks, defaultBank, defaults, onOpen }: { card: Account; color: CardColor; st: CardStatus; banks: Account[]; defaultBank?: string; defaults?: Defaults; onOpen?: () => void }) {
   const { store, changed } = useLedger();
   const [sheet, setSheet] = useState<"pay" | "due">();
   const [from, setFrom] = useState("");
@@ -34,6 +35,8 @@ export function CardTile({ card, st, banks, defaultBank, defaults, onOpen }: { c
   const payAll = st.remaining + st.unbilled;
   // After the statement is paid, paying again goes toward the next one, so no manual transfer is needed.
   const payAhead = !st.remaining && (st.paid || st.unbilled > 0);
+  // How much of the limit is in use (owed plus installment holds), for the bar under Credit left.
+  const used = card.limit ? Math.min(1, Math.max(0, (card.limit - (st.creditLeft ?? card.limit)) / card.limit)) : 0;
 
   function pick(c: Choice) {
     setChoice(c);
@@ -79,7 +82,8 @@ export function CardTile({ card, st, banks, defaultBank, defaults, onOpen }: { c
 
   return (
     <div className="card pad">
-      <button className="cardhead" title="See what makes up these numbers" onClick={onOpen}>
+      {/* The top of the tile is the card face, in the card's colour; tapping it opens the per-card view. */}
+      <button className={`cardhead face-${color}`} title="See what makes up these numbers" onClick={onOpen}>
         <div className="mute">{card.name}<span className="chev">›</span></div>
         {st.remaining ? <BigAmount minor={st.remaining} currency={cur} /> : <BigAmount currency={cur} word={st.paid ? "Paid" : "Nothing due"} />}
         <div className="mute small">
@@ -93,7 +97,14 @@ export function CardTile({ card, st, banks, defaultBank, defaults, onOpen }: { c
       )}
       <div className="row static"><span>Unbilled</span><span>{fmt(st.unbilled)}</span></div>
       {st.creditLeft !== undefined && (
-        <div className="row static"><span>Credit left</span><span>{fmt(st.creditLeft)} <span className="mute small">of {fmt(card.limit!)}</span></span></div>
+        <>
+          <div className="row static credit"><span>Credit left</span><span>{fmt(st.creditLeft)} <span className="mute small">of {fmt(card.limit!)}</span></span></div>
+          <div className="usedrow">
+            <div className={used >= 0.9 ? "usedbar high" : "usedbar"} role="meter" aria-label="Credit used" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(used * 100)} aria-valuetext={`${Math.round(used * 100)}% of the limit used`}>
+              <i style={{ width: `${used > 0 ? Math.max(2, used * 100) : 0}%` }} />
+            </div>
+          </div>
+        </>
       )}
       {st.creditLeft !== undefined && st.holds.length === 1 && (
         <div className="row static hold"><span>{st.holds[0]!.name} hold</span><span>{fmt(st.holds[0]!.amount)}</span></div>

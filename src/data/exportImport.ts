@@ -39,6 +39,8 @@ function accountProblem(a: Record<string, unknown>): string | undefined {
   if (a.dueDays !== undefined && !(Number.isInteger(a.dueDays) && (a.dueDays as number) >= 0 && (a.dueDays as number) <= 60)) return "bad due days";
   if (a.limit !== undefined && !(Number.isInteger(a.limit) && (a.limit as number) >= 0)) return "bad limit";
   if (a.dueOverrides !== undefined && !(isObj(a.dueOverrides) && Object.entries(a.dueOverrides).every(([k, v]) => isoDate(k) && isoDate(v)))) return "bad due dates";
+  // Any string: a colour this copy does not know (from a newer one) just shows the default.
+  if (a.color !== undefined && typeof a.color !== "string") return "bad colour";
   return undefined;
 }
 
