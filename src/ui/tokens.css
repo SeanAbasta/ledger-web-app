@@ -29,7 +29,6 @@
   --banner: #7a4a00;
   --err: #c9352b;
   --track: rgba(0, 0, 0, 0.05);
-  --c5: #c7c7cc;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   /* Big figures: SF Pro Rounded where the system has it (Safari), else the normal font. */
   --rounded: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
@@ -105,7 +104,6 @@
   --banner: #ffcc80;
   --err: #ff6961;
   --track: rgba(255, 255, 255, 0.08);
-  --c5: #636366;
   color-scheme: dark;
 }
 @media (max-width: 700px) { :root { --gutter: 16px; } }
@@ -375,18 +373,23 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .big { font-family: var(--rounded); font-size: var(--fs-2xl); font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; margin: 2px 0; white-space: nowrap; }
 .big .cur { font-size: 0.62em; font-weight: 600; color: var(--mute); margin-right: 1px; }
 .big .cents { font-size: 0.6em; font-weight: 600; color: var(--mute); }
-.donut { display: flex; justify-content: center; margin: 8px 0; }
-.legend { list-style: none; margin: 0; padding: 0; }
-.legend li { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
-.legend .r { margin-left: auto; color: var(--mute); }
-.legend i { width: 9px; height: 9px; border-radius: 3px; }
+/* Category chart: each segment and legend dot has its category's fixed colour (.tone-*), the same as
+   the Ledger's row dots. The legend goes to two columns when its card is wide enough. */
+.donut { display: flex; justify-content: center; margin: var(--sp-2) 0; }
 .donut .track { stroke: var(--track); }
-:root { --c0: #0a84ff; --c1: #5ac8fa; --c2: #34c759; --c3: #ff9f0a; --c4: #af52de; }
-.s0 { stroke: var(--c0); } .s1 { stroke: var(--c1); } .s2 { stroke: var(--c2); } .s3 { stroke: var(--c3); } .s4 { stroke: var(--c4); } .s5 { stroke: var(--c5); }
-.k0 { background: var(--c0); } .k1 { background: var(--c1); } .k2 { background: var(--c2); } .k3 { background: var(--c3); } .k4 { background: var(--c4); } .k5 { background: var(--c5); }
-/* Scoped to the chart: as plain .bar it also hit <header class="bar"> and drew the page title at 45%. */
-rect.bar { fill: var(--c0); opacity: 0.45; }
-rect.bar.now { opacity: 1; }
+.donut .seg { stroke: var(--tone, var(--t-gray)); }
+.catcard { container-type: inline-size; }
+.legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); column-gap: var(--sp-5); }
+@container (min-width: 420px) { .legend { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.legend li { display: flex; align-items: center; gap: var(--sp-2); padding: 3px 0; min-width: 0; }
+.legend .r { margin-left: auto; color: var(--mute); }
+.legend i { width: 9px; height: 9px; border-radius: 3px; flex: none; background: var(--tone, var(--t-gray)); }
+/* Daily bars: one column per day with round tops, today's at full strength. (Named .dbar: a plain .bar
+   rule once matched <header class="bar"> and drew the page title at 45%.) */
+.dbars { display: flex; align-items: stretch; gap: 3px; height: 150px; margin-top: var(--sp-2); }
+.dbar { flex: 1 1 0; min-width: 0; display: flex; align-items: flex-end; }
+.dbar i { display: block; width: 100%; max-width: 14px; margin: 0 auto; border-radius: 4px 4px 2px 2px; background: var(--accent); opacity: 0.45; }
+.dbar.now i { opacity: 1; }
 @media (max-width: 700px) { .g3, .g2 { grid-template-columns: 1fr; } }
 /* Dashboard top row: Spent as the hero, Still due and Last month as two smaller tiles. One row on
    computers; on phones and narrow windows the hero takes the full width and the tiles share a row. */
@@ -450,7 +453,7 @@ rect.bar.now { opacity: 1; }
 .grp button.link { all: unset; cursor: pointer; color: var(--accent-ink); font-size: var(--fs-md); font-weight: 500; letter-spacing: 0; text-transform: none; }
 .grp button.link:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); border-radius: 6px; }
 fieldset:disabled .grp button.link { opacity: 0.5; cursor: default; }
-.line { stroke: var(--c0); }
+.line { stroke: var(--accent); }
 .ftable { padding: 4px 16px; margin-top: 12px; }
 .frow { display: grid; grid-template-columns: 1fr 1.3fr 1fr 1fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); text-align: right; }
 .frow:last-child { border-bottom: 0; }

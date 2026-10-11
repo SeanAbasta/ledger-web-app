@@ -16,6 +16,7 @@ import { myShare } from "../../data/splits";
 import { pctChange, summarize, topCategories, type Summary } from "../../data/summary";
 import { BigAmount } from "../../ui/Amount";
 import { cardColor } from "../../ui/cardColor";
+import { categoryTone } from "../../ui/categoryColor";
 import { Empty } from "../../ui/Empty";
 import { DashboardIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
@@ -52,9 +53,9 @@ function Donut({ cats, total, base }: { cats: Summary["byCategory"]; total: numb
     <svg viewBox="0 0 120 120" width="150" height="150" role="img" aria-label={`Spending by category, total ${formatMinor(total, base)}`}>
       <g fill="none" strokeWidth="18" transform="rotate(-90 60 60)">
         <circle cx="60" cy="60" r="40" className="track" />
-        {cats.map((c, i) => {
+        {cats.map((c) => {
           const len = (c.amount / total) * C;
-          const el = <circle key={c.category} cx="60" cy="60" r="40" className={`s${i}`} strokeDasharray={`${Math.max(len - 1, 0)} ${C - Math.max(len - 1, 0)}`} strokeDashoffset={-acc} />;
+          const el = <circle key={c.category} cx="60" cy="60" r="40" className={`seg tone-${categoryTone(c.category)}`} strokeDasharray={`${Math.max(len - 1, 0)} ${C - Math.max(len - 1, 0)}`} strokeDashoffset={-acc} />;
           acc += len;
           return el;
         })}
@@ -63,15 +64,18 @@ function Donut({ cats, total, base }: { cats: Summary["byCategory"]; total: numb
   );
 }
 
+/** One column per day, today's at full strength. HTML columns keep the rounded tops round at any width
+ *  (a stretched SVG squashed them). Heights go through React's style prop, which the CSP allows. */
 function Bars({ days, from, todayIdx, base }: { days: number[]; from: string; todayIdx: number; base: string }) {
   const max = Math.max(...days, 1);
   return (
-    <svg viewBox={`0 0 ${days.length * 10} 100`} width="100%" height="150" preserveAspectRatio="none" role="img" aria-label={`Daily spending from ${from}, highest ${formatMinor(max, base)}`}>
-      {days.map((v, i) => {
-        const h = (v / max) * 96;
-        return <rect key={i} x={i * 10 + 1.5} y={100 - h} width="7" height={Math.max(h, v > 0 ? 1 : 0)} rx="2" className={i === todayIdx ? "bar now" : "bar"}><title>{`${i + 1}: ${formatMinor(v, base)}`}</title></rect>;
-      })}
-    </svg>
+    <div className="dbars" role="img" aria-label={`Daily spending from ${from}, highest ${formatMinor(max, base)}`}>
+      {days.map((v, i) => (
+        <span key={i} className={i === todayIdx ? "dbar now" : "dbar"} title={`${i + 1}: ${formatMinor(v, base)}`}>
+          <i style={{ height: `${v > 0 ? Math.max((v / max) * 100, 2) : 0}%` }} />
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -178,12 +182,12 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
         <Empty icon={<DashboardIcon />} title="Nothing spent yet" note={labelMonth(from)} />
       ) : (
         <div className="grid g2">
-          <div className="card pad">
+          <div className="card pad catcard">
             <div className="mute">Categories</div>
             <div className="donut"><Donut cats={cats} total={catTotal} base={base} /></div>
             <ul className="legend">
-              {cats.map((c, i) => (
-                <li key={c.category}><i className={`k${i}`} />{c.category}<span className="r">{Math.round((c.amount / catTotal) * 100)}%</span></li>
+              {cats.map((c) => (
+                <li key={c.category}><i className={`tone-${categoryTone(c.category)}`} />{c.category}<span className="r">{Math.round((c.amount / catTotal) * 100)}%</span></li>
               ))}
             </ul>
           </div>
