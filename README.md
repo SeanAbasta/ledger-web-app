@@ -105,7 +105,7 @@ Each person runs their own copy, with their own two GitHub repos. Nothing is sha
 | **App** (your copy of this project) | Public | Code only. GitHub Pages needs a public repo on a free account. It never holds your data. |
 | **Data** (yours alone) | **Private** | Your expenses, as small JSON files. |
 
-> The author's own copy is live at https://seanabasta.github.io/ledger-web-app/ as a personal instance. Please make your own copy instead of using it: that way you decide what code runs with your token, and updates happen when you choose.
+> The author's own copy is live at https://seanabasta.github.io/ledger-web-app/ as a personal instance. Making your own copy is still the safest route: that way you decide what code runs with your token, and updates happen when you choose. If you know and trust the author and do not want to keep a copy, you can use this one instead. Connect it to your own private data repo and your own token (steps 2 and 3 below). Your data stays in your browser and your repo, and the author never sees it. You will get each update as soon as it is deployed, and you need to trust the code that is deployed there.
 
 ### 1. Make your own copy of the app
 
