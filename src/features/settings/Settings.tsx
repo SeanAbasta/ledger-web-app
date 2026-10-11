@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { list, remove, saveSettings, upsert } from "../../data/collections";
 import { CURRENCIES } from "../../data/currencies";
 import { formatMinor, parseMinor } from "../../data/money";
-import type { Account, Defaults, Person, Rule, Settings as S } from "../../data/schema";
+import type { Account, Defaults, Entry, Person, Rule, Settings as S } from "../../data/schema";
 import { DEFAULT_DUE_DAYS, DEFAULT_SETTINGS, isCard } from "../../data/schema";
 import { getSettings } from "../../data/collections";
 import { useLedger } from "../../ui/Ledger";
@@ -10,6 +10,11 @@ import { daysLeft } from "../../sync/config";
 import { bundleText, parseBundle, type Bundle } from "../../data/bundle";
 import { entriesCsv, exportBundle, importBundle, validateBundle } from "../../data/exportImport";
 import { loadAllEntries } from "../../data/months";
+import { accountBalances } from "../../data/accounts";
+import { nonZero } from "../../data/balances";
+import { today } from "../../data/dates";
+import { accountUsage, personUsage, usageText } from "../../data/usage";
+import { itemsToDate } from "../../data/world";
 import { downloadText } from "../../ui/download";
 import { pillOf } from "../../ui/Pill";
 import { Sheet } from "../../ui/Sheet";
@@ -93,8 +98,9 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
   const [backupMsg, setBackupMsg] = useState("");
   const [theme, setThemeState] = useState<Theme>(loadTheme);
   const [confirm, setConfirm] = useState<"pull" | "remove">();
-  const [dropCard, setDropCard] = useState<Account>();
-  const [used, setUsed] = useState<Set<string>>(new Set());
+  // A person or account that is in use: removing it asks first and says what it affects.
+  const [drop, setDrop] = useState<{ kind: "people" | "accounts"; id: string; name: string; lines: string[] }>();
+  const [refs, setRefs] = useState<{ entries: Entry[]; rules: Rule[] }>({ entries: [], rules: [] });
   const [s, setS] = useState<S>(DEFAULT_SETTINGS);
   const [people, setPeople] = useState<Person[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -106,12 +112,9 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
       setS(await getSettings(store));
       setPeople(await list(store, "people"));
       setAccounts(await list(store, "accounts"));
-      // Accounts that something refers to, so removing a card with history asks first.
+      // What refers to people and accounts, so removing one in use asks first.
       const [entries, rules] = await Promise.all([loadAllEntries(store), list(store, "rules") as Promise<Rule[]>]);
-      setUsed(new Set([
-        ...entries.filter((e) => !e.deleted).flatMap((e) => [e.accountId, e.toAccountId]),
-        ...rules.flatMap((r) => [r.accountId, ...(r.revisions ?? []).map((x) => x.accountId)]),
-      ].filter((x): x is string => !!x)));
+      setRefs({ entries, rules });
       setLastExported(await store.getMeta<string>("lastExported"));
     })();
   }, [store, rev]);
@@ -126,6 +129,41 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
   // A default whose account or category was removed shows as unset; new items then start as if none was set.
   const shown = (id: string | undefined, from: Account[]) => (id && from.some((a) => a.id === id) ? id : "");
   const stamp = () => new Date().toISOString().slice(0, 10);
+
+  async function removeNow(kind: "people" | "accounts", id: string) {
+    await remove(store, kind, id);
+    setDrop(undefined);
+    changed();
+  }
+  function askRemovePerson(p: Person) {
+    const u = personUsage(p.id, refs.entries, refs.rules, itemsToDate(refs, today()));
+    const owed = nonZero(u.owed);
+    if (!u.entries && !u.plans && !owed.length) return void removeNow("people", p.id);
+    const amts = (xs: [string, number][]) => xs.map(([c, v]) => formatMinor(Math.abs(v), c)).join(" and ");
+    const theyOwe = owed.filter(([, v]) => v > 0);
+    const iOwe = owed.filter(([, v]) => v < 0);
+    const on = usageText(u);
+    setDrop({ kind: "people", id: p.id, name: p.name, lines: [
+      [on && `${p.name} is on ${on}.`, theyOwe.length ? `${p.name} owes you ${amts(theyOwe)}.` : "", iOwe.length ? `You owe ${p.name} ${amts(iOwe)}.` : "", !owed.length ? "Settled up." : ""].filter(Boolean).join(" "),
+      `The entries stay in the Ledger and keep the split, but ${p.name} leaves Splits${owed.length ? ", Owed to you and the forecast" : ""}. Adding ${p.name} again makes a new person; it does not bring these back.`,
+    ] });
+  }
+  function askRemoveAccount(a: Account) {
+    const u = accountUsage(a.id, refs.entries, refs.rules);
+    if (isCard(a)) {
+      if (!u.entries && !u.plans) return void removeNow("accounts", a.id);
+      return setDrop({ kind: "accounts", id: a.id, name: a.name, lines: [
+        'This card has entries. They stay in the Ledger, but without the card they count as money that left no account ("Other"), not as card charges. Change their account first if you want to keep them on a card.',
+      ] });
+    }
+    const balance = accountBalances([a], itemsToDate(refs, today()), s.baseCurrency).accounts[0]?.balance ?? a.openingBalance;
+    if (!u.entries && !u.plans && !balance && !a.openingBalance) return void removeNow("accounts", a.id);
+    const on = usageText(u);
+    setDrop({ kind: "accounts", id: a.id, name: a.name, lines: [
+      `${on ? `${a.name} has ${on}. Balance` : `${a.name} has a balance of`} ${formatMinor(balance, a.currency)}.`,
+      [on && 'The entries stay in the Ledger but count as money from no account ("Other").', a.openingBalance ? `Its opening balance of ${formatMinor(a.openingBalance, a.currency)} leaves your total.` : ""].filter(Boolean).join(" "),
+    ].filter(Boolean) });
+  }
 
   async function exportJson() {
     downloadText(bundleText(await exportBundle(store)), `ledger-export-${stamp()}.json`);
@@ -214,7 +252,7 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
         {accounts.filter((a) => !isCard(a)).map((a) => (
           <AccountRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency}
             onSave={async (x) => { await upsert(store, "accounts", x); changed(); }}
-            onRemove={async () => { await remove(store, "accounts", a.id); changed(); }} />
+            onRemove={() => askRemoveAccount(a)} />
         ))}
         <button className="btn ghost sm" onClick={async () => { await upsert(store, "accounts", { name: "New account", currency: s.baseCurrency, openingBalance: 0 }); changed(); }}>Add account</button>
       </div>
@@ -225,7 +263,7 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
         {accounts.filter(isCard).map((a) => (
           <CardRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency}
             onSave={async (x) => { await upsert(store, "accounts", x); changed(); }}
-            onRemove={async () => { if (used.has(a.id)) setDropCard(a); else { await remove(store, "accounts", a.id); changed(); } }} />
+            onRemove={() => askRemoveAccount(a)} />
         ))}
         <button className="btn ghost sm" onClick={async () => { await upsert(store, "accounts", { name: "New card", currency: s.baseCurrency, openingBalance: 0, type: "card", statementDay: 15, dueDays: DEFAULT_DUE_DAYS }); changed(); }}>Add card</button>
       </div>
@@ -235,7 +273,7 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
         {people.map((p) => (
           <div key={p.id} className="acct">
             <input aria-label="Name" defaultValue={p.name} onBlur={async (e) => { const n = e.target.value.trim(); if (n && n !== p.name) { await upsert(store, "people", { ...p, name: n }); changed(); } }} />
-            <button className="x" aria-label={`Remove ${p.name}`} onClick={async () => { await remove(store, "people", p.id); changed(); }}>✕</button>
+            <button className="x" aria-label={`Remove ${p.name}`} onClick={() => askRemovePerson(p)}>✕</button>
           </div>
         ))}
         <form className="acct" onSubmit={async (e) => { e.preventDefault(); if (!person.trim()) return; await upsert(store, "people", { name: person.trim() }); setPerson(""); changed(); }}>
@@ -300,15 +338,13 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
         </Sheet>
       )}
 
-      {dropCard && (
-        <Sheet locked onClose={() => setDropCard(undefined)}>
-          <h3>Remove {dropCard.name}</h3>
-          <p className="mute">
-            This card has entries. They stay in the Ledger, but without the card they count as money that left no account ("Other"), not as card charges. Change their account first if you want to keep them on a card.
-          </p>
+      {drop && (
+        <Sheet locked onClose={() => setDrop(undefined)}>
+          <h3>Remove {drop.name}</h3>
+          {drop.lines.map((l) => <p key={l} className="mute">{l}</p>)}
           <div className="actions">
-            <button className="btn ghost" onClick={() => setDropCard(undefined)}>Cancel</button>
-            <button className="btn ghost danger" onClick={async () => { await remove(store, "accounts", dropCard.id); setDropCard(undefined); changed(); }}>Remove</button>
+            <button className="btn ghost" onClick={() => setDrop(undefined)}>Cancel</button>
+            <button className="btn ghost danger" onClick={() => void removeNow(drop.kind, drop.id)}>Remove</button>
           </div>
         </Sheet>
       )}
