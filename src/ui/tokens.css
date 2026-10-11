@@ -389,11 +389,20 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .legend .r { margin-left: auto; color: var(--mute); }
 .legend i { width: 9px; height: 9px; border-radius: 3px; flex: none; background: var(--tone, var(--t-gray)); }
 /* Daily bars: one column per day with round tops, today's at full strength. (Named .dbar: a plain .bar
-   rule once matched <header class="bar"> and drew the page title at 45%.) */
-.dbars { display: flex; align-items: stretch; gap: 3px; height: 150px; margin-top: var(--sp-2); }
-.dbar { flex: 1 1 0; min-width: 0; display: flex; align-items: flex-end; }
+   rule once matched <header class="bar"> and drew the page title at 45%.) Each column is the bar area
+   plus a 16 px label row; the baseline sits on top of the label row. Quiet days that have happened get
+   a short stub (.zero), future days draw nothing. */
+.dailyhead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
+.dbars { position: relative; display: flex; align-items: stretch; gap: 3px; height: 166px; margin-top: var(--sp-2); }
+.dbars::after { content: ""; position: absolute; left: 0; right: 0; bottom: 16px; border-top: 1px solid var(--line); }
+.dbar { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+.dfill { flex: 1; display: flex; align-items: flex-end; }
 .dbar i { display: block; width: 100%; max-width: 14px; margin: 0 auto; border-radius: 4px 4px 2px 2px; background: var(--accent); opacity: 0.45; }
+.dbar i.zero { height: 3px; opacity: 0.2; }
 .dbar.now i { opacity: 1; }
+.dlab { height: 16px; line-height: 16px; display: flex; justify-content: center; white-space: nowrap; font-size: var(--fs-xs); color: var(--mute); }
+.dbar.now .dlab { color: var(--accent-ink); font-weight: 600; }
+.dailystats { margin-top: var(--sp-3); }
 @media (max-width: 700px) { .g3, .g2 { grid-template-columns: 1fr; } }
 /* Dashboard top row: Spent as the hero, Still due and Last month as two smaller tiles. One row on
    computers; on phones and narrow windows the hero takes the full width and the tiles share a row. */

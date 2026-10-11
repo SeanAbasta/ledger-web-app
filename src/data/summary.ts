@@ -57,3 +57,23 @@ export function topCategories(cats: Summary["byCategory"], n = 5): Summary["byCa
 export function pctChange(cur: Minor, prev: Minor): number | null {
   return prev > 0 ? Math.round(((cur - prev) / prev) * 100) : null;
 }
+
+export interface DailyStats {
+  /** Spent per elapsed day; 0 before any day has passed. */
+  average: Minor;
+  /** The highest day (the earliest on a tie), only when something was spent that day. */
+  peak?: { index: number; amount: Minor };
+  /** Elapsed days with nothing spent (a refund day does not count as quiet). */
+  quietDays: number;
+}
+
+/** `elapsed` is how many days of `byDay` have happened: today's day number, or the whole month once it is past. */
+export function dailyStats(byDay: Minor[], elapsed: number): DailyStats {
+  const days = byDay.slice(0, Math.max(0, elapsed));
+  const average = days.length ? Math.round(days.reduce((a, v) => a + v, 0) / days.length) : 0;
+  let peak: DailyStats["peak"];
+  days.forEach((amount, index) => {
+    if (amount > 0 && (!peak || amount > peak.amount)) peak = { index, amount };
+  });
+  return { average, peak, quietDays: days.filter((v) => v === 0).length };
+}

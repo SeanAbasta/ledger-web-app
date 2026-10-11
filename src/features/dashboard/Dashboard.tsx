@@ -8,12 +8,12 @@ import { isCard, type Account, type Defaults } from "../../data/schema";
 import { forecast } from "../../data/forecast";
 import { itemsToDate, loadWorld } from "../../data/world";
 import { getSettings, list } from "../../data/collections";
-import { addDays, addMonths, labelMonth, monthEnd, monthStart, today } from "../../data/dates";
+import { addDays, addMonths, labelMonth, labelShort, monthEnd, monthStart, today } from "../../data/dates";
 import { loadEntries } from "../../data/months";
 import { formatMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem } from "../../data/rules";
 import { myShare } from "../../data/splits";
-import { pctChange, summarize, topCategories, type Summary } from "../../data/summary";
+import { dailyStats, pctChange, summarize, topCategories, type Summary } from "../../data/summary";
 import { BigAmount } from "../../ui/Amount";
 import { cardColor } from "../../ui/cardColor";
 import { categoryTone } from "../../ui/categoryColor";
@@ -65,16 +65,23 @@ function Donut({ cats, total, base }: { cats: Summary["byCategory"]; total: numb
 }
 
 /** One column per day, today's at full strength. HTML columns keep the rounded tops round at any width
- *  (a stretched SVG squashed them). Heights go through React's style prop, which the CSP allows. */
-function Bars({ days, from, todayIdx, base }: { days: number[]; from: string; todayIdx: number; base: string }) {
+ *  (a stretched SVG squashed them). Heights go through React's style prop, which the CSP allows.
+ *  Days that have happened with nothing spent get a short stub, so a quiet day reads as a day and not a gap. */
+function Bars({ days, from, elapsed, todayIdx, base, label }: { days: number[]; from: string; elapsed: number; todayIdx: number; base: string; label: string }) {
   const max = Math.max(...days, 1);
   return (
-    <div className="dbars" role="img" aria-label={`Daily spending from ${from}, highest ${formatMinor(max, base)}`}>
-      {days.map((v, i) => (
-        <span key={i} className={i === todayIdx ? "dbar now" : "dbar"} title={`${i + 1}: ${formatMinor(v, base)}`}>
-          <i style={{ height: `${v > 0 ? Math.max((v / max) * 100, 2) : 0}%` }} />
-        </span>
-      ))}
+    <div className="dbars" role="img" aria-label={label}>
+      {days.map((v, i) => {
+        const quiet = i < elapsed && v <= 0;
+        // Weekly labels (1, 8, 15, ...), and today's own; a weekly one right next to today's is dropped.
+        const named = i === todayIdx || (i % 7 === 0 && Math.abs(i - todayIdx) > 1);
+        return (
+          <span key={i} className={i === todayIdx ? "dbar now" : "dbar"} title={`${labelShort(addDays(from, i))}: ${formatMinor(v, base)}`}>
+            <span className="dfill"><i className={quiet ? "zero" : undefined} style={quiet ? undefined : { height: `${v > 0 ? Math.max((v / max) * 100, 2) : 0}%` }} /></span>
+            <span className="dlab">{named ? i + 1 : ""}</span>
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -136,6 +143,10 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
   const catTotal = cats.reduce((a, c) => a + c.amount, 0);
   const change = pctChange(cur.total, prevTotal);
   const todayIdx = isCurrent ? Number(today().slice(8)) - 1 : -1;
+  // Days of this month that have happened: up to today, all of a past month, none of a future one.
+  const elapsed = isCurrent ? todayIdx + 1 : from > today() ? 0 : cur.byDay.length;
+  const daily = dailyStats(cur.byDay, elapsed);
+  const dailyLabel = `Daily spending from ${labelShort(from)}, average ${formatMinor(daily.average, base)} a day${daily.peak ? `, highest ${formatMinor(daily.peak.amount, base)} on ${labelShort(addDays(from, daily.peak.index))}` : ""}`;
   const opened = cards.find((c) => c.card.id === openCard);
 
   if (opened) {
@@ -192,8 +203,15 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
             </ul>
           </div>
           <div className="card pad">
-            <div className="mute">Daily</div>
-            <Bars days={cur.byDay} from={from} todayIdx={todayIdx} base={base} />
+            <div className="dailyhead">
+              <span className="mute">Daily</span>
+              {elapsed > 0 && <span className="mute small">Avg {formatMinor(daily.average, base)} a day</span>}
+            </div>
+            <Bars days={cur.byDay} from={from} elapsed={elapsed} todayIdx={todayIdx} base={base} label={dailyLabel} />
+            <div className="dailystats">
+              {daily.peak && <div className="row static"><span>Highest day</span><span>{formatMinor(daily.peak.amount, base)} <span className="mute">{labelShort(addDays(from, daily.peak.index))}</span></span></div>}
+              <div className="row static"><span>No spending</span><span>{daily.quietDays} of {elapsed} {elapsed === 1 ? "day" : "days"}</span></div>
+            </div>
           </div>
         </div>
       )}

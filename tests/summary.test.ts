@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pctChange, summarize, topCategories } from "../src/data/summary";
+import { dailyStats, pctChange, summarize, topCategories } from "../src/data/summary";
 import { myShare } from "../src/data/splits";
 import { daysBetween } from "../src/data/dates";
 import type { LedgerItem } from "../src/data/rules";
@@ -59,4 +59,23 @@ describe("helpers", () => {
     expect(pctChange(100, 0)).toBeNull();
   });
   it("counts days", () => expect(daysBetween("2026-10-01", "2026-10-31")).toBe(30));
+});
+
+describe("dailyStats", () => {
+  it("averages over the days that have happened, names the highest day and counts quiet days", () => {
+    // Day 6 onwards has not happened yet, so the zeros there are not quiet days.
+    const s = dailyStats([1000, 0, 3000, 0, 500, 0, 0, 0], 5);
+    expect(s).toEqual({ average: 900, peak: { index: 2, amount: 3000 }, quietDays: 2 });
+  });
+  it("takes the earliest day on a tie", () => {
+    expect(dailyStats([200, 700, 700], 3).peak).toEqual({ index: 1, amount: 700 });
+  });
+  it("a refund day lowers the average, is never the peak and is not quiet", () => {
+    const s = dailyStats([-400, 1000, 0], 3);
+    expect(s).toEqual({ average: 200, peak: { index: 1, amount: 1000 }, quietDays: 1 });
+  });
+  it("has no peak and a zero average with nothing spent or no days yet", () => {
+    expect(dailyStats([0, 0, 0], 3)).toEqual({ average: 0, peak: undefined, quietDays: 3 });
+    expect(dailyStats([0, 0, 0], 0)).toEqual({ average: 0, peak: undefined, quietDays: 0 });
+  });
 });
