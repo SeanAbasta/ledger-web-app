@@ -309,7 +309,7 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
             {s.categories.map((c) => <option key={c}>{c}</option>)}
           </select></label>
         <div className="field"><b>Use last used instead<span className="mute small sub">Overrides the defaults above, on this device</span></b>
-          <button type="button" className={`toggle ${s.defaults?.lastUsed ? "on" : ""}`} aria-pressed={!!s.defaults?.lastUsed} onClick={() => void saveDefault({ lastUsed: !s.defaults?.lastUsed || undefined })}><i /></button></div>
+          <button type="button" className={`toggle ${s.defaults?.lastUsed ? "on" : ""}`} aria-pressed={!!s.defaults?.lastUsed} aria-label="Use last used instead" onClick={() => void saveDefault({ lastUsed: !s.defaults?.lastUsed || undefined })}><i /></button></div>
       </div>
 
       <div className="grp">Categories<button type="button" className="r link" aria-pressed={editCats} onClick={() => setEditCats(!editCats)}>{editCats ? "Done" : "Edit"}</button></div>

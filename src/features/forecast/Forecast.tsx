@@ -111,7 +111,7 @@ export function Forecast() {
           );
         })}
         <div className="field"><b>Repeat every month</b>
-          <button type="button" className={`toggle ${repeat ? "on" : ""}`} aria-pressed={repeat} onClick={() => void toggle(!repeat)}><i /></button></div>
+          <button type="button" className={`toggle ${repeat ? "on" : ""}`} aria-pressed={repeat} aria-label="Repeat salary every month" onClick={() => void toggle(!repeat)}><i /></button></div>
         {banks.length > 0 && (
           <label className="field"><b>Paid into</b>
             <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>{banks.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>

@@ -208,7 +208,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
 
       {entry?.kind !== "income" && (
         <div className="field"><b>Split</b>
-          <button type="button" className={`toggle ${split ? "on" : ""}`} aria-pressed={split} onClick={() => setSplit(!split)}><i /></button></div>
+          <button type="button" className={`toggle ${split ? "on" : ""}`} aria-pressed={split} aria-label="Split" onClick={() => setSplit(!split)}><i /></button></div>
       )}
       {split && entry?.kind !== "income" && (
         <>
