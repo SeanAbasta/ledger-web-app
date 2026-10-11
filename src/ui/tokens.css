@@ -305,6 +305,8 @@ details { margin: 8px 0; font-size: 13px; color: var(--mute); }
 .hint { margin: 10px 0 0; }
 .row:not(.static) > :first-child { flex: 1; min-width: 0; }
 .owedline { display: block; }
+/* People removed since an entry was split: listed in its edit form, kept in the split. */
+.kept { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 10px; text-align: right; }
 
 /* card tile head opens the per-card view */
 .cardhead { all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer; border-radius: 8px; }

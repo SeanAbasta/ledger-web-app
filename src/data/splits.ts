@@ -1,5 +1,5 @@
 import { splitEvenly } from "./money";
-import type { Entry, Minor, Split, SplitMode, SplitShare } from "./schema";
+import type { Entry, Minor, Person, Split, SplitMode, SplitShare } from "./schema";
 
 /** What an expense actually costs me: my part of a split, or the whole amount when not split. */
 export function myShare(amount: Minor, split?: Split): Minor {
@@ -52,4 +52,51 @@ export function buildSplit(opts: {
     shares = everyone.map((id, i) => ({ personId: id, amount: parts[i]! })).filter((s) => s.personId !== paidBy);
   }
   return { paidBy, mode, shares };
+}
+
+/** Everyone in a split other than me: the people who owe (in share order), then the payer. */
+export function participants(split: Split): string[] {
+  return [...new Set([...split.shares.map((s) => s.personId), split.paidBy])].filter((id) => id !== "me");
+}
+
+/**
+ * People in a split who have since been removed, in split order. The name comes from the removed
+ * record (tombstone); "Removed person" when even that is gone.
+ */
+export function removedInSplit(split: Split, live: Person[], all: Person[]): { id: string; name: string }[] {
+  return participants(split)
+    .filter((id) => !live.some((p) => p.id === id))
+    .map((id) => ({ id, name: all.find((p) => p.id === id)?.name ?? "Removed person" }));
+}
+
+/**
+ * The split to store when an entry is saved. When nothing about the split changed (amount, payer,
+ * mode, who is in it and, for custom, each share), the stored split is returned exactly as it was,
+ * so opening and saving an entry never moves a share. Otherwise it is rebuilt with `buildSplit`,
+ * keeping the original participants' order so spare centavos go to the same people.
+ */
+export function splitForSave(opts: {
+  original?: { amount: Minor; split: Split };
+  amount: Minor;
+  paidBy: string;
+  mode: SplitMode;
+  people: string[];
+  custom?: SplitShare[];
+}): Split {
+  const { original, amount, paidBy, mode, people, custom } = opts;
+  const others = [...new Set(people.filter((id) => id !== "me"))];
+  if (original) {
+    const o = original.split;
+    const before = participants(o);
+    const now = [...new Set([...others, ...(paidBy === "me" ? [] : [paidBy])])];
+    const owed = (xs: SplitShare[]) => JSON.stringify(Object.fromEntries(xs.filter((s) => s.amount > 0 && s.personId !== paidBy).map((s) => [s.personId, s.amount]).sort()));
+    const same = original.amount === amount && o.paidBy === paidBy && o.mode === mode
+      && before.length === now.length && before.every((id) => now.includes(id))
+      && (mode !== "custom" || owed(o.shares) === owed(custom ?? []));
+    if (same) return o;
+    const order = before.filter((id) => others.includes(id)).concat(others.filter((id) => !before.includes(id)));
+    const rank = (s: SplitShare) => (order.includes(s.personId) ? order.indexOf(s.personId) : order.length);
+    return buildSplit({ amount, paidBy, mode, people: order, custom: custom && [...custom].sort((x, y) => rank(x) - rank(y)) });
+  }
+  return buildSplit({ amount, paidBy, mode, people: others, custom });
 }

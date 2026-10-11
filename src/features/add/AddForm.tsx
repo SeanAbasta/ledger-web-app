@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import { getSettings, list, upsert } from "../../data/collections";
+import { getSettings, list, listAll, upsert } from "../../data/collections";
 import { canBillNext, cutoffFor, dueFor, nextCutoff } from "../../data/cards";
 import { CURRENCIES } from "../../data/currencies";
 import { startAccount, startCategory } from "../../data/defaults";
 import { addEntry, deleteEntry, updateEntry } from "../../data/months";
 import { formatMinor, parseMinor, splitEvenly } from "../../data/money";
 import { labelShort, today } from "../../data/dates";
-import type { Account, Entry, Frequency, Person, Settings, SplitMode, SplitShare } from "../../data/schema";
+import type { Account, Entry, Frequency, Person, Settings, SplitMode } from "../../data/schema";
 import { isCard, monthOf, DEFAULT_SETTINGS } from "../../data/schema";
-import { buildSplit } from "../../data/splits";
+import { keptKey, resolveNames, splitFormOf, splitFromForm, type SplitFormState } from "../../data/splitForm";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { AccountOptions } from "../../ui/AccountOptions";
@@ -53,6 +53,8 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
   const [mode, setMode] = useState<SplitMode>(entry?.split?.mode ?? "half");
   const [names, setNames] = useState("");
   const [custom, setCustom] = useState<Record<string, string>>({});
+  // People in this split who were removed in Settings since. They stay in it unless the split is changed.
+  const [kept, setKept] = useState<SplitFormState["kept"]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -71,11 +73,11 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
         setAccountId((x) => x || start);
       }
       if (entry?.split) {
-        const ids = entry.split.shares.map((x) => x.personId).concat(entry.split.paidBy).filter((x) => x !== "me");
-        setNames([...new Set(ids)].map((id) => p.find((x) => x.id === id)?.name ?? "").filter(Boolean).join(", "));
-        const nm = (id: string) => p.find((x) => x.id === id)?.name.toLowerCase() ?? id;
-        setPaidBy(entry.split.paidBy === "me" ? "me" : nm(entry.split.paidBy));
-        setCustom(Object.fromEntries(entry.split.shares.map((x) => [nm(x.personId), formatMinor(x.amount, entry.currency).replace(/[^\d.]/g, "")])));
+        const f = splitFormOf(entry.split, entry.currency, p, await listAll(store, "people"));
+        setNames(f.names);
+        setPaidBy(f.paidBy);
+        setCustom(f.custom);
+        setKept(f.kept);
       }
     })();
   }, [store, entry]);
@@ -92,15 +94,6 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
   const billable = !!card && validDate && entry?.kind !== "income" && (!!entry || kind === "one-off") && !someoneElsePaid && (canBillNext(card, date) || !!entry?.nextBill);
   const nextCut = card && validDate ? nextCutoff(card, cutoffFor(card, date)) : undefined;
 
-  async function resolvePeople(): Promise<Person[]> {
-    const out: Person[] = [];
-    for (const n of nameList) {
-      const found = [...people, ...out].find((p) => p.name.toLowerCase() === n.toLowerCase());
-      out.push(found ?? (await upsert(store, "people", { name: n })));
-    }
-    return out;
-  }
-
   async function save() {
     setError("");
     try {
@@ -115,10 +108,10 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
 
       let splitVal;
       if (split) {
-        const ps = await resolvePeople();
-        const payer = paidBy === "me" ? "me" : ps.find((p) => p.name.toLowerCase() === paidBy)?.id ?? "me";
-        const shares: SplitShare[] = ps.map((p) => ({ personId: p.id, amount: parseMinor(custom[p.name.toLowerCase()] ?? "0", currency) ?? 0 }));
-        splitVal = buildSplit({ amount: perPayment, paidBy: payer, mode, people: ps.map((p) => p.id), custom: shares });
+        const named = await resolveNames(store, nameList, people);
+        // An unchanged split is saved exactly as stored; removed people in it are never dropped.
+        const original = entry?.split ? { amount: entry.amount, split: entry.split } : undefined;
+        splitVal = splitFromForm({ names, paidBy, mode, custom, kept }, named, perPayment, currency, original);
       }
 
       const base = {
@@ -221,14 +214,22 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
         <>
           <label className="field"><b>People</b><input list="people" placeholder="Maya, Jon" value={names} onChange={(e) => setNames(e.target.value)} />
             <datalist id="people">{people.map((p) => <option key={p.id} value={p.name} />)}</datalist></label>
-          <div className="field"><b>Mode</b><Segmented value={mode} options={MODES} labels={MODE_LABEL} onChange={(m) => { setMode(m); if (m === "i-owe" && paidBy === "me") setPaidBy(picks[0]?.[0] ?? "me"); }} /></div>
+          {kept.length > 0 && (
+            <div className="field"><b>Also in this split</b>
+              <span className="kept">{kept.map((k) => <span key={k.id}>{k.name}<span className="tag">removed</span></span>)}</span></div>
+          )}
+          <div className="field"><b>Mode</b><Segmented value={mode} options={MODES} labels={MODE_LABEL} onChange={(m) => { setMode(m); if (m === "i-owe" && paidBy === "me") setPaidBy(picks[0]?.[0] ?? (kept[0] ? keptKey(kept[0].id) : "me")); }} /></div>
           <label className="field"><b>Paid by</b>
             <select value={paidBy} onChange={(e) => setPaidBy(e.target.value)}>
               <option value="me">Me</option>
               {picks.map(([k, n]) => <option key={k} value={k}>{n}</option>)}
+              {kept.map((k) => <option key={k.id} value={keptKey(k.id)}>{k.name} (removed)</option>)}
             </select></label>
           {mode === "custom" && picks.map(([k, n]) => (
             <label className="field" key={k}><b>{n} owes</b><MoneyInput value={custom[k] ?? ""} onChange={(v) => setCustom({ ...custom, [k]: v })} currency={currency} /></label>
+          ))}
+          {mode === "custom" && kept.map((k) => (
+            <label className="field" key={k.id}><b>{k.name} owes<span className="tag">removed</span></b><MoneyInput value={custom[keptKey(k.id)] ?? ""} onChange={(v) => setCustom({ ...custom, [keptKey(k.id)]: v })} currency={currency} /></label>
           ))}
         </>
       )}

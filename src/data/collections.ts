@@ -32,6 +32,12 @@ export async function list<K extends Named>(store: LedgerStore, kind: K): Promis
   return items.filter((i) => !i.deleted);
 }
 
+/** Every item, removed ones (tombstones) included, so something removed can still be named. */
+export async function listAll<K extends Named>(store: LedgerStore, kind: K): Promise<(ItemOf[K] & { deleted?: true })[]> {
+  const doc = await store.get(PATH[kind]);
+  return ((doc?.[kind] as (ItemOf[K] & { deleted?: true })[] | undefined) ?? []);
+}
+
 /** Insert or replace by id. Returns the stored item. */
 export async function upsert<K extends Named>(
   store: LedgerStore,
