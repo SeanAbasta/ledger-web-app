@@ -86,7 +86,7 @@ export function CardTile({ card, st, banks, defaultBank, defaults, onOpen }: { c
         </div>
       </button>
       {st.statement > 0 && (
-        <button className="row" title="Change the due date" onClick={() => open("due")}>
+        <button className="row edit" title="Change the due date" aria-label={`Due ${labelShort(st.due)}${moved ? ", moved" : ""}. Change due date`} onClick={() => open("due")}>
           <span>Due</span><span>{labelShort(st.due)}{moved && <span className="tag">moved</span>}</span>
         </button>
       )}
