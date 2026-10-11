@@ -100,7 +100,7 @@ function CardRow({ a, base, color, onSave, onRemove }: { a: Account; base: strin
 
 type Page = "accounts" | "people" | "general" | "sync";
 /** Settings opens on a short list of pages, each a group of the old long page. */
-const PAGES: [Page, string][] = [["accounts", "Accounts"], ["people", "People and categories"], ["general", "General"], ["sync", "Sync and backup"]];
+const PAGES: [Page, string][] = [["general", "General"], ["accounts", "Accounts"], ["people", "People and categories"], ["sync", "Sync and backup"]];
 const THEME_LABEL: Record<Theme, string> = { light: "Light", dark: "Dark", auto: "Auto" };
 
 /** `focusCard` (from Reconcile, "Set as Owed at start") opens Accounts and scrolls that card into view once loaded. */
