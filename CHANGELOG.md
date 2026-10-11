@@ -2,6 +2,26 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V1.2.2 (2026-10-11)
+
+A new look. The screens and features are the same, and nothing about your data or your numbers changes.
+
+Card colours are saved with your data. An older copy of the app ignores them and keeps them, so nothing breaks if one computer updates later. It just shows the old look until it is updated.
+
+Now includes:
+
+- A calmer background, the way Apple's own apps do it: light grey in light mode and true black in dark mode, cards one step lighter, and a faint blue glow at the top.
+- Big amounts in Apple's rounded font where your browser has it (Safari), with a smaller peso sign and centavos. Digits line up in columns everywhere.
+- On phones the tabs move to a bar at the bottom, each with an icon, so all six are always visible and under your thumb. On a computer the sidebar shows the same icons and stays in view while you scroll.
+- The top bar stays at the top and the page scrolls under it. On iPhone its title and sync status should now look sharp, instead of blurry until you pulled the page down.
+- Ledger rows show what you bought first, then a colour dot, the category and any tags. Amounts have no minus sign. Income, refunds and money paid back to you are green with a plus. Each day and its total stay pinned at the top while you scroll through that day.
+- Each category keeps its own colour, the same in the Ledger and in the Dashboard's category chart.
+- The Dashboard leads with Spent, with a bar comparing it with the same days last month. Still due and Last month sit side by side, and Last month says "No data" instead of ₱0.00 when there is nothing to compare.
+- Each credit card's tile looks like the card, in its own colour. Pick the colour in Settings, Accounts. A bar under Credit left shows how much of the limit is in use.
+- Daily bars have rounded tops, and the category list uses two columns on wide screens.
+- On big screens the content stays in a centred column instead of stretching across the window.
+- Friendlier messages when a list is empty, and "No matches" when a search finds nothing.
+
 ## V1.2.0 (2026-10-10)
 
 **Update both computers before you use "Bill on next statement".** An older copy ignores it and keeps the charge on its original statement, so the two computers would show different card numbers. Everything else works with an older copy.
