@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import { AddForm, type SavedNote } from "./features/add/AddForm";
 import { Dashboard } from "./features/dashboard/Dashboard";
 import { Forecast } from "./features/forecast/Forecast";
@@ -9,11 +9,15 @@ import { Gate } from "./features/sync/Gate";
 import { SetupSheet } from "./features/sync/SetupSheet";
 import { SyncSheet } from "./features/sync/SyncSheet";
 import { LedgerProvider } from "./ui/Ledger";
+import { AddIcon, DashboardIcon, ForecastIcon, LedgerIcon, SettingsIcon, SplitsIcon } from "./ui/icons";
 import { Pill } from "./ui/Pill";
 import { SyncProvider, useSync } from "./ui/Sync";
 
 const NAV = ["Add", "Ledger", "Dashboard", "Splits", "Forecast", "Settings"] as const;
 export type Tab = (typeof NAV)[number];
+
+/** One icon per tab: the phone tab bar and the sidebar show the same ones. */
+const ICON: Record<Tab, () => ReactElement> = { Add: AddIcon, Ledger: LedgerIcon, Dashboard: DashboardIcon, Splits: SplitsIcon, Forecast: ForecastIcon, Settings: SettingsIcon };
 
 /** The screens that are all about editing are locked as a whole while offline and read-only. */
 const EDIT_TABS: Tab[] = ["Add", "Forecast"]; // Settings locks its own edit controls so Export still works offline
@@ -46,9 +50,14 @@ function Shell() {
     <div className="win">
       <nav className="side">
         <div className="brand">Ledger</div>
-        {NAV.map((n) => (
-          <button key={n} className={n === tab ? "on" : ""} onClick={() => { setFocusPerson(undefined); setSaved(undefined); setFocusCard(undefined); setTab(n); }}>{n}</button>
-        ))}
+        {NAV.map((n) => {
+          const Icon = ICON[n];
+          return (
+            <button key={n} className={n === tab ? "on" : ""} aria-current={n === tab ? "page" : undefined} onClick={() => { setFocusPerson(undefined); setSaved(undefined); setFocusCard(undefined); setTab(n); }}>
+              <Icon /><span>{n}</span>
+            </button>
+          );
+        })}
       </nav>
       <main className={READING_TABS.includes(tab) ? "reading" : undefined}>
         <header className="bar">

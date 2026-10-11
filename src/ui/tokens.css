@@ -57,6 +57,10 @@
   /* Bars that content scrolls under: the page colour, slightly see-through, blurred behind. */
   --bar-bg: rgba(242, 242, 247, 0.8);
   --bar-h: 52px;
+  --side-bg: rgba(255, 255, 255, 0.55);
+  --tab-bg: rgba(255, 255, 255, 0.8);
+  --tab-shadow: 0 8px 30px rgba(0, 0, 0, 0.14);
+  --tabbar-h: 62px; /* phone tab bar, for the space kept free under the content */
   /* Stacking: pinned day headers < top bar < phone tab bar < sheets. */
   --z-day: 2;
   --z-bar: 3;
@@ -80,6 +84,9 @@
   --card-shadow: none;
   --glow: rgba(10, 132, 255, 0.2);
   --bar-bg: rgba(0, 0, 0, 0.72);
+  --side-bg: rgba(28, 28, 30, 0.55);
+  --tab-bg: rgba(36, 36, 38, 0.8);
+  --tab-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
   --surface: #1c1c1e;
   --seg-on: #48484a;
   --fill: rgba(255, 255, 255, 0.08);
@@ -122,12 +129,17 @@ body::before {
   z-index: -1;
 }
 .win { display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 100vh; }
+/* Computer: the sidebar stays in view while the page scrolls. Nothing scrolls under it, so it needs no
+   blur. Phones: a floating tab bar at the bottom (below). Both show the same icons and labels. */
 .side {
-  background: var(--glass);
-  backdrop-filter: blur(24px) saturate(1.6);
-  -webkit-backdrop-filter: blur(24px) saturate(1.6);
-  border-right: 1px solid var(--glass-line);
-  padding: 16px 10px;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  background: var(--side-bg);
+  border-right: 0.5px solid var(--line);
+  padding: var(--sp-4) 10px;
+  padding-left: max(10px, env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -135,10 +147,15 @@ body::before {
 .brand { font-weight: 600; font-size: var(--fs-base); padding: 4px 10px 14px; }
 .side button {
   all: unset;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 7px 10px;
   border-radius: 8px;
   cursor: pointer;
 }
+.side .icon { width: 18px; height: 18px; flex: none; }
+.side button:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); }
 .side button.on { background: rgba(10, 132, 255, 0.14); color: var(--accent-ink); font-weight: 500; }
 /* Big screens: the page content stays in a centred column (--col), the background fills the rest.
    The top bar and the banner span the width but line their contents up with that column. */
@@ -152,7 +169,7 @@ main.reading { --col: var(--reading-max); }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: env(safe-area-inset-top) max(var(--gutter), calc((100% - var(--col)) / 2)) 0;
+  padding: env(safe-area-inset-top) max(var(--gutter), env(safe-area-inset-right), calc((100% - var(--col)) / 2)) 0 max(var(--gutter), env(safe-area-inset-left), calc((100% - var(--col)) / 2));
 }
 /* The glass is a layer behind the bar's text, never the element that holds the text. iPhone drew the
    title and pill soft until the page was pulled down when they sat inside the blurred layer
@@ -170,8 +187,10 @@ main.reading { --col: var(--reading-max); }
 /* No blur available, or Reduce Transparency: a solid bar. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .bar::before { background: var(--bg); } }
 @media (prefers-reduced-transparency: reduce) { .bar::before { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { @media (max-width: 700px) { .side::before { background: var(--surface); } } }
+@media (max-width: 700px) and (prefers-reduced-transparency: reduce) { .side::before { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .bar h1 { font-size: var(--fs-lg); font-weight: 600; color: var(--ink); margin: 0; }
-.body { padding: var(--sp-5) var(--gutter); }
+.body { padding: var(--sp-5) max(var(--gutter), env(safe-area-inset-right)) var(--sp-5) var(--gutter); }
 .win .body > * { max-width: var(--col); margin-inline: auto; } /* .win: outranks fieldset.plain's margin: 0 */
 .mute { color: var(--mute); }
 .pill {
@@ -277,20 +296,60 @@ input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
   .drawer .sheet { animation-name: fade-in; }
   .drawer.closing .sheet { transform: none; opacity: 0; }
 }
-/* Small screens: nav becomes one slim scrolling row. Only the page row may grow, otherwise the grid
-   hands spare height to the nav row and stretches its buttons into a tall bar on short pages. */
+/* Phones: a floating glass tab bar at the bottom, under the thumb, with all six tabs always visible
+   (the old top row scrolled sideways and hid Settings below 440 px). It clears the home indicator, and
+   the page keeps room under its last row so nothing hides behind the bar. Like the top bar, the glass
+   is a layer behind the icons and labels, never the element that holds them. */
 @media (max-width: 700px) {
-  .win { grid-template-columns: 1fr; grid-template-rows: auto 1fr; align-content: start; min-height: 100dvh; }
+  .win { grid-template-columns: minmax(0, 1fr); min-height: 100dvh; }
   .side {
+    position: fixed;
+    top: auto;
+    left: max(14px, env(safe-area-inset-left));
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    z-index: var(--z-tabs);
+    height: auto;
     flex-direction: row;
-    align-items: center;
-    overflow-x: auto;
-    padding: calc(8px + env(safe-area-inset-top)) 10px 8px;
-    border-right: 0;
-    border-bottom: 1px solid var(--glass-line);
+    gap: 0;
+    padding: 6px 3px;
+    border: 0;
+    border-radius: 30px;
+    background: none;
+    box-shadow: var(--tab-shadow);
   }
-  .side button { flex: none; white-space: nowrap; }
+  .side::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--tab-bg);
+    -webkit-backdrop-filter: blur(24px) saturate(1.8);
+    backdrop-filter: blur(24px) saturate(1.8);
+    border: 0.5px solid var(--glass-line);
+  }
+  .side button {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 0;
+    border-radius: 22px;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--mute);
+  }
+  .side button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .side .icon { width: 22px; height: 22px; }
   .brand { display: none; }
+  /* "Dashboard" at 10 px needs about 54 px; small phones get a slightly wider bar so it never cuts off. */
+  @media (max-width: 400px) { .side { left: max(10px, env(safe-area-inset-left)); right: max(10px, env(safe-area-inset-right)); } }
+  .body {
+    padding-left: max(var(--gutter), env(safe-area-inset-left));
+    padding-right: max(var(--gutter), env(safe-area-inset-right));
+    padding-bottom: calc(var(--tabbar-h) + max(16px, env(safe-area-inset-bottom)) + var(--sp-5));
+  }
   /* Period on its own row, left aligned, Today pill at the far end: tapping ‹ › never shifts. */
   .toolrow .nav { order: 3; flex-basis: 100%; }
   .nav button.today { margin-left: auto; }
