@@ -223,6 +223,10 @@ input, select {
   border: 0; border-radius: 8px; padding: 6px 10px; min-width: 0;
 }
 input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
+/* Open lists: Chrome on Windows cannot draw the translucent --fill, so it falls back to white and the
+   light text disappears. Opaque theme colours keep the list readable in light and dark. The closed
+   select keeps its own background. */
+option, optgroup { background-color: var(--surface); color: var(--ink); }
 /* iPhone zooms into any field with text under 16 px when it is tapped, so phones get 16 px fields. */
 @media (max-width: 700px) { input, select, textarea { font-size: 16px; } }
 .small { font-size: var(--fs-sm); }
