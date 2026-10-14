@@ -1,4 +1,5 @@
 import { toBase } from "./base";
+import type { CardStatus } from "./cards";
 import { daysBetween } from "./dates";
 import type { LedgerItem } from "./rules";
 import type { Entry, IsoDate, Minor } from "./schema";
@@ -76,4 +77,24 @@ export function dailyStats(byDay: Minor[], elapsed: number): DailyStats {
     if (amount > 0 && (!peak || amount > peak.amount)) peak = { index, amount };
   });
   return { average, peak, quietDays: days.filter((v) => v === 0).length };
+}
+
+export interface WhatIf {
+  /** The owed net (negative when I owe) and Total with it added. */
+  owed?: { amount: Minor; after: Minor };
+  /** What is owed on all cards today and Total with it paid. */
+  cards?: { amount: Minor; after: Minor };
+}
+
+/**
+ * The Accounts card's "what if" lines. Each is worked out from `total`, not stacked on the other.
+ * A card counts statement remaining plus unbilled (future installment holds are not owed yet); a card
+ * that is paid ahead counts as zero. A pair is left out when its amount is zero.
+ */
+export function accountsWhatIf(total: Minor, owedNet: Minor, cards: Pick<CardStatus, "remaining" | "unbilled">[]): WhatIf {
+  const owing = cards.reduce((a, c) => a + Math.max(0, c.remaining + c.unbilled), 0);
+  return {
+    owed: owedNet !== 0 ? { amount: owedNet, after: total + owedNet } : undefined,
+    cards: owing > 0 ? { amount: owing, after: total - owing } : undefined,
+  };
 }

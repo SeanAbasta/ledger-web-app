@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dailyStats, pctChange, summarize, topCategories } from "../src/data/summary";
+import { accountsWhatIf, dailyStats, pctChange, summarize, topCategories } from "../src/data/summary";
 import { myShare } from "../src/data/splits";
 import { daysBetween } from "../src/data/dates";
 import type { LedgerItem } from "../src/data/rules";
@@ -77,5 +77,34 @@ describe("dailyStats", () => {
   it("has no peak and a zero average with nothing spent or no days yet", () => {
     expect(dailyStats([0, 0, 0], 3)).toEqual({ average: 0, peak: undefined, quietDays: 3 });
     expect(dailyStats([0, 0, 0], 0)).toEqual({ average: 0, peak: undefined, quietDays: 0 });
+  });
+});
+
+describe("accountsWhatIf", () => {
+  const total = 5_000_000; // 50,000.00
+  const card = (remaining: number, unbilled: number, futureInstallments = 0) => ({ remaining, unbilled, futureInstallments });
+
+  it("works out each line from Total, not stacked", () => {
+    const w = accountsWhatIf(total, 200_000, [card(300_000, 100_000), card(0, 50_000)]);
+    expect(w.owed).toEqual({ amount: 200_000, after: 5_200_000 });
+    expect(w.cards).toEqual({ amount: 450_000, after: 4_550_000 });
+  });
+
+  it("hides both pairs when nothing is owed either way", () => {
+    expect(accountsWhatIf(total, 0, [])).toEqual({ owed: undefined, cards: undefined });
+    expect(accountsWhatIf(total, 0, [card(0, 0)]).cards).toBeUndefined();
+  });
+
+  it("keeps a negative owed net (I owe) and takes it off Total", () => {
+    expect(accountsWhatIf(total, -150_000, []).owed).toEqual({ amount: -150_000, after: 4_850_000 });
+  });
+
+  it("counts a paid-ahead card as zero", () => {
+    expect(accountsWhatIf(total, 0, [card(0, -80_000)]).cards).toBeUndefined();
+    expect(accountsWhatIf(total, 0, [card(0, -80_000), card(100_000, 0)]).cards).toEqual({ amount: 100_000, after: 4_900_000 });
+  });
+
+  it("leaves future installment holds out", () => {
+    expect(accountsWhatIf(total, 0, [card(100_000, 20_000, 900_000)]).cards).toEqual({ amount: 120_000, after: 4_880_000 });
   });
 });

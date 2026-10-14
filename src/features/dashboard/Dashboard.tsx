@@ -13,7 +13,7 @@ import { loadEntries } from "../../data/months";
 import { formatMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem } from "../../data/rules";
 import { myShare } from "../../data/splits";
-import { dailyStats, pctChange, summarize, topCategories, type Summary } from "../../data/summary";
+import { accountsWhatIf, dailyStats, pctChange, summarize, topCategories, type Summary } from "../../data/summary";
 import { BigAmount } from "../../ui/Amount";
 import { cardColor } from "../../ui/cardColor";
 import { categoryTone } from "../../ui/categoryColor";
@@ -136,6 +136,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
   const { base, cur, prevTotal, stillDue, from, isCurrent, balances, owed, next, cards, banks, accounts, items, salaryAccount, defaults } = v;
   const showAccounts = balances.accounts.length > 0 || balances.unassigned !== 0;
   const showOwed = owed.people.length > 0;
+  const whatIf = accountsWhatIf(balances.totalBase, owed.net, cards.map((c) => c.st));
   const bottomCards = [showAccounts, showOwed, !!next].filter(Boolean).length;
   const cats = topCategories(cur.byCategory);
   // Shares of what was spent per category. A refund for an earlier month's purchase can leave a
@@ -229,6 +230,18 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
             ))}
             {balances.unassigned !== 0 && <div className="row static"><span className="mute">Other</span><span>{formatMinor(balances.unassigned, base)}</span></div>}
             <div className="row static"><b>Total</b><b>{formatMinor(balances.totalBase, base)}</b></div>
+            {whatIf.owed && (
+              <>
+                <div className="row static whatif first"><span>{whatIf.owed.amount > 0 ? "+ Owed to you" : "− You owe"}</span><span className={whatIf.owed.amount > 0 ? "pos" : ""}>{formatMinor(Math.abs(whatIf.owed.amount), base)}</span></div>
+                <div className="row static whatif"><span>{whatIf.owed.amount > 0 ? "If everyone pays back" : "After you pay back"}</span><span>{formatMinor(whatIf.owed.after, base)}</span></div>
+              </>
+            )}
+            {whatIf.cards && (
+              <>
+                <div className="row static whatif first"><span>− Card bills</span><span>{formatMinor(whatIf.cards.amount, base)}</span></div>
+                <div className="row static whatif"><span>After card bills</span><span>{formatMinor(whatIf.cards.after, base)}</span></div>
+              </>
+            )}
           </div>
         )}
         {showOwed && (
