@@ -4,7 +4,7 @@ import { moveAndRemove, reassignAccounts } from "../src/data/accountMove";
 import { orphans } from "../src/data/usage";
 import { getSettings, listAll, remove, restore, saveSettings, upsert } from "../src/data/collections";
 import { LedgerStore } from "../src/data/db";
-import { addEntry, loadAllEntries, deleteEntry } from "../src/data/months";
+import { addEntry, loadAllEntries, deleteEntry, updateEntry } from "../src/data/months";
 import type { Account, Rule } from "../src/data/schema";
 import { itemsToDate, loadWorld } from "../src/data/world";
 
@@ -157,5 +157,29 @@ describe("fix leftovers", () => {
     expect((await money()).other).toBe(0);
     // Removed accounts stay removed; only what pointed at them moved.
     expect((await listAll(store, "accounts")).filter((x) => x.deleted).map((x) => x.id).sort()).toEqual([c.id, d.id].sort());
+  });
+});
+
+describe("edit a card payment", () => {
+  it("changes from, to, amount and date (moving months), and refuses the same account at both ends", async () => {
+    const a = await bank("Bank A", 10000000);
+    const b = await bank("Bank B", 5000000);
+    const c1 = await card("Card A");
+    const c2 = await card("Card B");
+    await spend(c1.id, 100000);
+    await spend(c2.id, 100000);
+    const t = await pay(a.id, c1.id, 50000);
+    const before = await money();
+    const moved = await updateEntry(store, "2026-09", t.id, { accountId: b.id, toAccountId: c2.id, amount: 80000, date: "2026-08-20" });
+    expect(moved).toMatchObject({ accountId: b.id, toAccountId: c2.id, amount: 80000, date: "2026-08-20", kind: "transfer" });
+    const after = await money();
+    expect(after.of(a.id)).toBe(before.of(a.id)! + 50000);
+    expect(after.of(b.id)).toBe(before.of(b.id)! - 80000);
+    expect(after.of(c1.id)).toBe(-100000);
+    expect(after.of(c2.id)).toBe(-100000 + 80000);
+    expect(after.other).toBe(0);
+    const all = await loadAllEntries(store);
+    expect(all.filter((e) => e.id === t.id).map((e) => [e.date, !!e.deleted]).sort()).toEqual([["2026-08-20", false], ["2026-09-10", true]]);
+    await expect(updateEntry(store, "2026-08", t.id, { toAccountId: b.id })).rejects.toThrow("two different accounts");
   });
 });

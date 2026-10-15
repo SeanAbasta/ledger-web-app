@@ -9,6 +9,7 @@ import { REMOVED_PERSON } from "../../data/splits";
 import { isCard, type Account, type Entry, type Person, type Rule } from "../../data/schema";
 import { AddForm } from "../add/AddForm";
 import { OccurrenceForm } from "./OccurrenceForm";
+import { TransferForm } from "./TransferForm";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { Sheet } from "../../ui/Sheet";
@@ -241,12 +242,17 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
           )}
         </Sheet>
       )}
-      {paid && (
+      {paid?.kind === "transfer" && (
+        <Sheet locked onClose={() => setPaid(undefined)}>
+          <h3>{paid.category === "Card payment" ? "Edit card payment" : "Edit transfer"}</h3>
+          <TransferForm entry={paid} accounts={accounts} onDone={() => setPaid(undefined)} />
+        </Sheet>
+      )}
+      {paid && paid.kind !== "transfer" && (
         <Sheet locked onClose={() => setPaid(undefined)}>
           <h3>{paid.note || paid.category || "Transfer"}</h3>
           <p className="mute">
             {labelDay(paid.date)} · {formatMinor(paid.amount, paid.currency)}
-            {paid.kind === "transfer" && ` · ${accountName(paid.accountId)} to ${accountName(paid.toAccountId)}`}
           </p>
           <div className="actions">
             <button className="btn ghost danger" onClick={async () => { await deleteEntry(store, paid.date.slice(0, 7), paid.id); setPaid(undefined); changed(); }}>Delete</button>
