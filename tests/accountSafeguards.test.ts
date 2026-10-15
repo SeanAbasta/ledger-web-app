@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { accountBalances } from "../src/data/accounts";
-import { moveAndRemove } from "../src/data/accountMove";
+import { moveAndRemove, reassignAccounts } from "../src/data/accountMove";
+import { orphans } from "../src/data/usage";
 import { getSettings, listAll, remove, restore, saveSettings, upsert } from "../src/data/collections";
 import { LedgerStore } from "../src/data/db";
 import { addEntry, loadAllEntries, deleteEntry } from "../src/data/months";
@@ -126,5 +127,35 @@ describe("restore", () => {
     const all = await listAll(store, "accounts");
     expect(all.map((x) => x.id)).toEqual([a.id, c.id]);
     expect(all.every((x) => !("deleted" in x))).toBe(true);
+  });
+});
+
+describe("fix leftovers", () => {
+  it("moves every entry and plan on removed accounts to one account, so Other goes back to 0", async () => {
+    const a = await bank("Bank A", 10000000);
+    const b = await bank("Bank B", 5000000);
+    const c = await card("Card A");
+    const d = await card("Card B");
+    await spend(c.id, 100000);
+    await pay(a.id, c.id, 60000);
+    await spend(b.id, 20000);
+    await plan({ accountId: d.id });
+    await plan({ accountId: a.id, revisions: [{ from: "2026-09-01", accountId: d.id }] });
+    await remove(store, "accounts", c.id);
+    await remove(store, "accounts", d.id);
+    const w = await loadWorld(store);
+    const o = orphans(w.entries, w.rules, await listAll(store, "accounts"));
+    expect(o.entries).toHaveLength(2);
+    expect(o.rules).toHaveLength(2);
+    expect(o.ids.sort()).toEqual([c.id, d.id].sort());
+    expect((await money()).other).not.toBe(0);
+
+    const e = await card("Card E");
+    expect(await reassignAccounts(store, o.ids, e.id)).toEqual({ entries: 2, plans: 2, kept: 0 });
+    const w2 = await loadWorld(store);
+    expect(orphans(w2.entries, w2.rules, await listAll(store, "accounts"))).toEqual({ entries: [], rules: [], ids: [] });
+    expect((await money()).other).toBe(0);
+    // Removed accounts stay removed; only what pointed at them moved.
+    expect((await listAll(store, "accounts")).filter((x) => x.deleted).map((x) => x.id).sort()).toEqual([c.id, d.id].sort());
   });
 });

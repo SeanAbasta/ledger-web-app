@@ -7,13 +7,14 @@ import { activeSalaryRule } from "../../data/income";
 import { isCard, type Account, type Defaults } from "../../data/schema";
 import { forecast } from "../../data/forecast";
 import { itemsToDate, loadWorld } from "../../data/world";
-import { getSettings, list } from "../../data/collections";
+import { getSettings, list, listAll } from "../../data/collections";
 import { addDays, addMonths, labelMonth, labelShort, monthEnd, monthStart, today } from "../../data/dates";
 import { loadEntries } from "../../data/months";
 import { formatMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem } from "../../data/rules";
 import { myShare } from "../../data/splits";
 import { accountsWhatIf, dailyStats, pctChange, summarize, topCategories, type Summary } from "../../data/summary";
+import { orphans, type Orphans } from "../../data/usage";
 import { BigAmount } from "../../ui/Amount";
 import { cardColor } from "../../ui/cardColor";
 import { categoryTone } from "../../ui/categoryColor";
@@ -23,6 +24,7 @@ import { useLedger } from "../../ui/Ledger";
 import { useTodayKey } from "../../ui/useTodayKey";
 import { CardTile } from "./CardTile";
 import { CardView } from "./CardView";
+import { FixSheet } from "./FixSheet";
 
 interface View {
   base: string;
@@ -41,6 +43,9 @@ interface View {
   items: LedgerItem[];
   salaryAccount?: string;
   defaults?: Defaults;
+  /** Entries and plans on removed accounts (they count as "Other"), and every account, removed ones included. */
+  orphans: Orphans;
+  allAccounts: Account[];
   /** Which way the month changed (1 = next), so the cards slide in from that side; 0 = no slide. */
   dir: -1 | 0 | 1;
 }
@@ -92,6 +97,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
   const [v, setV] = useState<View>();
   // A card opened from its tile: the per-card statement view replaces the Dashboard until Back.
   const [openCard, setOpenCard] = useState<string>();
+  const [fixing, setFixing] = useState(false);
   const dir = useRef<-1 | 0 | 1>(0);
   const go = (d: -1 | 0 | 1, next: (a: string) => string) => { dir.current = d; setAnchor(next); };
   const goToday = () => { const t = today(); go(monthStart(t) === monthStart(anchor) ? 0 : t > anchor ? 1 : -1, () => t); };
@@ -124,17 +130,19 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
       const fc = forecast({ start: balances.totalBase, today: t, base, entries: world.entries, rules: world.rules, months: 2, owed: owed.net, accounts: world.accounts });
       const cards = world.accounts.filter(isCard).map((card) => ({ card, st: cardStatus(card, upToToday, world.rules, t), bd: cardBreakdown(card, upToToday, t) }));
       const banks = world.accounts.filter((a) => !isCard(a));
+      const allAccounts = await listAll(store, "accounts");
       if (stale) return;
       const d = dir.current;
       dir.current = 0;
-      setV((old) => ({ dir: old && old.from !== from ? d : 0, base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, accounts: world.accounts, items: upToToday, salaryAccount: activeSalaryRule(world.rules, t)?.accountId, defaults: settings.defaults }));
+      setV((old) => ({ dir: old && old.from !== from ? d : 0, base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, accounts: world.accounts, items: upToToday, salaryAccount: activeSalaryRule(world.rules, t)?.accountId, defaults: settings.defaults, orphans: orphans(world.entries, world.rules, allAccounts), allAccounts }));
     })();
     return () => { stale = true; };
   }, [store, rev, anchor]);
 
   if (!v) return null;
   const { base, cur, prevTotal, stillDue, from, isCurrent, balances, owed, next, cards, banks, accounts, items, salaryAccount, defaults } = v;
-  const showAccounts = balances.accounts.length > 0 || balances.unassigned !== 0;
+  const fixable = v.orphans.entries.length + v.orphans.rules.length > 0;
+  const showAccounts = balances.accounts.length > 0 || balances.unassigned !== 0 || fixable;
   const showOwed = owed.people.length > 0;
   const whatIf = accountsWhatIf(balances.totalBase, owed.net, cards.map((c) => c.st));
   const bottomCards = [showAccounts, showOwed, !!next].filter(Boolean).length;
@@ -228,7 +236,9 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
             {balances.accounts.map(({ account, balance }) => (
               <div key={account.id} className="row static"><span>{account.name}</span><span>{formatMinor(balance, account.currency)}</span></div>
             ))}
-            {balances.unassigned !== 0 && <div className="row static"><span className="mute">Other</span><span>{formatMinor(balances.unassigned, base)}</span></div>}
+            {(balances.unassigned !== 0 || fixable) && (
+              <div className="row static"><span className="mute">Other{fixable && <button className="link" title="Move what was on removed accounts" onClick={() => setFixing(true)}>Fix</button>}</span><span>{formatMinor(balances.unassigned, base)}</span></div>
+            )}
             <div className="row static"><b>Total</b><b>{formatMinor(balances.totalBase, base)}</b></div>
             {whatIf.owed && (
               <>
@@ -269,6 +279,8 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
       </div>
       {cur.unconverted > 0 && <p className="mute small">{cur.unconverted} foreign {cur.unconverted === 1 ? "amount has" : "amounts have"} no rate and {cur.unconverted === 1 ? "is" : "are"} left out.</p>}
       </div>
+      {/* Outside the sliding period, so the sheet is never placed inside a moving box. */}
+      {fixing && <FixSheet o={v.orphans} all={v.allAccounts} onClose={() => setFixing(false)} />}
     </>
   );
 }

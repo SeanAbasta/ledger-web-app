@@ -42,3 +42,29 @@ export function usageText(u: Usage): string {
   ].filter(Boolean);
   return parts.join(" and ");
 }
+
+/** Live entries and plans that point at an account that was removed or no longer exists, and those account ids. */
+export interface Orphans {
+  entries: Entry[];
+  rules: Rule[];
+  /** The missing or removed account ids they point at. */
+  ids: string[];
+}
+
+/** What the Dashboard's Fix link lists. An entry with no account at all is not an orphan. `accounts` may include removed ones. */
+export function orphans(entries: Entry[], rules: Rule[], accounts: { id: string; deleted?: true }[]): Orphans {
+  const live = new Set(accounts.filter((a) => !a.deleted).map((a) => a.id));
+  const ids = new Set<string>();
+  const missing = (id: string | undefined) => {
+    if (!id || live.has(id)) return false;
+    ids.add(id);
+    return true;
+  };
+  // Every id is checked (no short-circuit), so each missing account is collected.
+  const anyMissing = (xs: (string | undefined)[]) => xs.map(missing).some(Boolean);
+  return {
+    entries: entries.filter((e) => !e.deleted && anyMissing([e.accountId, e.toAccountId])),
+    rules: rules.filter((r) => !r.deleted && anyMissing([r.accountId, ...(r.revisions ?? []).map((x) => x.accountId)])),
+    ids: [...ids],
+  };
+}

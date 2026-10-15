@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ledgerItems } from "../src/data/rules";
 import type { Entry, Rule } from "../src/data/schema";
-import { accountUsage, personUsage, usageText } from "../src/data/usage";
+import { accountUsage, orphans, personUsage, usageText } from "../src/data/usage";
 
 const entry = (e: Partial<Entry> & { id: string }): Entry =>
   ({ kind: "expense", date: "2026-10-01", amount: 1000, currency: "PHP", createdAt: "x", updatedAt: "x", ...e }) as Entry;
@@ -66,5 +66,30 @@ describe("usage text", () => {
     expect(usageText({ entries: 1, plans: 0 })).toBe("1 entry");
     expect(usageText({ entries: 0, plans: 2 })).toBe("2 plans");
     expect(usageText({ entries: 0, plans: 0 })).toBe("");
+  });
+});
+
+describe("orphans", () => {
+  it("finds live entries and plans that point at a removed or missing account, from either side", () => {
+    const accounts = [{ id: "bankA" }, { id: "cardA", deleted: true as const }];
+    const entries = [
+      entry({ id: "a", accountId: "cardA" }),
+      entry({ id: "b", kind: "transfer", accountId: "bankA", toAccountId: "cardA" }),
+      entry({ id: "c", accountId: "gone" }),
+      entry({ id: "d", accountId: "bankA" }),
+      entry({ id: "e" }),
+      entry({ id: "f", accountId: "cardA", deleted: true }),
+    ];
+    const rules = [
+      rule({ id: "r1", accountId: "cardA" }),
+      rule({ id: "r2", accountId: "bankA", revisions: [{ from: "2026-10-01", accountId: "gone" }] }),
+      rule({ id: "r3", accountId: "bankA" }),
+      rule({ id: "r4", accountId: "cardA", deleted: true }),
+    ];
+    const o = orphans(entries, rules, accounts);
+    expect(o.entries.map((e) => e.id)).toEqual(["a", "b", "c"]);
+    expect(o.rules.map((r) => r.id)).toEqual(["r1", "r2"]);
+    expect(o.ids.sort()).toEqual(["cardA", "gone"]);
+    expect(orphans(entries.slice(3, 5), rules.slice(2), accounts)).toEqual({ entries: [], rules: [], ids: [] });
   });
 });
