@@ -256,6 +256,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .amt select { flex: none; }
 @media (max-width: 480px) { .amt input { font-size: var(--fs-xl); } }
 .actions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-3); }
+.actions.wrap { flex-wrap: wrap; }
 .btn { background: var(--accent); color: #fff; border: 0; font-weight: 500; padding: 8px 18px; border-radius: 999px; cursor: pointer; }
 .btn.ghost { background: var(--fill-2); color: var(--ink); }
 .btn.danger { color: var(--err); }

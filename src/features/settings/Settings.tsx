@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { list, remove, saveSettings, upsert } from "../../data/collections";
+import { moveAndRemove } from "../../data/accountMove";
 import { CURRENCIES } from "../../data/currencies";
 import { formatMinor, parseMinor } from "../../data/money";
 import type { Account, Defaults, Entry, Person, Rule, Settings as S } from "../../data/schema";
@@ -113,7 +114,10 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
   const [theme, setThemeState] = useState<Theme>(loadTheme);
   const [confirm, setConfirm] = useState<"pull" | "remove">();
   // A person or account that is in use: removing it asks first and says what it affects.
-  const [drop, setDrop] = useState<{ kind: "people" | "accounts"; id: string; name: string; lines: string[] }>();
+  // An account in use can first move its entries, plans and defaults to `targets` (same kind; banks in the same currency).
+  const [drop, setDrop] = useState<{ kind: "people" | "accounts"; id: string; name: string; lines: string[]; targets?: Account[]; none?: string }>();
+  const [moveTo, setMoveTo] = useState("");
+  const [dropErr, setDropErr] = useState("");
   const [refs, setRefs] = useState<{ entries: Entry[]; rules: Rule[] }>({ entries: [], rules: [] });
   const [s, setS] = useState<S>(DEFAULT_SETTINGS);
   const [people, setPeople] = useState<Person[]>([]);
@@ -153,6 +157,21 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
     setDrop(undefined);
     changed();
   }
+  async function moveThenRemove(id: string) {
+    setDropErr("");
+    try {
+      await moveAndRemove(store, id, moveTo);
+      setDrop(undefined);
+      changed();
+    } catch (e) {
+      setDropErr(e instanceof Error ? e.message : "Could not move");
+    }
+  }
+  function askAccount(d: NonNullable<typeof drop>) {
+    setMoveTo(d.targets?.[0]?.id ?? "");
+    setDropErr("");
+    setDrop(d);
+  }
   function askRemovePerson(p: Person) {
     const u = personUsage(p.id, refs.entries, refs.rules, itemsToDate(refs, today()));
     const owed = nonZero(u.owed);
@@ -168,18 +187,30 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
   }
   function askRemoveAccount(a: Account) {
     const u = accountUsage(a.id, refs.entries, refs.rules);
+    const on = usageText(u);
     if (isCard(a)) {
       if (!u.entries && !u.plans) return void removeNow("accounts", a.id);
-      return setDrop({ kind: "accounts", id: a.id, name: a.name, lines: [
-        'This card has entries. They stay in the Ledger, but without the card they count as money that left no account ("Other"), not as card charges. Change their account first if you want to keep them on a card.',
-      ] });
+      const targets = accounts.filter((x) => isCard(x) && x.id !== a.id);
+      return askAccount({ kind: "accounts", id: a.id, name: a.name, targets, none: "Add another card to move them to.", lines: [
+        `${a.name} has ${on}.`,
+        targets.length
+          ? `Move them, and any default set to ${a.name}, to another card first. If you remove it anyway, they stay in the Ledger but count as money from no account ("Other"), not as card charges.`
+          : 'If you remove it, they stay in the Ledger but count as money from no account ("Other"), not as card charges.',
+        a.openingBalance ? `Its owed at start of ${formatMinor(-a.openingBalance, a.currency)} goes with it.` : "",
+      ].filter(Boolean) });
     }
     const balance = accountBalances([a], itemsToDate(refs, today()), s.baseCurrency).accounts[0]?.balance ?? a.openingBalance;
     if (!u.entries && !u.plans && !balance && !a.openingBalance) return void removeNow("accounts", a.id);
-    const on = usageText(u);
-    setDrop({ kind: "accounts", id: a.id, name: a.name, lines: [
+    // Only worth moving when something refers to it; same currency, so the total stays the same.
+    const targets = on ? banks.filter((x) => x.id !== a.id && x.currency === a.currency) : undefined;
+    askAccount({ kind: "accounts", id: a.id, name: a.name, targets, none: `Add another ${a.currency} bank account to move them to.`, lines: [
       `${on ? `${a.name} has ${on}. Balance` : `${a.name} has a balance of`} ${formatMinor(balance, a.currency)}.`,
-      [on && 'The entries stay in the Ledger but count as money from no account ("Other").', a.openingBalance ? `Its opening balance of ${formatMinor(a.openingBalance, a.currency)} leaves your total.` : ""].filter(Boolean).join(" "),
+      [
+        on && (targets?.length
+          ? `Move them, and any default set to ${a.name}, to another bank account first. If you remove it anyway, they stay in the Ledger but count as money from no account ("Other").`
+          : 'If you remove it, the entries stay in the Ledger but count as money from no account ("Other").'),
+        a.openingBalance ? `Its opening balance of ${formatMinor(a.openingBalance, a.currency)} leaves your total.` : "",
+      ].filter(Boolean).join(" "),
     ].filter(Boolean) });
   }
 
@@ -244,9 +275,15 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
         <Sheet locked onClose={() => setDrop(undefined)}>
           <h3>Remove {drop.name}</h3>
           {drop.lines.map((l) => <p key={l} className="mute">{l}</p>)}
-          <div className="actions">
+          {drop.targets && (drop.targets.length ? (
+            <label className="field"><b>Move to</b>
+              <select value={moveTo} onChange={(e) => setMoveTo(e.target.value)}>{drop.targets.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+          ) : <p className="mute small">{drop.none}</p>)}
+          {dropErr && <p className="err" role="alert">{dropErr}</p>}
+          <div className="actions wrap">
             <button className="btn ghost" onClick={() => setDrop(undefined)}>Cancel</button>
-            <button className="btn ghost danger" onClick={() => void removeNow(drop.kind, drop.id)}>Remove</button>
+            <button className="btn ghost danger" onClick={() => void removeNow(drop.kind, drop.id)}>{drop.targets?.length ? "Remove anyway" : "Remove"}</button>
+            {!!drop.targets?.length && <button className="btn" onClick={() => void moveThenRemove(drop.id)}>Move to {drop.targets.find((a) => a.id === moveTo)?.name} and remove</button>}
           </div>
         </Sheet>
       )}

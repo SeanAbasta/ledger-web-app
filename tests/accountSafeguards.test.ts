@@ -1,0 +1,104 @@
+import { beforeEach, describe, expect, it } from "vitest";
+import { accountBalances } from "../src/data/accounts";
+import { moveAndRemove } from "../src/data/accountMove";
+import { getSettings, listAll, remove, saveSettings, upsert } from "../src/data/collections";
+import { LedgerStore } from "../src/data/db";
+import { addEntry, loadAllEntries, deleteEntry } from "../src/data/months";
+import type { Account, Rule } from "../src/data/schema";
+import { itemsToDate, loadWorld } from "../src/data/world";
+
+let store: LedgerStore;
+let n = 0;
+beforeEach(async () => {
+  store = await LedgerStore.open(`safeguards-${n++}`);
+});
+
+const day = "2026-09-10"; // in the past, so everything counts toward today's balances
+const bank = (name: string, openingBalance: number, currency = "PHP") => upsert(store, "accounts", { name, currency, openingBalance });
+const card = (name: string, owedAtStart = 0) => upsert(store, "accounts", { name, currency: "PHP", openingBalance: -owedAtStart, type: "card", statementDay: 15, dueDays: 25 });
+const spend = (accountId: string, amount: number, date = day) => addEntry(store, { kind: "expense", date, amount, currency: "PHP", category: "Food", accountId });
+const pay = (accountId: string, toAccountId: string, amount: number) => addEntry(store, { kind: "transfer", date: day, amount, currency: "PHP", category: "Card payment", accountId, toAccountId });
+const plan = (r: Partial<Rule>) => upsert(store, "rules", { type: "recurring", kind: "expense", amount: 50000, currency: "PHP", frequency: "monthly", start: "2026-08-01", ...r } as Rule);
+
+async function money() {
+  const w = await loadWorld(store);
+  const b = accountBalances(w.accounts, itemsToDate(w, "2026-10-15"), w.base);
+  const of = (id: string) => [...b.accounts, ...b.cards].find((x) => x.account.id === id)?.balance;
+  return { other: b.unassigned, total: b.totalBase, of };
+}
+
+describe("move before remove", () => {
+  it("moves a bank's entries, transfers, plans and defaults, so Other stays 0 and only its opening balance leaves the total", async () => {
+    const a = await bank("Bank A", 10000000);
+    const b = await bank("Bank B", 5000000);
+    const c = await card("Card A");
+    await spend(a.id, 100000);
+    await pay(a.id, c.id, 200000);
+    await addEntry(store, { kind: "income", date: day, amount: 3000000, currency: "PHP", category: "Salary", accountId: a.id });
+    const gone = await spend(a.id, 70000);
+    await deleteEntry(store, "2026-09", gone.id);
+    await plan({ accountId: a.id });
+    await plan({ accountId: b.id, revisions: [{ from: "2026-09-01", accountId: a.id }] });
+    await saveSettings(store, { defaults: { expense: a.id, income: a.id, cardPayment: a.id, category: "Food" } });
+    const before = await money();
+    const aBefore = before.of(a.id)!;
+
+    const r = await moveAndRemove(store, a.id, b.id);
+    expect(r).toEqual({ entries: 3, plans: 2, kept: 0 });
+
+    const after = await money();
+    expect(after.other).toBe(0);
+    expect(after.total).toBe(before.total - 10000000);
+    expect(after.of(b.id)).toBe(before.of(b.id)! + aBefore - 10000000);
+    expect(after.of(c.id)).toBe(before.of(c.id));
+    expect((await listAll(store, "accounts")).find((x) => x.id === a.id)?.deleted).toBe(true);
+    expect((await getSettings(store)).defaults).toEqual({ expense: b.id, income: b.id, cardPayment: b.id, category: "Food" });
+    // A deleted entry is history and is left alone; changed ones get a new updatedAt.
+    const all = await loadAllEntries(store);
+    expect(all.find((e) => e.id === gone.id)?.accountId).toBe(a.id);
+    expect(all.filter((e) => !e.deleted).every((e) => e.accountId !== a.id && e.toAccountId !== a.id)).toBe(true);
+    const rules = await listAll(store, "rules");
+    expect(rules.map((x) => x.accountId)).toEqual([b.id, b.id]);
+    expect(rules[1]!.revisions![0]!.accountId).toBe(b.id);
+  });
+
+  it("moves a card's charges and payments, so bank total is unchanged and the other card owes them", async () => {
+    const a = await bank("Bank A", 10000000);
+    const c1 = await card("Card A", 30000);
+    const c2 = await card("Card B");
+    await spend(c1.id, 100000);
+    await spend(c1.id, 40000);
+    await pay(a.id, c1.id, 50000);
+    await saveSettings(store, { defaults: { expense: c1.id, cardPayment: a.id } });
+    const before = await money();
+
+    expect(await moveAndRemove(store, c1.id, c2.id)).toEqual({ entries: 3, plans: 0, kept: 0 });
+
+    const after = await money();
+    expect(after.other).toBe(0);
+    expect(after.total).toBe(before.total);
+    // Card A's owed at start goes with Card A; its charges and payments now sit on Card B.
+    expect(after.of(c2.id)).toBe(-(100000 + 40000 - 50000));
+    expect((await getSettings(store)).defaults).toEqual({ expense: c2.id, cardPayment: a.id });
+  });
+
+  it("never makes a transfer go from an account to itself, and counts the ones it kept", async () => {
+    const a = await bank("Bank A", 1000000);
+    const b = await bank("Bank B", 1000000);
+    const t = await pay(a.id, b.id, 10000);
+    expect(await moveAndRemove(store, a.id, b.id)).toEqual({ entries: 0, plans: 0, kept: 1 });
+    expect((await loadAllEntries(store)).find((e) => e.id === t.id)?.accountId).toBe(a.id);
+  });
+
+  it("refuses a target that is removed or the same account, and changes nothing", async () => {
+    const a = await bank("Bank A", 1000000);
+    const b = await bank("Bank B", 1000000);
+    await spend(a.id, 10000);
+    await remove(store, "accounts", b.id);
+    await expect(moveAndRemove(store, a.id, b.id)).rejects.toThrow();
+    await expect(moveAndRemove(store, a.id, a.id)).rejects.toThrow();
+    const accts = (await listAll(store, "accounts")) as Account[];
+    expect(accts.find((x) => x.id === a.id)?.deleted).toBeUndefined();
+    expect((await loadAllEntries(store))[0]!.accountId).toBe(a.id);
+  });
+});
