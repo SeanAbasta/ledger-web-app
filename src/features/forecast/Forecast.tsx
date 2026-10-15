@@ -4,7 +4,7 @@ import { owedSummary, type OwedSummary } from "../../data/balances";
 import { addMonths, labelMonth, monthStart, today } from "../../data/dates";
 import { startAccount } from "../../data/defaults";
 import { forecast, type Forecast as F } from "../../data/forecast";
-import { activeSalaryRule, salaryFor, setRepeat, setSalary } from "../../data/income";
+import { activeSalaryRule, salaryFor, setRepeat, setSalary, setSalaryAccount } from "../../data/income";
 import { formatMinor, parseMinor } from "../../data/money";
 import { itemsToDate, loadWorld, type World } from "../../data/world";
 import { isCard } from "../../data/schema";
@@ -53,8 +53,10 @@ export function Forecast() {
       setStart(b.totalBase);
       setSkipped(b.skipped);
       const banks = world.accounts.filter((a) => !isCard(a));
-      // Keep a choice made here; otherwise start with the default (or last used) income account, else the first bank.
-      setAccountId((x) => (banks.some((b) => b.id === x) ? x : startAccount("income", world.settings.defaults, loadLastUsed(), banks) || banks[0]?.id || ""));
+      // The account the next salary (this month on) is paid into; with none yet, keep a choice made
+      // here, else start with the default (or last used) income account, else the first bank.
+      const paidInto = Array.from({ length: 12 }, (_, i) => salaryFor(addMonths(monthStart(t), i), world.entries, world.rules)?.accountId).find((id) => banks.some((b) => b.id === id));
+      setAccountId((x) => paidInto ?? (banks.some((b) => b.id === x) ? x : startAccount("income", world.settings.defaults, loadLastUsed(), banks) || banks[0]?.id || ""));
       setF(forecast({ start: b.totalBase, today: t, base: world.base, entries: world.entries, rules: world.rules, owed: o.net, accounts: world.accounts }));
     })();
   }, [store, rev]);
@@ -73,6 +75,15 @@ export function Forecast() {
     if (val === cur) return;
     await setSalary(store, month, val, { base, accountId: accountId || banks[0]?.id });
     rememberUsed({ income: accountId });
+    changed();
+  }
+
+  // Moves salary from this month on (the plan and manual entries); earlier months keep their account.
+  async function pickAccount(id: string) {
+    setError("");
+    setAccountId(id);
+    await setSalaryAccount(store, id, { today: t });
+    rememberUsed({ income: id });
     changed();
   }
 
@@ -114,8 +125,8 @@ export function Forecast() {
         <div className="field"><b>Repeat every month</b>
           <button type="button" className={`toggle ${repeat ? "on" : ""}`} aria-pressed={repeat} aria-label="Repeat salary every month" onClick={() => void toggle(!repeat)}><i /></button></div>
         {banks.length > 0 && (
-          <label className="field"><b>Paid into</b>
-            <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>{banks.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+          <label className="field"><b>Paid into<span className="mute small sub">This month on</span></b>
+            <select value={accountId} onChange={(e) => void pickAccount(e.target.value)}>{banks.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
         )}
         {error && <p className="err" role="alert">{error}</p>}
       </div>

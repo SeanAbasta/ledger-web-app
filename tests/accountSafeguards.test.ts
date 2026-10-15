@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { accountBalances } from "../src/data/accounts";
 import { moveAndRemove, reassignAccounts } from "../src/data/accountMove";
 import { orphans } from "../src/data/usage";
+import { salaryFor, setSalary, setSalaryAccount } from "../src/data/income";
+import { occurrences } from "../src/data/rules";
 import { getSettings, listAll, remove, restore, saveSettings, upsert } from "../src/data/collections";
 import { LedgerStore } from "../src/data/db";
 import { addEntry, loadAllEntries, deleteEntry, updateEntry } from "../src/data/months";
@@ -181,5 +183,63 @@ describe("edit a card payment", () => {
     const all = await loadAllEntries(store);
     expect(all.filter((e) => e.id === t.id).map((e) => [e.date, !!e.deleted]).sort()).toEqual([["2026-08-20", false], ["2026-09-10", true]]);
     await expect(updateEntry(store, "2026-08", t.id, { toAccountId: b.id })).rejects.toThrow("two different accounts");
+  });
+});
+
+describe("salary paid into", () => {
+  const today = "2026-10-15";
+  const salaryRule = (r: Partial<Rule>) => upsert(store, "rules", { type: "income", kind: "income", amount: 3000000, currency: "PHP", category: "Salary", frequency: "monthly", start: "2026-07-01", ...r } as Rule);
+  const salary = (accountId: string, date: string, amount = 3000000) => addEntry(store, { kind: "income", date, amount, currency: "PHP", category: "Salary", accountId });
+
+  it("moves a running salary plan from this month on; earlier months and per-month amounts stay", async () => {
+    const a = await bank("Bank A", 0);
+    const b = await bank("Bank B", 0);
+    const r = await salaryRule({ accountId: a.id, overrides: { "2026-11-01": { amount: 3500000 } } });
+    await setSalaryAccount(store, b.id, { today });
+    const next = (await listAll(store, "rules"))[0]!;
+    expect(next.accountId).toBe(a.id);
+    expect(next.revisions).toEqual([{ from: "2026-10-01", accountId: b.id }]);
+    expect(next.overrides).toEqual(r.overrides);
+    const occ = occurrences(next, "2026-07-01", "2026-12-31");
+    expect(occ.map((o) => o.accountId)).toEqual([a.id, a.id, a.id, b.id, b.id, b.id]);
+    expect(occ[4]!.amount).toBe(3500000);
+    // Choosing the same account again changes nothing.
+    await setSalaryAccount(store, b.id, { today });
+    expect((await listAll(store, "rules"))[0]!.updatedAt).toBe(next.updatedAt);
+    // Back to Bank A: the same revision is replaced, not stacked.
+    await setSalaryAccount(store, a.id, { today });
+    expect((await listAll(store, "rules"))[0]!.revisions).toEqual([{ from: "2026-10-01", accountId: a.id }]);
+  });
+
+  it("sets the account of a plan that starts this month or later", async () => {
+    const a = await bank("Bank A", 0);
+    const b = await bank("Bank B", 0);
+    await salaryRule({ start: "2026-11-01", accountId: a.id });
+    await setSalaryAccount(store, b.id, { today });
+    const next = (await listAll(store, "rules"))[0]!;
+    expect(next.accountId).toBe(b.id);
+    expect(next.revisions).toEqual([]);
+  });
+
+  it("moves manual salary entries from this month on, not earlier ones, and Forecast reads the new account", async () => {
+    const a = await bank("Bank A", 0);
+    const b = await bank("Bank B", 0);
+    const sep = await salary(a.id, "2026-09-01");
+    const oct = await salary(a.id, "2026-10-01");
+    const nov = await salary(a.id, "2026-11-01");
+    await setSalaryAccount(store, b.id, { today });
+    const all = await loadAllEntries(store);
+    const acct = (id: string) => all.find((e) => e.id === id)?.accountId;
+    expect([acct(sep.id), acct(oct.id), acct(nov.id)]).toEqual([a.id, b.id, b.id]);
+    expect(salaryFor("2026-10-01", all, [])?.accountId).toBe(b.id);
+    expect(salaryFor("2026-09-01", all, [])?.accountId).toBe(a.id);
+  });
+
+  it("puts a changed month's salary entry into the chosen account", async () => {
+    const a = await bank("Bank A", 0);
+    const b = await bank("Bank B", 0);
+    const e = await salary(a.id, "2026-12-01");
+    await setSalary(store, "2026-12-01", 3200000, { base: "PHP", accountId: b.id });
+    expect((await loadAllEntries(store)).find((x) => x.id === e.id)).toMatchObject({ amount: 3200000, accountId: b.id });
   });
 });
