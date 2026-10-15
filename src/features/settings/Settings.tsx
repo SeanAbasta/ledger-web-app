@@ -41,15 +41,24 @@ function AccountRow({ a, base, onSave, onRemove }: { a: Account; base: string; o
     const r = (over.rate ?? rate).trim();
     onSave({ ...a, name: (over.name ?? name).trim() || "Account", currency: cur, openingBalance: neg ? -o : o, rate: cur !== base && /^\d+(\.\d+)?$/.test(r) ? r : undefined });
   };
+  // Same shape as a card: name and ✕, then labelled fields. The opening balance is what the account
+  // held before the first entry logged on it; today's bank balance would count earlier entries twice.
   return (
-    <div className="acct bank">
-      <input aria-label="Account name" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => commit()} />
-      <select aria-label="Currency" value={currency} onChange={(e) => { setCurrency(e.target.value); commit({ currency: e.target.value }); }}>
-        {[...new Set([...CURRENCIES, currency])].map((c) => <option key={c}>{c}</option>)}
-      </select>
-      <MoneyInput className="bal" aria-label="Opening balance" placeholder="Opening" allowNegative currency={currency} value={opening} onChange={setOpening} onBlur={() => commit()} />
-      {currency !== base && <input className="rate" aria-label={`${base} per 1 ${currency}`} inputMode="decimal" placeholder={`${base} rate`} value={rate} onChange={(e) => setRate(e.target.value)} onBlur={() => commit()} />}
-      <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}>✕</button>
+    <div className="cardacct">
+      <div className="acct">
+        <input aria-label="Account name" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => commit()} />
+        <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}>✕</button>
+      </div>
+      <label className="field"><b>Currency</b>
+        <select aria-label="Currency" value={currency} onChange={(e) => { setCurrency(e.target.value); commit({ currency: e.target.value }); }}>
+          {[...new Set([...CURRENCIES, currency])].map((c) => <option key={c}>{c}</option>)}
+        </select></label>
+      <label className="field wide"><b>Balance before your first entry<span className="mute small sub">Use today's balance only if nothing is logged yet</span></b>
+        <MoneyInput aria-label="Balance before your first entry" placeholder="0" allowNegative currency={currency} value={opening} onChange={setOpening} onBlur={() => commit()} /></label>
+      {currency !== base && (
+        <label className="field"><b>{base} per 1 {currency}</b>
+          <input aria-label={`${base} per 1 ${currency}`} inputMode="decimal" placeholder="Rate" value={rate} onChange={(e) => setRate(e.target.value)} onBlur={() => commit()} /></label>
+      )}
     </div>
   );
 }

@@ -451,15 +451,11 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .acct { display: flex; gap: 8px; align-items: center; padding: 6px 0; }
 .acct input { flex: 1; min-width: 0; }
 .acct select { flex: none; }
-/* Phones: a bank account takes two lines (name and ✕, then currency and balance), so the balance is
-   never cut off by the 16 px field text. Foreign accounts put the rate on a third line. */
+/* Phones: the bank "Balance before your first entry" label and hint take the full width, the amount goes under it. */
 @media (max-width: 480px) {
-  .acct.bank { flex-wrap: wrap; row-gap: 6px; padding: 8px 0 10px; border-bottom: 1px solid var(--line); }
-  .acct.bank > input:first-child { flex: 1 1 calc(100% - 48px); }
-  .acct.bank .x { order: 1; }
-  .acct.bank select { order: 2; }
-  .acct.bank .bal { order: 3; text-align: right; }
-  .acct.bank .rate { order: 4; flex: 1 1 100%; text-align: right; }
+  .field.wide { flex-wrap: wrap; row-gap: 6px; }
+  .field.wide > b { flex: 1 1 100%; }
+  .field.wide input { flex: 1; max-width: none; }
 }
 .cardacct { padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
 .cardacct .field:last-of-type { border-bottom: 0; }
