@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { accountBalances } from "../src/data/accounts";
 import { moveAndRemove } from "../src/data/accountMove";
-import { getSettings, listAll, remove, saveSettings, upsert } from "../src/data/collections";
+import { getSettings, listAll, remove, restore, saveSettings, upsert } from "../src/data/collections";
 import { LedgerStore } from "../src/data/db";
 import { addEntry, loadAllEntries, deleteEntry } from "../src/data/months";
 import type { Account, Rule } from "../src/data/schema";
@@ -100,5 +100,31 @@ describe("move before remove", () => {
     const accts = (await listAll(store, "accounts")) as Account[];
     expect(accts.find((x) => x.id === a.id)?.deleted).toBeUndefined();
     expect((await loadAllEntries(store))[0]!.accountId).toBe(a.id);
+  });
+});
+
+describe("restore", () => {
+  it("brings back a removed bank and card with the same id, so balances and the total are as before", async () => {
+    const a = await bank("Bank A", 10000000);
+    const c = await card("Card A", 30000);
+    await spend(a.id, 100000);
+    await spend(c.id, 250000);
+    await pay(a.id, c.id, 200000);
+    const before = await money();
+    await remove(store, "accounts", a.id);
+    await remove(store, "accounts", c.id);
+    const removed = await money();
+    expect(removed.total).not.toBe(before.total);
+    expect(removed.other).not.toBe(0);
+
+    await restore(store, "accounts", a.id);
+    await restore(store, "accounts", c.id);
+    const after = await money();
+    expect(after).toEqual({ ...before, of: after.of });
+    expect(after.of(a.id)).toBe(before.of(a.id));
+    expect(after.of(c.id)).toBe(before.of(c.id));
+    const all = await listAll(store, "accounts");
+    expect(all.map((x) => x.id)).toEqual([a.id, c.id]);
+    expect(all.every((x) => !("deleted" in x))).toBe(true);
   });
 });

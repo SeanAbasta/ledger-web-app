@@ -73,3 +73,15 @@ export async function remove(store: LedgerStore, kind: Named, id: string): Promi
     docs.set(PATH[kind], { [kind]: arr });
   });
 }
+
+/** Undo a removal: the same id comes back, so everything that still points at it reconnects. */
+export async function restore(store: LedgerStore, kind: Named, id: string): Promise<void> {
+  await store.transact([PATH[kind]], (docs) => {
+    const arr = ((docs.get(PATH[kind])?.[kind] as { id: string; deleted?: true; updatedAt: string }[] | undefined) ?? []).map((x) => {
+      if (x.id !== id || !x.deleted) return x;
+      const { deleted: _, ...live } = x;
+      return { ...live, updatedAt: now() };
+    });
+    docs.set(PATH[kind], { [kind]: arr });
+  });
+}

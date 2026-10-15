@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { list, remove, saveSettings, upsert } from "../../data/collections";
+import { list, listAll, remove, restore, saveSettings, upsert } from "../../data/collections";
 import { moveAndRemove } from "../../data/accountMove";
 import { CURRENCIES } from "../../data/currencies";
 import { formatMinor, parseMinor } from "../../data/money";
@@ -122,6 +122,8 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
   const [s, setS] = useState<S>(DEFAULT_SETTINGS);
   const [people, setPeople] = useState<Person[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  // Removed accounts, newest removed first, so one can be brought back with the same id.
+  const [removed, setRemoved] = useState<Account[]>([]);
   const [cat, setCat] = useState("");
   // Category chips show their ✕ only in Edit mode, so a stray tap cannot remove one.
   const [editCats, setEditCats] = useState(false);
@@ -132,7 +134,9 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
     (async () => {
       setS(await getSettings(store));
       setPeople(await list(store, "people"));
-      setAccounts(await list(store, "accounts"));
+      const all = await listAll(store, "accounts");
+      setAccounts(all.filter((a) => !a.deleted));
+      setRemoved(all.filter((a) => a.deleted).sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)));
       // What refers to people and accounts, so removing one in use asks first.
       const [entries, rules] = await Promise.all([loadAllEntries(store), list(store, "rules") as Promise<Rule[]>]);
       setRefs({ entries, rules });
@@ -400,6 +404,18 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
                 ))}
                 <button className="btn ghost sm" onClick={async () => { await upsert(store, "accounts", { name: "New card", currency: s.baseCurrency, openingBalance: 0, type: "card", statementDay: 15, dueDays: DEFAULT_DUE_DAYS }); changed(); }}>Add card</button>
               </div>
+
+              {removed.length > 0 && (
+                <>
+                  <div className="grp">Removed</div>
+                  <div className="card">
+                    {removed.map((a) => (
+                      <div key={a.id} className="field"><b>{a.name}<span className="mute small sub">{isCard(a) ? "Card" : `Bank account, ${a.currency}`}</span></b>
+                        <button className="btn ghost sm" onClick={async () => { await restore(store, "accounts", a.id); changed(); }}>Restore</button></div>
+                    ))}
+                  </div>
+                </>
+              )}
 
               <div className="grp">Defaults</div>
               <div className="card">
