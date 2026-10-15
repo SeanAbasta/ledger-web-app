@@ -44,8 +44,8 @@ After that you only need a browser.
 | | Feature | What you get |
 |---|---|---|
 | **Add** | Fast entry | Amount, currency, category, note, date and account in one small form. Set default accounts and a default category in Settings, or start with the last ones you used. |
-| **Ledger** | History | Day, Week and Month views, newest first (inside each day too), search, and a Today button (or T on a computer) to jump back. The period that holds today shows a quiet "Next 30 days" group, and upcoming payments also appear on their own dates. Each category has its own colour, the same as in the Dashboard chart. Tap any entry to edit or delete it. For recurring payments you can change one payment, or this and every later one, so a price rise on a subscription is a single edit. |
-| **Dashboard** | Summary | Spent this month compared with last month, a category donut, daily bars, account balances, what is still due, and who owes you (tap a person to open their Splits page). A Today button returns to the current month. |
+| **Ledger** | History | Day, Week and Month views, newest first (inside each day too), search, and a Today button (or T on a computer) to jump back. The period that holds today shows a quiet "Next 30 days" group, and upcoming payments also appear on their own dates. Each category has its own colour, the same as in the Dashboard chart. Tap any entry to edit or delete it, card payments included. For recurring payments you can change one payment, or this and every later one, so a price rise on a subscription is a single edit. |
+| **Dashboard** | Summary | Spent this month compared with last month, a category donut, daily bars with your daily average and highest day, account balances, what is still due, and who owes you (tap a person to open their Splits page). The Accounts card also shows your total if everyone paid you back, and after your card bills. A Today button returns to the current month. |
 | **Splits** | Shared costs | Choose who paid and how to split: they owe it all, you owe it all, 50/50, or custom amounts for 3 or more people. |
 | **Snapshot** | Easy settling | Turn a person's balance into a clean statement image you can copy or save, then record the settlement. |
 | **Currency** | Multi-currency | PHP by default. Foreign expenses keep their original amount and the exchange rate at the time, so history never shifts. |
@@ -53,7 +53,8 @@ After that you only need a browser.
 | **Statements** | Every number explained | Tap a card to see its statement line by line, what is unbilled, and its installment plans. The lists always add up to the card's numbers. |
 | **Reconcile** | Match your bank | Type what your bank app shows. Ledger says what matches and names the likely cause of a gap, such as charges the bank posted a day late, charges still pending, or a balance from before you started. A charge the bank bills on the next statement can be moved there with one switch. |
 | **Recurring** | Rules, not rows | One-off, recurring (weekly, monthly, yearly) and installments such as "3 of 12, 8,000 left". Stored once, generated when needed. |
-| **Forecast** | Look ahead | Enter your salary per month or repeat it, and see your balance projected 12 months out from income, recurring costs, your average spending, and money people owe you. Card spending leaves your bank on the statement's due date, not on the day you swiped. |
+| **Forecast** | Look ahead | Enter your salary per month or repeat it, choose the bank it is paid into, and see your balance projected 12 months out from income, recurring costs, your average spending, and money people owe you. Card spending leaves your bank on the statement's due date, not on the day you swiped. |
+| **Accounts** | Safe to tidy up | Removing a bank account or card that is in use offers to move its entries, plans and defaults to another one first. Removed accounts can be restored with everything still attached, and a Fix link on the Dashboard moves anything left on a removed account. |
 | **Sync** | Two computers, one ledger | A verified handoff through a private GitHub repo. It shows when it is synced and only says "Safe to close" after checking. |
 | **Appearance** | Light or dark | Light by default. Switch to Dark, or Auto to follow your device, in Settings. It is a per-device choice and is not synced. On phones the tabs sit in a bar at the bottom, under your thumb. Sheets and buttons move gently, and only fade when your device asks for reduced motion. |
 | **Backup** | Your data, your files | Export everything as one file or as a spreadsheet, and import a backup. Nothing is deleted on import. |
@@ -198,7 +199,7 @@ Back up now and then with Settings, **Backup file**. The data repo's history is 
 
 ## Status
 
-Ledger is deployed and in use. Sync between two computers has been confirmed against a real GitHub repo. The latest release is V1.2.2; see [CHANGELOG.md](CHANGELOG.md) for what changed in each version. It is still a personal project, so keep a backup.
+Ledger is deployed and in use. Sync between two computers has been confirmed against a real GitHub repo. The latest release is V1.2.4; see [CHANGELOG.md](CHANGELOG.md) for what changed in each version. It is still a personal project, so keep a backup.
 
 The first version was built in these milestones:
 
@@ -213,7 +214,7 @@ The first version was built in these milestones:
 | 7 | Token setup screen, sync status, conflict screen | Done |
 | 8 | Deployment to GitHub Pages, install as an app, export and import | Done |
 
-Later releases added dark mode, editing, credit cards, in V1.2.0 card statements, bank reconcile, Pay all and default accounts, and in V1.2.2 a refreshed look with a bottom tab bar on phones.
+Later releases added dark mode, editing, credit cards, in V1.2.0 card statements, bank reconcile, Pay all and default accounts, in V1.2.2 a refreshed look with a bottom tab bar on phones, and in V1.2.4 safeguards for removing accounts and cards.
 
 The author's own copy is live at `https://seanabasta.github.io/ledger-web-app/`.
 

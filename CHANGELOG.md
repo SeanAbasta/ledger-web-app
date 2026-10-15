@@ -2,6 +2,39 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V1.2.4 (2026-10-15)
+
+Safer removing of bank accounts and cards. Before, removing one that was in use only warned you: its entries and plans then counted as "Other" on the Dashboard, a bank's starting balance left your total, and a card's balance owed disappeared. Adding the account again did not bring anything back.
+
+No new kinds of data are stored, so an older copy of the app keeps working with everything here. Update both computers to get the new screens.
+
+This release also collects the smaller changes that went out quietly in V1.2.1 and V1.2.3 and in between, listed at the end.
+
+Now includes:
+
+- Move before you remove. When a bank account or card has entries or plans, removing it offers "Move to [account] and remove". Its entries, card payments, plans and any default set to it move to the account you pick, then it is removed. A card moves to another card, and a bank account to another bank account in the same currency, so your total stays the same. "Remove anyway" is still there.
+- Restore. Settings, Accounts lists removed accounts and cards with a Restore button. Restoring brings back the same account, so everything that still pointed at it reconnects and its balance returns.
+- Fix leftovers. If any entry or plan points at a removed account, the Dashboard's Accounts card shows "Other" with a Fix link. It lists them and moves them all to one account you pick.
+- Card payments and other transfers can be edited: from, to, amount and date. Before, they could only be deleted.
+- Forecast, "Paid into": changing it now moves your salary from this month on, for a repeating salary and for salaries typed in month by month. Earlier months stay in the account they were paid into.
+- A bank account's starting balance is now labelled "Balance before your first entry", with a hint to use today's balance only if nothing is logged yet. Typing today's balance while older entries exist counts those entries twice.
+
+Also in this release, shipped quietly since V1.2.0:
+
+- Removing a person or a bank account that is in use asks first and says what is affected, for example "Alex is on 4 entries. Alex owes you ₱1,000.00."
+- Categories are removed only after tapping Edit, with bigger targets, so a stray tap cannot remove one.
+- Editing a split never drops a person who was removed in Settings. The Ledger names removed people and accounts, for example "Bank A (removed)", instead of showing "?".
+- Edit sheets open without the keyboard, so on phones the whole form shows. Only the Add tab focuses the amount.
+- On phones, pinch and double-tap zoom are off, and tapping a field no longer zooms in.
+- Switches have names for screen readers.
+- Small phones: tags never split across lines and buttons do not wrap.
+- On a card tile the Due row says "Change", so it reads as editing the due date rather than opening a page.
+- Settings is a short list of pages (General, Accounts, People and categories, Sync and backup) instead of one long page.
+- Sheets and bars stay readable on computers where the browser draws no blur, seen on Windows.
+- The Dashboard's daily chart has day labels, the daily average, the highest day and the number of days with no spending.
+- The Dashboard's Accounts card shows what your total would be if everyone paid you back, and after your card bills.
+- Open dropdown lists are readable in dark mode on Windows.
+
 ## V1.2.2 (2026-10-11)
 
 A new look. The screens and features are the same, and nothing about your data or your numbers changes.
