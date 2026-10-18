@@ -126,6 +126,27 @@ export function dailyStats(byDay: Minor[], elapsed: number): DailyStats {
   return { average, peak, quietDays: days.filter((v) => v === 0).length };
 }
 
+export interface ForecastStats {
+  /** The lowest and highest month-end balance in the range, the earliest month on a tie. */
+  lowest?: { month: IsoDate; amount: Minor };
+  highest?: { month: IsoDate; amount: Minor };
+  /** The last month-end balance minus today's balance. */
+  change: Minor;
+  /** Months that end below zero. */
+  below: number;
+}
+
+/** The Forecast chart's stat rows for the months shown (3, 6 or 12), starting from today's balance. */
+export function forecastStats(start: Minor, months: { month: IsoDate; end: Minor }[]): ForecastStats {
+  let lowest: ForecastStats["lowest"];
+  let highest: ForecastStats["highest"];
+  for (const m of months) {
+    if (!lowest || m.end < lowest.amount) lowest = { month: m.month, amount: m.end };
+    if (!highest || m.end > highest.amount) highest = { month: m.month, amount: m.end };
+  }
+  return { lowest, highest, change: (months[months.length - 1]?.end ?? start) - start, below: months.filter((m) => m.end < 0).length };
+}
+
 export interface WhatIf {
   /** The owed net (negative when I owe) and Total with it added. */
   owed?: { amount: Minor; after: Minor };

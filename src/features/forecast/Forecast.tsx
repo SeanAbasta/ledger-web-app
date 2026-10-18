@@ -1,27 +1,107 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { accountBalances } from "../../data/accounts";
 import { owedSummary, type OwedSummary } from "../../data/balances";
 import { addMonths, labelMonth, monthStart, today } from "../../data/dates";
 import { startAccount } from "../../data/defaults";
-import { forecast, type Forecast as F } from "../../data/forecast";
+import { forecast, type Forecast as F, type ForecastMonth } from "../../data/forecast";
 import { activeSalaryRule, salaryFor, setRepeat, setSalary, setSalaryAccount } from "../../data/income";
 import { formatMinor, parseMinor } from "../../data/money";
+import { forecastStats } from "../../data/summary";
 import { itemsToDate, loadWorld, type World } from "../../data/world";
 import { isCard } from "../../data/schema";
 import { BigAmount } from "../../ui/Amount";
 import { useLedger } from "../../ui/Ledger";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 import { MoneyInput } from "../../ui/MoneyInput";
+import { Popover, usePopover } from "../../ui/Popover";
+import { Segmented } from "../../ui/Segmented";
 
-function Line({ values, base }: { values: number[]; base: string }) {
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min || 1;
-  const pts = values.map((v, i) => `${(i / (values.length - 1)) * 400},${100 - ((v - min) / span) * 90 - 5}`);
+const RANGES = ["3", "6", "12"] as const;
+const RANGE_LABEL = { "3": "3 months", "6": "6 months", "12": "12 months" } as const;
+const shortMonth = (m: string) => labelMonth(m).split(" ")[0]!;
+/** A y-axis figure in a few characters: ₱120k, ₱1.2M. */
+function compact(minor: number, base: string): string {
+  const sign = formatMinor(0, base).replace(/[\d.,\s]/g, "");
+  const major = Math.abs(minor) / 100;
+  const n = major >= 1e6 ? `${+(major / 1e6).toFixed(1)}M` : major >= 1e3 ? `${Math.round(major / 1e3)}k` : `${Math.round(major)}`;
+  return `${minor < 0 ? "-" : ""}${sign}${n}`;
+}
+
+/**
+ * Projected balance: today's balance, then each month's end. The line is SVG (stretched); dots, labels,
+ * below-zero tints and the tap targets are HTML placed in percent through React's style prop, so the
+ * stretch never squashes them (the same reason the Dashboard daily bars are HTML).
+ */
+function BalanceChart({ start, months, base }: { start: number; months: ForecastMonth[]; base: string }) {
+  const pop = usePopover<number>();
+  const boxRef = useRef<HTMLDivElement>(null);
+  const values = [start, ...months.map((m) => m.end)];
+  let lo = Math.min(...values);
+  let hi = Math.max(...values);
+  if (lo < 0) hi = Math.max(hi, 0); // below zero: keep the zero line in view
+  const span = hi - lo || 1;
+  const x = (i: number) => (i / (values.length - 1)) * 100;
+  const y = (v: number) => 5 + (1 - (v - lo) / span) * 90;
+  const step = 100 / (values.length - 1);
+  const stats = forecastStats(start, months);
+  const last = months[months.length - 1];
+  const thin = months.length > 6; // every other month label on small phones
+  const label = `Projected balance over ${months.length} months, from ${formatMinor(start, base)} today to ${formatMinor(last?.end ?? start, base)} at the end of ${last ? labelMonth(last.month) : "this month"}${stats.lowest ? `, lowest ${formatMinor(stats.lowest.amount, base)} in ${labelMonth(stats.lowest.month)}` : ""}`;
+  const open = pop.openKey === undefined ? undefined : months[pop.openKey];
+  const prevEnd = (i: number) => (i === 0 ? start : months[i - 1]!.end);
+  const valueAt = (v: number, i: number, edge: "start" | "end") => (
+    <span className={`fval ${edge} ${y(v) < 22 ? "below" : "above"}`} style={{ left: `${x(i)}%`, top: `${y(v)}%` }}>{formatMinor(v, base)}</span>
+  );
+
   return (
-    <svg viewBox="0 0 400 100" width="100%" height="150" preserveAspectRatio="none" role="img" aria-label={`Projected balance from ${formatMinor(values[0] ?? 0, base)} to ${formatMinor(values[values.length - 1] ?? 0, base)}`}>
-      <polyline points={pts.join(" ")} fill="none" className="line" strokeWidth="2.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-    </svg>
+    <div ref={boxRef} className={pop.open ? "fchart popopen" : "fchart"}>
+      <div className="fgrid">
+        <div className="fy" aria-hidden="true"><span>{compact(hi, base)}</span><span>{compact(lo, base)}</span></div>
+        <div className="fplot">
+          {months.map((m, i) => m.end < 0 && <span key={m.month} className="fband neg" style={{ left: `${Math.max(0, x(i + 1) - step / 2)}%`, width: `${Math.min(step, 100 - x(i + 1) + step / 2)}%` }} />)}
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={label}>
+            <line x1="0" x2="100" y1="50" y2="50" className="fmid" vectorEffect="non-scaling-stroke" />
+            {lo < 0 && <line x1="0" x2="100" y1={y(0)} y2={y(0)} className="fzero" vectorEffect="non-scaling-stroke" />}
+            <polyline points={values.map((v, i) => `${x(i)},${y(v)}`).join(" ")} fill="none" className="line" strokeWidth="2.5" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          </svg>
+          <span className="fdot today" style={{ left: "0%", top: `${y(start)}%` }} aria-hidden="true" />
+          {months.map((m, i) => <span key={m.month} className={m.noIncome ? "fdot noinc" : "fdot"} style={{ left: `${x(i + 1)}%`, top: `${y(m.end)}%` }} aria-hidden="true" />)}
+          {valueAt(start, 0, "start")}
+          {last && valueAt(last.end, months.length, "end")}
+          {months.map((m, i) => (
+            <button key={m.month} type="button" className="fhit" style={{ left: `${Math.max(0, x(i + 1) - step / 2)}%`, width: `${Math.min(step, 100 - x(i + 1) + step / 2)}%` }}
+              aria-label={`${labelMonth(m.month)}, ${formatMinor(m.end, base)}`} aria-expanded={pop.openKey === i} aria-controls={pop.openKey === i ? "fpop" : undefined} {...pop.trigger(i)} />
+          ))}
+        </div>
+        {/* With 12 months on a small phone only every other month is named, and "Today" (its dot and value
+            say it) gives way to the current month. */}
+        <div className="flabs" aria-hidden="true">
+          <span className={thin ? "flab start skip" : "flab start"} style={{ left: "0%" }}>Today</span>
+          {months.map((m, i) => (
+            <span key={m.month} className={`flab${i === 0 ? " now" : ""}${thin && i % 2 === 1 ? " skip" : ""}${i === months.length - 1 ? " end" : ""}`} style={{ left: `${x(i + 1)}%` }}>{shortMonth(m.month)}</span>
+          ))}
+        </div>
+      </div>
+      <div className="dailystats">
+        {stats.lowest && <div className="row static"><span>Lowest point</span><span>{formatMinor(stats.lowest.amount, base)} <span className="mute">{labelMonth(stats.lowest.month)}</span></span></div>}
+        {stats.highest && <div className="row static"><span>Highest point</span><span>{formatMinor(stats.highest.amount, base)} <span className="mute">{labelMonth(stats.highest.month)}</span></span></div>}
+        <div className="row static"><span>Change over {months.length} months</span><span className={stats.change > 0 ? "pos" : ""}>{stats.change > 0 ? "+" : stats.change < 0 ? "\u2212" : ""}{formatMinor(Math.abs(stats.change), base)}</span></div>
+        {stats.below > 0 && <div className="row static"><span>Below zero</span><span className="warnink">{stats.below} {stats.below === 1 ? "month" : "months"}</span></div>}
+      </div>
+      {open && pop.open && (
+        <Popover open={pop.open} container={boxRef} popRef={pop.popRef} id="fpop" label={`${labelMonth(open.month)} forecast`}>
+          <div className="pophead"><b>{labelMonth(open.month)}</b>{open.noIncome && <span className="tag warn">No income set</span>}</div>
+          <div className="popamt"><b>{formatMinor(open.end, base)}</b><span className="mute">at month end</span></div>
+          <ul className="poplist">
+            <li><span>Income</span><span>{formatMinor(open.income, base)}</span></li>
+            <li><span>Spending</span><span>{formatMinor(open.obligations + open.variable, base)}</span></li>
+            <li><span>Card bills</span><span>{formatMinor(open.cards, base)}</span></li>
+            {open.owed !== 0 && <li><span>{open.owed > 0 ? "Owed back" : "You pay back"}</span><span>{formatMinor(Math.abs(open.owed), base)}</span></li>}
+            <li><span>Change from {pop.openKey === 0 ? "today" : labelMonth(months[pop.openKey! - 1]!.month)}</span><span>{open.end - prevEnd(pop.openKey!) > 0 ? "+" : open.end < prevEnd(pop.openKey!) ? "\u2212" : ""}{formatMinor(Math.abs(open.end - prevEnd(pop.openKey!)), base)}</span></li>
+          </ul>
+        </Popover>
+      )}
+    </div>
   );
 }
 
@@ -40,6 +120,7 @@ export function Forecast() {
   const [f, setF] = useState<F>();
   const [error, setError] = useState("");
   const [accountId, setAccountId] = useState("");
+  const [range, setRange] = useState<(typeof RANGES)[number]>("12");
 
   useEffect(() => {
     (async () => {
@@ -132,7 +213,11 @@ export function Forecast() {
       </div>
 
       <div className="grp">Projected balance</div>
-      <div className="card pad"><Line values={f.months.map((m) => m.end)} base={base} /></div>
+      <div className="card pad">
+        <div className="frange"><Segmented value={range} options={RANGES} labels={RANGE_LABEL} onChange={setRange} /></div>
+        {/* Keyed on the range so an open month closes when the range changes. */}
+        <BalanceChart key={range} start={start} months={f.months.slice(0, Number(range))} base={base} />
+      </div>
       <div className="card ftable">
         <div className="frow head"><span>Month</span><span>Income</span><span>Spend</span><span>Balance</span></div>
         {f.months.map((m) => (
