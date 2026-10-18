@@ -2,6 +2,19 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V1.3.0 (2026-10-18)
+
+Filters and charts you can tap. See one category in the Ledger, one account's spending on the Dashboard, what is inside each slice of the category chart, and each month of the Forecast. Picking people for a split is a tap instead of typing.
+
+No new kinds of data are stored, so an older copy of the app keeps working with everything here. Update both computers to get the new screens.
+
+- Splits: turning Split on shows your people as buttons. Tap to include someone, tap again to take them out. Paid by is a row of buttons too: Me, the people in the split, and anyone removed since. A new name can still be added with the Add field; it is saved with the expense. On iPhone you no longer have to type every name.
+- Ledger: a category filter next to Search, for Day, Week and Month. It works together with Search, the day totals follow it, and removed categories on old entries can still be picked.
+- Dashboard: an account filter next to the month. Pick a bank account, a card, or "No account or removed" to see that spending only: Spent and its comparison with last month, Still due, the category chart and the daily bars. Balances (cards, accounts, owed, the forecast) always show everything, and a note says so.
+- Dashboard: hover or tap a slice of the category chart, or a row of its legend, to see the amount, its share and its three largest items. The grouped "Other" lists what it contains.
+- Forecast: the projected balance chart shows 3, 6 or 12 months, starts from today's balance, names the months, marks months with no income set, and shades any month that ends below zero. Tap or hover a month for its income, spending, card bills and change. Under the chart: the lowest and highest point, the change over the range, and how many months end below zero.
+- Splits someone else paid are saved with no account. Before, the form could keep your default account on them; balances already ignored it, and the Dashboard filter counts those older ones as "No account" too.
+
 ## V1.2.4 (2026-10-15)
 
 Safer removing of bank accounts and cards. Before, removing one that was in use only warned you: its entries and plans then counted as "Other" on the Dashboard, a bank's starting balance left your total, and a card's balance owed disappeared. Adding the account again did not bring anything back.
