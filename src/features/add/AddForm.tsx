@@ -123,7 +123,8 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
         currency,
         category,
         note: note || undefined,
-        accountId: accountId || undefined,
+        // Someone else paid: none of my money moved, so no account is saved (an edit clears an old one).
+        accountId: someoneElsePaid ? undefined : accountId || undefined,
         split: splitVal,
         rate: foreign ? rate : undefined,
         nextBill: billable && nextBill ? (true as const) : undefined, // undefined clears it on an edit
@@ -147,7 +148,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
       }
       changed();
       if (entry) return onDone?.();
-      rememberUsed({ expense: accountId, category });
+      rememberUsed({ expense: someoneElsePaid ? undefined : accountId, category });
       setAmount("");
       setNote("");
       // A plan that starts later is easy to lose, so say when it begins.
@@ -195,10 +196,10 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
       <label className="field"><b>Note</b><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" /></label>
       <label className="field"><b>{kind === "one-off" ? "Date" : "Starts"}{card && validDate && cutoffFor(card, date) === date && <span className="tag">statement day</span>}</b><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
       {accounts.length > 0 && (
-        <label className="field"><b>Account{!entry && accountId && accountId === startAcct.id && <span className="tag">{startAcct.from}</span>}</b>
-          <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-            {someoneElsePaid ? <option value="">None</option> : !accountId && <option value="" disabled>Pick an account</option>}
-            <AccountOptions accounts={accounts} />
+        <label className="field"><b>Account{!entry && !someoneElsePaid && accountId && accountId === startAcct.id && <span className="tag">{startAcct.from}</span>}</b>
+          {/* Someone else paid: only None. The picked account is kept in state and comes back if I paid after all. */}
+          <select value={someoneElsePaid ? "" : accountId} onChange={(e) => setAccountId(e.target.value)}>
+            {someoneElsePaid ? <option value="">None</option> : <>{!accountId && <option value="" disabled>Pick an account</option>}<AccountOptions accounts={accounts} /></>}
           </select></label>
       )}
 

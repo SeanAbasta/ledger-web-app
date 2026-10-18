@@ -15,11 +15,36 @@ export interface Summary {
   unconverted: number;
 }
 
+/** The Dashboard filter choice for spending with no account or on a removed one (the Accounts card's "Other"). */
+export const NO_ACCOUNT = "none";
+
+/**
+ * The account a piece of spending came out of, for the Dashboard filter. A split someone else paid
+ * has none, even when an account is stored on it (older Add forms saved the default): none of my money moved.
+ */
+export function spendAccount(it: LedgerItem): string | undefined {
+  const x = it.type === "entry" ? it.entry : it.occ;
+  return x.split && x.split.paidBy !== "me" ? undefined : x.accountId;
+}
+
+/** Account filter: one account by id, or NO_ACCOUNT for no account or one not in `live` (removed). */
+export interface AccountFilter {
+  account: string;
+  live: string[];
+}
+
+export function matchesAccount(it: LedgerItem, f?: AccountFilter): boolean {
+  if (!f) return true;
+  const a = spendAccount(it);
+  return f.account === NO_ACCOUNT ? !a || !f.live.includes(a) : a === f.account;
+}
+
 /**
  * Spending from `from` to `to`. Refunds count against the category they came back to. `all` is
- * used to find the expense a refund belongs to (for my share of a split one).
+ * used to find the expense a refund belongs to (for my share of a split one). With `filter`, only
+ * spending on that account counts (a refund by the account it came back to).
  */
-export function summarize(items: LedgerItem[], base: string, from: IsoDate, to: IsoDate, all: Entry[] = []): Summary {
+export function summarize(items: LedgerItem[], base: string, from: IsoDate, to: IsoDate, all: Entry[] = [], filter?: AccountFilter): Summary {
   const byId = new Map([...all, ...items.flatMap((it) => (it.type === "entry" ? [it.entry] : []))].map((e) => [e.id, e]));
   const byDay: Minor[] = Array(daysBetween(from, to) + 1).fill(0);
   const cats = new Map<string, Minor>();
@@ -29,6 +54,7 @@ export function summarize(items: LedgerItem[], base: string, from: IsoDate, to: 
     const x = it.type === "entry" ? it.entry : it.occ;
     const refund = it.type === "entry" && it.entry.refund;
     if (x.kind !== "expense" && !refund) continue;
+    if (!matchesAccount(it, filter)) continue;
     const amount = refund ? -myRefund(it.entry, byId) : myShare(x.amount, x.split);
     const mine = toBase({ amount, currency: x.currency, rate: "rate" in x ? x.rate : undefined } as never, base);
     if (mine === undefined) {

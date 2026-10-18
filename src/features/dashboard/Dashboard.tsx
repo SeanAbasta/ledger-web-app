@@ -13,8 +13,9 @@ import { loadEntries } from "../../data/months";
 import { formatMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem } from "../../data/rules";
 import { myShare } from "../../data/splits";
-import { accountsWhatIf, dailyStats, pctChange, summarize, topCategories, type Summary } from "../../data/summary";
+import { accountsWhatIf, dailyStats, matchesAccount, NO_ACCOUNT, pctChange, summarize, topCategories, type AccountFilter, type Summary } from "../../data/summary";
 import { orphans, type Orphans } from "../../data/usage";
+import { AccountOptions } from "../../ui/AccountOptions";
 import { BigAmount } from "../../ui/Amount";
 import { cardColor } from "../../ui/cardColor";
 import { categoryTone } from "../../ui/categoryColor";
@@ -48,6 +49,8 @@ interface View {
   allAccounts: Account[];
   /** Which way the month changed (1 = next), so the cards slide in from that side; 0 = no slide. */
   dir: -1 | 0 | 1;
+  /** The spending filter these numbers were worked out with ("" is all accounts). */
+  acct: string;
 }
 
 const C = 2 * Math.PI * 40;
@@ -98,6 +101,8 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
   // A card opened from its tile: the per-card statement view replaces the Dashboard until Back.
   const [openCard, setOpenCard] = useState<string>();
   const [fixing, setFixing] = useState(false);
+  // Spending filter: "" is all accounts, an account id, or NO_ACCOUNT. Balances are never filtered.
+  const [acct, setAcct] = useState("");
   const dir = useRef<-1 | 0 | 1>(0);
   const go = (d: -1 | 0 | 1, next: (a: string) => string) => { dir.current = d; setAnchor(next); };
   const goToday = () => { const t = today(); go(monthStart(t) === monthStart(anchor) ? 0 : t > anchor ? 1 : -1, () => t); };
@@ -118,10 +123,12 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
       const prevTo = isCurrent ? addMonths(spentTo, -1) : monthEnd(prevFrom);
       const entries = await loadEntries(store, prevFrom, to);
       const world = await loadWorld(store);
-      const cur = summarize(from > t ? [] : ledgerItems(entries, rules, from, spentTo), base, from, to, world.entries);
-      const prev = summarize(ledgerItems(entries, rules, prevFrom, prevTo), base, prevFrom, prevTo, world.entries);
+      // This month, last month and Still due all use the same filter, so the comparison is like for like.
+      const filter: AccountFilter | undefined = acct ? { account: acct, live: world.accounts.map((a) => a.id) } : undefined;
+      const cur = summarize(from > t ? [] : ledgerItems(entries, rules, from, spentTo), base, from, to, world.entries, filter);
+      const prev = summarize(ledgerItems(entries, rules, prevFrom, prevTo), base, prevFrom, prevTo, world.entries, filter);
       const stillDue = isCurrent
-        ? rules.flatMap((r) => occurrences(r, addDays(t, 1), to)).filter((o) => o.kind === "expense")
+        ? rules.flatMap((r) => occurrences(r, addDays(t, 1), to)).filter((o) => o.kind === "expense" && matchesAccount({ type: "occurrence", date: o.date, occ: o }, filter))
             .reduce((a, o) => a + (toBase({ amount: myShare(o.amount, o.split), currency: o.currency }, base) ?? 0), 0)
         : 0;
       const upToToday = itemsToDate(world, t);
@@ -134,10 +141,10 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
       if (stale) return;
       const d = dir.current;
       dir.current = 0;
-      setV((old) => ({ dir: old && old.from !== from ? d : 0, base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, accounts: world.accounts, items: upToToday, salaryAccount: activeSalaryRule(world.rules, t)?.accountId, defaults: settings.defaults, orphans: orphans(world.entries, world.rules, allAccounts), allAccounts }));
+      setV((old) => ({ dir: old && old.from !== from ? d : 0, acct, base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, accounts: world.accounts, items: upToToday, salaryAccount: activeSalaryRule(world.rules, t)?.accountId, defaults: settings.defaults, orphans: orphans(world.entries, world.rules, allAccounts), allAccounts }));
     })();
     return () => { stale = true; };
-  }, [store, rev, anchor]);
+  }, [store, rev, anchor, acct]);
 
   if (!v) return null;
   const { base, cur, prevTotal, stillDue, from, isCurrent, balances, owed, next, cards, banks, accounts, items, salaryAccount, defaults } = v;
@@ -157,6 +164,8 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
   const daily = dailyStats(cur.byDay, elapsed);
   const dailyLabel = `Daily spending from ${labelShort(from)}, average ${formatMinor(daily.average, base)} a day${daily.peak ? `, highest ${formatMinor(daily.peak.amount, base)} on ${labelShort(addDays(from, daily.peak.index))}` : ""}`;
   const opened = cards.find((c) => c.card.id === openCard);
+  // Named from the loaded numbers' filter, so the tag never sits over the previous filter's figures while loading.
+  const acctName = v.acct === NO_ACCOUNT ? "No account or removed" : accounts.find((a) => a.id === v.acct)?.name;
 
   if (opened) {
     return (
@@ -178,13 +187,20 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
           <button aria-label="Next month" onClick={() => go(1, (a) => addMonths(monthStart(a), 1))}>›</button>
           <button className={monthStart(anchor) === monthStart(today()) ? "today off" : "today"} onClick={goToday}>Today</button>
         </span>
+        {accounts.length > 0 && (
+          <select className="acctpick" aria-label="Spending from" value={acct} onChange={(e) => setAcct(e.target.value)}>
+            <option value="">All accounts</option>
+            <AccountOptions accounts={accounts} />
+            <option value={NO_ACCOUNT}>No account or removed</option>
+          </select>
+        )}
       </div>
 
       {/* Keyed on the loaded month: the cards swap and slide in only once the new month's numbers are ready. */}
       <div key={from} className={v.dir === 1 ? "period next" : v.dir === -1 ? "period prev" : "period"}>
       {/* Spent leads; Still due and Last month sit side by side under it on phones, beside it on computers. */}
       <div className="statrow">
-        <div className="card stat hero"><div className="mute">Spent</div><BigAmount minor={cur.total} currency={base} />
+        <div className="card stat hero"><div className="mute">Spent{acctName && <span className="tag">{acctName}</span>}</div><BigAmount minor={cur.total} currency={base} />
           {prevTotal > 0 && (
             // This month so far against last month's same days: full and orange once past it.
             <div className={cur.total > prevTotal ? "spentbar over" : "spentbar"} aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(1, cur.total / prevTotal)) * 100}%` }} /></div>
@@ -199,7 +215,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
       </div>
 
       {catTotal <= 0 ? (
-        <Empty icon={<DashboardIcon />} title="Nothing spent yet" note={labelMonth(from)} />
+        <Empty icon={<DashboardIcon />} title="Nothing spent yet" note={acctName ? `${labelMonth(from)}, ${acctName}` : labelMonth(from)} />
       ) : (
         <div className="grid g2">
           <div className="card pad catcard">
@@ -224,6 +240,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
           </div>
         </div>
       )}
+      {acctName && <p className="mute small hint balnote">Filtered to {acctName}. Cards, accounts and owed below show everything.</p>}
       {cards.length > 0 && (
         <div className={`grid ${cards.length % 3 === 0 ? "g3" : "g2"}`}>
           {cards.map(({ card, st }) => <CardTile key={card.id} card={card} color={cardColor(card, accounts)} st={st} banks={banks} defaultBank={salaryAccount} defaults={defaults} onOpen={() => setOpenCard(card.id)} />)}
