@@ -540,6 +540,17 @@ details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 .owedline { display: block; }
 /* People removed since an entry was split: listed in its edit form, kept in the split. */
 .kept { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 10px; text-align: right; }
+/* Split People and Paid by: tap to pick. The label sits on top and the chips wrap under it.
+   Picked chips are filled with the accent; phones get 44 px tall targets. */
+.field.stack { flex-direction: column; align-items: stretch; gap: var(--sp-2); }
+.picks { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.pick { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; min-height: 32px; max-width: 100%; padding: 0 14px; border-radius: 999px; background: var(--fill-2); color: var(--ink); font-size: var(--fs-md); font-weight: 500; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pick.on { background: var(--accent); color: #fff; }
+.pick:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); outline-offset: 2px; }
+fieldset:disabled .pick { cursor: default; }
+.addpick { display: flex; gap: var(--sp-2); align-items: center; }
+.field .addpick input { flex: 1; min-width: 0; max-width: none; text-align: left; }
+@media (max-width: 700px) { .pick, .addpick .btn { min-height: 44px; } }
 
 /* Card tiles: the top is a card face in the card's colour (picked in Settings, src/ui/cardColor.ts),
    like Apple Wallet. Tapping it opens the per-card view. White text on the darker left of each gradient. */
@@ -619,16 +630,16 @@ fieldset:disabled .swatch { cursor: default; }
 
 /* Press feedback: held buttons shrink to 97% and dim; tappable rows only dim (a full-width row that
    shrinks looks like it jumps). Reduce Motion: dim only. Our own feedback replaces the grey tap flash. */
-.btn, .choice, .pill, .seg button, .side button, .nav button, .toggle, .chip button, .x, button.row, .cardhead, .swatch {
+.btn, .choice, .pill, .seg button, .side button, .nav button, .toggle, .chip button, .x, button.row, .cardhead, .swatch, .pick {
   transition: transform 150ms ease-out, opacity 150ms ease-out;
   -webkit-tap-highlight-color: transparent;
 }
 .btn:active:not(:disabled), .choice:active:not(:disabled), .pill:active, .seg button:active:not(:disabled),
-.side button:active, .nav button:active, .toggle:active:not(:disabled), .chip button:active:not(:disabled), .x:active:not(:disabled), .swatch:active:not(:disabled) {
+.side button:active, .nav button:active, .toggle:active:not(:disabled), .chip button:active:not(:disabled), .x:active:not(:disabled), .swatch:active:not(:disabled), .pick:active:not(:disabled) {
   transform: scale(0.97);
   opacity: 0.7;
 }
 button.row:active:not(:disabled), .cardhead:active { opacity: 0.55; }
 @media (prefers-reduced-motion: reduce) {
-  .btn:active, .choice:active, .pill:active, .seg button:active, .side button:active, .nav button:active, .toggle:active, .chip button:active, .x:active, .swatch:active { transform: none; }
+  .btn:active, .choice:active, .pill:active, .seg button:active, .side button:active, .nav button:active, .toggle:active, .chip button:active, .x:active, .swatch:active, .pick:active { transform: none; }
 }

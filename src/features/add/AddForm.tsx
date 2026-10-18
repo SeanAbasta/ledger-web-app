@@ -8,7 +8,7 @@ import { formatMinor, parseMinor, splitEvenly } from "../../data/money";
 import { labelShort, today } from "../../data/dates";
 import type { Account, Entry, Frequency, Person, Settings, SplitMode } from "../../data/schema";
 import { isCard, monthOf, DEFAULT_SETTINGS } from "../../data/schema";
-import { keptKey, resolveNames, splitFormOf, splitFromForm, type SplitFormState } from "../../data/splitForm";
+import { addName, hasName, keptKey, namesOf, payerAfter, payerForMode, resolveNames, splitFormOf, splitFromForm, toggleName, type SplitFormState } from "../../data/splitForm";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { AccountOptions } from "../../ui/AccountOptions";
@@ -52,6 +52,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
   const [paidBy, setPaidBy] = useState(entry?.split?.paidBy ?? "me");
   const [mode, setMode] = useState<SplitMode>(entry?.split?.mode ?? "half");
   const [names, setNames] = useState("");
+  const [newName, setNewName] = useState("");
   const [custom, setCustom] = useState<Record<string, string>>({});
   // People in this split who were removed in Settings since. They stay in it unless the split is changed.
   const [kept, setKept] = useState<SplitFormState["kept"]>([]);
@@ -83,7 +84,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
   }, [store, entry]);
 
   const foreign = currency !== settings.baseCurrency;
-  const nameList = names.split(",").map((n) => n.trim()).filter(Boolean);
+  const nameList = namesOf(names);
   // When someone else paid a split, none of my money moved, so no account is needed.
   const someoneElsePaid = split && paidBy !== "me";
   const needsAccount = accounts.length > 0 && !someoneElsePaid;
@@ -109,6 +110,8 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
       let splitVal;
       if (split) {
         const named = await resolveNames(store, nameList, people);
+        // New people are saved now; keep them in the list so another Save after an error does not add them twice.
+        setPeople((ps) => [...ps, ...named.filter((p) => !ps.some((x) => x.id === p.id))]);
         // An unchanged split is saved exactly as stored; removed people in it are never dropped.
         const original = entry?.split ? { amount: entry.amount, split: entry.split } : undefined;
         splitVal = splitFromForm({ names, paidBy, mode, custom, kept }, named, perPayment, currency, original);
@@ -162,7 +165,19 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
     onDone?.();
   }
 
-  const picks = [...new Map(nameList.map((n) => [n.toLowerCase(), n])).entries()];
+  // Picked names as [key, shown name], spelled as the live person when there is one.
+  const picks = nameList.map((n) => [n.toLowerCase(), people.find((p) => p.name.toLowerCase() === n.toLowerCase())?.name ?? n] as const);
+  // One chip per live person (names that differ only in case share a key), then picked names not saved yet.
+  const chips = [...new Map(people.map((p) => [p.name.toLowerCase(), p.name])).values(), ...picks.filter(([k]) => !people.some((p) => p.name.toLowerCase() === k)).map(([, n]) => n)];
+  const tap = (n: string) => {
+    const next = toggleName(names, n);
+    setNames(next);
+    setPaidBy(payerAfter(paidBy, mode, next, kept));
+  };
+  const add = () => {
+    setNames(addName(names, newName, people));
+    setNewName("");
+  };
 
   return (
     <form className="form" onSubmit={(e) => { e.preventDefault(); void save(); }}>
@@ -212,19 +227,29 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
       )}
       {split && entry?.kind !== "income" && (
         <>
-          <label className="field"><b>People</b><input list="people" placeholder="Maya, Jon" value={names} onChange={(e) => setNames(e.target.value)} />
-            <datalist id="people">{people.map((p) => <option key={p.id} value={p.name} />)}</datalist></label>
+          <div className="field stack"><b>People</b>
+            {chips.length > 0 ? (
+              <div className="picks">{chips.map((n) => {
+                const on = hasName(names, n);
+                return <button key={n.toLowerCase()} type="button" className={on ? "pick on" : "pick"} aria-pressed={on} onClick={() => tap(n)}>{n}</button>;
+              })}</div>
+            ) : <span className="mute small">Add the people you split with</span>}
+            <div className="addpick">
+              <input aria-label="New person" placeholder="New person" enterKeyHint="done" value={newName} onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }} />
+              <button type="button" className="btn ghost sm" disabled={!newName.trim()} onClick={add}>Add</button>
+            </div></div>
           {kept.length > 0 && (
             <div className="field"><b>Also in this split</b>
               <span className="kept">{kept.map((k) => <span key={k.id}>{k.name}<span className="tag">removed</span></span>)}</span></div>
           )}
-          <div className="field"><b>Mode</b><Segmented value={mode} options={MODES} labels={MODE_LABEL} onChange={(m) => { setMode(m); if (m === "i-owe" && paidBy === "me") setPaidBy(picks[0]?.[0] ?? (kept[0] ? keptKey(kept[0].id) : "me")); }} /></div>
-          <label className="field"><b>Paid by</b>
-            <select value={paidBy} onChange={(e) => setPaidBy(e.target.value)}>
-              <option value="me">Me</option>
-              {picks.map(([k, n]) => <option key={k} value={k}>{n}</option>)}
-              {kept.map((k) => <option key={k.id} value={keptKey(k.id)}>{k.name} (removed)</option>)}
-            </select></label>
+          <div className="field"><b>Mode</b><Segmented value={mode} options={MODES} labels={MODE_LABEL} onChange={(m) => { setMode(m); setPaidBy(payerForMode(m, paidBy, names, kept)); }} /></div>
+          <div className="field stack"><b>Paid by</b>
+            <div className="picks" role="radiogroup" aria-label="Paid by">
+              {[["me", "Me"] as const, ...picks, ...kept.map((k) => [keptKey(k.id), `${k.name} (removed)`] as const)].map(([k, n]) => (
+                <button key={k} type="button" role="radio" aria-checked={k === paidBy} className={k === paidBy ? "pick on" : "pick"} onClick={() => setPaidBy(k)}>{n}</button>
+              ))}
+            </div></div>
           {mode === "custom" && picks.map(([k, n]) => (
             <label className="field" key={k}><b>{n} owes</b><MoneyInput value={custom[k] ?? ""} onChange={(v) => setCustom({ ...custom, [k]: v })} currency={currency} /></label>
           ))}
