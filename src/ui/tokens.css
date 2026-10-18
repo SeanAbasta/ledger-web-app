@@ -395,10 +395,17 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .donut { display: flex; justify-content: center; margin: var(--sp-2) 0; }
 .donut .track { stroke: var(--track); }
 .donut .seg { stroke: var(--tone, var(--t-gray)); }
-.catcard { container-type: inline-size; }
+.catcard { container-type: inline-size; position: relative; }
+/* The open breakdown must sit over the cards next to and under this one. */
+.catcard.popopen { z-index: 1; }
 .legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); column-gap: var(--sp-5); }
 @container (min-width: 420px) { .legend { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.legend li { display: flex; align-items: center; gap: var(--sp-2); padding: 3px 0; min-width: 0; }
+.legend li { min-width: 0; }
+/* Legend rows are buttons: they open the category's breakdown (hover, tap or keyboard). */
+.legend button { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: var(--sp-2); width: 100%; padding: 3px 0; min-width: 0; cursor: pointer; border-radius: 6px; }
+.legend button:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); outline-offset: 2px; }
+@media (max-width: 700px) { .legend button { min-height: 44px; } }
+.donut .seg { cursor: pointer; }
 .legend .r { margin-left: auto; color: var(--mute); }
 .legend i { width: 9px; height: 9px; border-radius: 3px; flex: none; background: var(--tone, var(--t-gray)); }
 /* Daily bars: one column per day with round tops, today's at full strength. (Named .dbar: a plain .bar
@@ -635,10 +642,21 @@ fieldset:disabled .swatch { cursor: default; }
 
 /* Tab change: the new screen fades in (150 ms). Already a fade, so Reduce Motion keeps it. */
 .tabfade { animation: fade-in 150ms ease-out; }
+/* Chart breakdown popover (src/ui/Popover.tsx): placed inside its card, never wider than it. */
+.pop { position: absolute; z-index: 1; width: 260px; max-width: calc(100% - 16px); box-sizing: border-box; padding: var(--sp-3); border-radius: 14px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow), 0 0 0 1px var(--line); font-size: var(--fs-md); animation: fade-in 120ms ease-out; }
+.pop.measuring { visibility: hidden; left: 0; top: 0; }
+.pophead { display: flex; align-items: center; gap: var(--sp-2); }
+.pophead i { width: 9px; height: 9px; border-radius: 3px; flex: none; background: var(--tone, var(--t-gray)); }
+.popamt { display: flex; justify-content: space-between; gap: var(--sp-2); margin: var(--sp-1) 0 var(--sp-2); }
+.poplist { list-style: none; margin: 0; padding: var(--sp-2) 0 0; border-top: 1px solid var(--line); }
+.poplist li { display: flex; justify-content: space-between; gap: var(--sp-3); padding: 2px 0; }
+.poplist li > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.poplist li > span:last-child { white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .pop { animation: none; } }
 
 /* Press feedback: held buttons shrink to 97% and dim; tappable rows only dim (a full-width row that
    shrinks looks like it jumps). Reduce Motion: dim only. Our own feedback replaces the grey tap flash. */
-.btn, .choice, .pill, .seg button, .side button, .nav button, .toggle, .chip button, .x, button.row, .cardhead, .swatch, .pick {
+.btn, .choice, .pill, .seg button, .side button, .nav button, .toggle, .chip button, .x, button.row, .cardhead, .swatch, .pick, .legend button {
   transition: transform 150ms ease-out, opacity 150ms ease-out;
   -webkit-tap-highlight-color: transparent;
 }
@@ -647,7 +665,7 @@ fieldset:disabled .swatch { cursor: default; }
   transform: scale(0.97);
   opacity: 0.7;
 }
-button.row:active:not(:disabled), .cardhead:active { opacity: 0.55; }
+button.row:active:not(:disabled), .cardhead:active, .legend button:active { opacity: 0.55; }
 @media (prefers-reduced-motion: reduce) {
   .btn:active, .choice:active, .pill:active, .seg button:active, .side button:active, .nav button:active, .toggle:active, .chip button:active, .x:active, .swatch:active, .pick:active { transform: none; }
 }

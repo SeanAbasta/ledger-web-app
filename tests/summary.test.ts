@@ -38,7 +38,7 @@ describe("summarize", () => {
     expect(s.byDay.length).toBe(31);
     expect(s.byDay[0]).toBe(1500);
     expect(s.byDay[2]).toBe(1000);
-    expect(s.byCategory[0]).toEqual({ category: "Food", amount: 7600 });
+    expect(s.byCategory[0]).toMatchObject({ category: "Food", amount: 7600 });
   });
   it("leaves out foreign amounts with no rate and counts them", () => {
     const s = summarize([e("2026-10-01", 100, { currency: "USD" })], "PHP", "2026-10-01", "2026-10-31");

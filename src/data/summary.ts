@@ -5,10 +5,26 @@ import type { LedgerItem } from "./rules";
 import type { Entry, IsoDate, Minor } from "./schema";
 import { myRefund, myShare } from "./splits";
 
+/** One piece of spending in a category's breakdown: what it was, when, and what it cost me (base currency). */
+export interface SpendItem {
+  label: string;
+  date: IsoDate;
+  amount: Minor;
+}
+
+export interface CategorySpend {
+  category: string;
+  amount: Minor;
+  /** The largest items (up to 3; refunds never listed), the earliest first on a tie. */
+  top?: SpendItem[];
+  /** Only on the folded "Other" from topCategories: the categories folded into it, largest first. */
+  members?: { category: string; amount: Minor }[];
+}
+
 export interface Summary {
   /** What expenses cost me, in the base currency (my share of splits). */
   total: Minor;
-  byCategory: { category: string; amount: Minor }[];
+  byCategory: CategorySpend[];
   /** One value per day from `from`. */
   byDay: Minor[];
   /** Foreign amounts without a rate, left out of the totals. */
@@ -48,6 +64,7 @@ export function summarize(items: LedgerItem[], base: string, from: IsoDate, to: 
   const byId = new Map([...all, ...items.flatMap((it) => (it.type === "entry" ? [it.entry] : []))].map((e) => [e.id, e]));
   const byDay: Minor[] = Array(daysBetween(from, to) + 1).fill(0);
   const cats = new Map<string, Minor>();
+  const picks = new Map<string, SpendItem[]>();
   let total = 0;
   let unconverted = 0;
   for (const it of items) {
@@ -66,18 +83,22 @@ export function summarize(items: LedgerItem[], base: string, from: IsoDate, to: 
     if (i >= 0 && i < byDay.length) byDay[i]! += mine;
     const c = x.category || "Other";
     cats.set(c, (cats.get(c) ?? 0) + mine);
+    if (!refund && mine > 0) picks.set(c, [...(picks.get(c) ?? []), { label: x.note || c, date: it.date, amount: mine }]);
   }
-  const byCategory = [...cats.entries()].map(([category, amount]) => ({ category, amount })).filter((c) => c.amount > 0).sort((a, b) => b.amount - a.amount);
+  const topOf = (c: string) => (picks.get(c) ?? []).sort((a, b) => b.amount - a.amount || (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)).slice(0, 3);
+  const byCategory = [...cats.entries()].map(([category, amount]) => ({ category, amount, top: topOf(category) })).filter((c) => c.amount > 0).sort((a, b) => b.amount - a.amount);
   return { total, byCategory, byDay, unconverted };
 }
 
-/** Top `n` categories, the rest folded into "Other". */
+/**
+ * Top `n` categories, the rest folded into "Other". The folded Other lists what went into it
+ * (`members`, largest first; a real "Other" category among them keeps its name) instead of items.
+ */
 export function topCategories(cats: Summary["byCategory"], n = 5): Summary["byCategory"] {
   if (cats.length <= n) return cats;
-  const rest = cats.slice(n).reduce((a, c) => a + c.amount, 0);
   const head = cats.slice(0, n).filter((c) => c.category !== "Other");
-  const other = rest + (cats.slice(0, n).find((c) => c.category === "Other")?.amount ?? 0);
-  return [...head, { category: "Other", amount: other }];
+  const folded = cats.filter((c) => !head.includes(c)).map(({ category, amount }) => ({ category, amount })).sort((a, b) => b.amount - a.amount);
+  return [...head, { category: "Other", amount: folded.reduce((a, c) => a + c.amount, 0), members: folded }];
 }
 
 /** Percent change from `prev` to `cur`, rounded; null when there is nothing to compare to. */

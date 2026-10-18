@@ -20,6 +20,7 @@ import { BigAmount } from "../../ui/Amount";
 import { cardColor } from "../../ui/cardColor";
 import { categoryTone } from "../../ui/categoryColor";
 import { Empty } from "../../ui/Empty";
+import { Popover, usePopover } from "../../ui/Popover";
 import { DashboardIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
 import { useTodayKey } from "../../ui/useTodayKey";
@@ -55,7 +56,7 @@ interface View {
 
 const C = 2 * Math.PI * 40;
 
-function Donut({ cats, total, base }: { cats: Summary["byCategory"]; total: number; base: string }) {
+function Donut({ cats, total, base, trigger }: { cats: Summary["byCategory"]; total: number; base: string; trigger: ReturnType<typeof usePopover<string>>["trigger"] }) {
   let acc = 0;
   return (
     <svg viewBox="0 0 120 120" width="150" height="150" role="img" aria-label={`Spending by category, total ${formatMinor(total, base)}`}>
@@ -63,7 +64,8 @@ function Donut({ cats, total, base }: { cats: Summary["byCategory"]; total: numb
         <circle cx="60" cy="60" r="40" className="track" />
         {cats.map((c) => {
           const len = (c.amount / total) * C;
-          const el = <circle key={c.category} cx="60" cy="60" r="40" className={`seg tone-${categoryTone(c.category)}`} strokeDasharray={`${Math.max(len - 1, 0)} ${C - Math.max(len - 1, 0)}`} strokeDashoffset={-acc} />;
+          // Hover or tap a segment for its breakdown; keyboard users get the same from the legend buttons.
+          const el = <circle key={c.category} cx="60" cy="60" r="40" className={`seg tone-${categoryTone(c.category)}`} strokeDasharray={`${Math.max(len - 1, 0)} ${C - Math.max(len - 1, 0)}`} strokeDashoffset={-acc} {...trigger(c.category)} />;
           acc += len;
           return el;
         })}
@@ -103,6 +105,11 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
   const [fixing, setFixing] = useState(false);
   // Spending filter: "" is all accounts, an account id, or NO_ACCOUNT. Balances are never filtered.
   const [acct, setAcct] = useState("");
+  const pop = usePopover<string>();
+  const catRef = useRef<HTMLDivElement>(null);
+  const { close } = pop;
+  // New numbers (another month, filter or a sync) close an open breakdown.
+  useEffect(() => close(), [v, close]);
   const dir = useRef<-1 | 0 | 1>(0);
   const go = (d: -1 | 0 | 1, next: (a: string) => string) => { dir.current = d; setAnchor(next); };
   const goToday = () => { const t = today(); go(monthStart(t) === monthStart(anchor) ? 0 : t > anchor ? 1 : -1, () => t); };
@@ -218,14 +225,37 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
         <Empty icon={<DashboardIcon />} title="Nothing spent yet" note={acctName ? `${labelMonth(from)}, ${acctName}` : labelMonth(from)} />
       ) : (
         <div className="grid g2">
-          <div className="card pad catcard">
+          <div ref={catRef} className={pop.open ? "card pad catcard popopen" : "card pad catcard"}>
             <div className="mute">Categories</div>
-            <div className="donut"><Donut cats={cats} total={catTotal} base={base} /></div>
+            <div className="donut"><Donut cats={cats} total={catTotal} base={base} trigger={pop.trigger} /></div>
             <ul className="legend">
               {cats.map((c) => (
-                <li key={c.category}><i className={`tone-${categoryTone(c.category)}`} />{c.category}<span className="r">{Math.round((c.amount / catTotal) * 100)}%</span></li>
+                <li key={c.category}>
+                  <button type="button" aria-expanded={pop.openKey === c.category} aria-controls={pop.openKey === c.category ? "catpop" : undefined} {...pop.trigger(c.category)}>
+                    <i className={`tone-${categoryTone(c.category)}`} />{c.category}<span className="r">{Math.round((c.amount / catTotal) * 100)}%</span>
+                  </button>
+                </li>
               ))}
             </ul>
+            {(() => {
+              const c = cats.find((x) => x.category === pop.openKey);
+              if (!c) return null;
+              return (
+                <Popover open={pop.open} container={catRef} popRef={pop.popRef} id="catpop" label={`${c.category} breakdown`}>
+                  <div className="pophead"><i className={`tone-${categoryTone(c.category)}`} /><b>{c.category}</b></div>
+                  <div className="popamt"><b>{formatMinor(c.amount, base)}</b><span className="mute">{Math.round((c.amount / catTotal) * 100)}% of spending</span></div>
+                  {c.members ? (
+                    <ul className="poplist">
+                      {c.members.map((m) => <li key={m.category}><span>{m.category}</span><span>{formatMinor(m.amount, base)}</span></li>)}
+                    </ul>
+                  ) : (
+                    <ul className="poplist">
+                      {(c.top ?? []).map((i, n) => <li key={n}><span>{i.label}<span className="mute"> {labelShort(i.date)}</span></span><span>{formatMinor(i.amount, base)}</span></li>)}
+                    </ul>
+                  )}
+                </Popover>
+              );
+            })()}
           </div>
           <div className="card pad">
             <div className="dailyhead">

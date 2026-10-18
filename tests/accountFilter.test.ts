@@ -34,7 +34,7 @@ describe("Dashboard account filter", () => {
   it("one bank or one card, refunds by their own account, card payments never", () => {
     expect(sum("A1").total).toBe(10000 + 2000); // food + plan Oct 6 and 13
     expect(sum("C1").total).toBe(300000 + 30000 - 50000 + 2000); // laptop + my half of pizza - refund + plan Oct 20 and 27
-    expect(sum("C1").byCategory).toEqual([{ category: "Shopping", amount: 250000 }, { category: "Food", amount: 30000 }, { category: "Bills", amount: 2000 }]);
+    expect(sum("C1").byCategory).toMatchObject([{ category: "Shopping", amount: 250000 }, { category: "Food", amount: 30000 }, { category: "Bills", amount: 2000 }]);
   });
 
   it("No account or removed: no account, a removed account, and splits someone else paid", () => {

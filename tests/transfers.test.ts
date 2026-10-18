@@ -68,7 +68,7 @@ describe("refunds", () => {
   it("lower spending in their category and what the card owes", () => {
     const s = summarize(items([jacket, back]), "PHP", "2026-11-01", "2026-11-30");
     expect(s.total).toBe(4500 * P);
-    expect(s.byCategory).toEqual([{ category: "Shopping", amount: 4500 * P }]);
+    expect(s.byCategory).toMatchObject([{ category: "Shopping", amount: 4500 * P }]);
     expect(s.byDay[19]).toBe(-500 * P);
     expect(accountBalances([bank, card], items([jacket, back]), "PHP").cards[0]!.balance).toBe(-4500 * P);
   });
