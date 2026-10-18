@@ -280,6 +280,9 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 /* The pill keeps its space while hidden, so the arrows never move under the pointer when it appears. */
 .nav button.today.off { visibility: hidden; }
 .search { width: 150px; }
+/* Ledger: Search and the category filter stay together; a long category name ends in an ellipsis. */
+.filters { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.catpick { max-width: 170px; text-overflow: ellipsis; }
 .grp { font-size: var(--fs-md); font-weight: 600; color: var(--ink); margin: var(--sp-5) 0 var(--sp-2); display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); }
 .grp .r { color: var(--mute); font-weight: 500; }
 .card { background: var(--surface); border-radius: var(--radius-card); box-shadow: var(--card-shadow); padding: 2px var(--sp-4); }
@@ -370,7 +373,9 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
   /* Period on its own row, left aligned, Today pill at the far end: tapping ‹ › never shifts. */
   .toolrow .nav { order: 3; flex-basis: 100%; }
   .nav button.today { margin-left: auto; }
-  .toolrow .search { flex: 1 1 100px; width: auto; }
+  .toolrow .filters { flex: 1 1 260px; }
+  .toolrow .search { flex: 1 1 100px; width: auto; min-width: 0; }
+  .toolrow .catpick { flex: 0 1 auto; max-width: 45%; }
 }
 
 /* dashboard */

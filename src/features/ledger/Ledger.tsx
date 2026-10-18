@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getSettings, list, listAll, nameOf, upsert } from "../../data/collections";
 import { toBase } from "../../data/base";
 import { addDays, addMonths, contains, labelDay, labelMonth, labelShort, monthStart, periodOf, today } from "../../data/dates";
+import { categoryChoices, itemMatches } from "../../data/ledgerFilter";
 import { addRefund, deleteEntry, loadAllEntries, loadEntries, refundable } from "../../data/months";
 import { formatMinor, parseMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem, type Occurrence } from "../../data/rules";
@@ -38,6 +39,8 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
   const [view, setView] = useState<View>("Month");
   const [anchor, setAnchor] = useState(initialDate ?? today());
   const [q, setQ] = useState("");
+  const [cat, setCat] = useState(""); // "" is All categories
+  const [categories, setCategories] = useState<string[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
   // People and accounts including removed ones, so old entries still show their names.
@@ -69,6 +72,7 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
       setPeople(p);
       setAccounts(a);
       setBase(s.baseCurrency);
+      setCategories(s.categories);
       const d = dir.current; // read now: the updater below runs later
       dir.current = 0;
       setShown((cur) => (cur.from === from && cur.to === to ? cur : { from, to, dir: d }));
@@ -84,15 +88,11 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
   const listHasToday = contains([shown.from, shown.to], t);
   const goToday = () => { const n = today(); go(contains([from, to], n) ? 0 : n > from ? 1 : -1, () => n); };
   useTodayKey(goToday);
-  const match = (it: LedgerItem) => {
-    if (!q.trim()) return true;
-    const x = it.type === "entry" ? it.entry : it.occ;
-    const hay = [x.category, x.note, formatMinor(x.amount, x.currency), x.currency].join(" ").toLowerCase();
-    return hay.includes(q.trim().toLowerCase());
-  };
-
   // Generated payments after today show too (as upcoming), so a plan that starts later can be found and fixed.
-  const items = useMemo(() => ledgerItems(entries, rules, shown.from, shown.to).filter(match), [entries, rules, shown, t, q]);
+  const all = useMemo(() => ledgerItems(entries, rules, shown.from, shown.to), [entries, rules, shown, t]);
+  const items = useMemo(() => all.filter((it) => itemMatches(it, q, cat)), [all, q, cat]);
+  const choices = useMemo(() => categoryChoices(all, categories, cat), [all, categories, cat]);
+  const filtered = !!q.trim() || !!cat;
   const upcoming = (it: LedgerItem) => it.type === "occurrence" && it.date > t;
   const due = useMemo(
     () => rules.flatMap((r) => occurrences(r, addDays(t, 1), addDays(t, 30))).sort((a, b) => (a.date < b.date ? -1 : 1)).filter((o) => o.kind === "expense"),
@@ -172,14 +172,20 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
           <button aria-label="Next" onClick={() => go(1, (a) => shift(view, a, 1))}>›</button>
           <button className={hasToday ? "today off" : "today"} onClick={goToday}>Today</button>
         </span>
-        <input className="search" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
+        <span className="filters">
+          <input className="search" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
+          <select className="catpick" aria-label="Category" value={cat} onChange={(e) => setCat(e.target.value)}>
+            <option value="">All categories</option>
+            {choices.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </span>
       </div>
 
       {notice && <p className="mute small hint" role="status">{notice}</p>}
       {groups.length > 0 && !notice && <p className="mute small hint">Tap an entry to edit it</p>}
 
       <div key={`${shown.from}/${shown.to}`} className={shown.dir === 1 ? "period next" : shown.dir === -1 ? "period prev" : "period"}>
-      {listHasToday && due.length > 0 && !q && (
+      {listHasToday && due.length > 0 && !filtered && (
         <>
           <div className="grp">Next 30 days</div>
           <div className="card">
@@ -193,8 +199,8 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
         </>
       )}
 
-      {groups.length === 0 && (q.trim()
-        ? <Empty icon={<LedgerIcon />} title="No matches" note={`Nothing in ${title(view, shown.from)} has "${q.trim()}"`} />
+      {groups.length === 0 && (filtered
+        ? <Empty icon={<LedgerIcon />} title="No matches" note={`Nothing${cat ? ` in ${cat}` : ""} in ${title(view, shown.from)}${q.trim() ? ` has "${q.trim()}"` : ""}`} />
         : <Empty icon={<LedgerIcon />} title="Nothing logged" note={title(view, shown.from)} />)}
       {groups.map(([date, its]) => (
         <div key={date}>
