@@ -254,6 +254,9 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .amt { display: flex; justify-content: center; gap: 8px; align-items: center; margin-bottom: 8px; }
 .amt input { font-size: var(--fs-2xl); font-weight: 600; flex: 1; min-width: 0; max-width: 300px; text-align: center; background: none; }
 .amt select { flex: none; }
+.amt .cur { flex: none; font-weight: 500; }
+/* Add tab: Expense | Income | Transfer above the form. */
+.addkind { display: flex; justify-content: center; margin-bottom: var(--sp-4); }
 @media (max-width: 480px) { .amt input { font-size: var(--fs-xl); } }
 .actions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-3); }
 .actions.wrap { flex-wrap: wrap; }

@@ -6,8 +6,10 @@ import { categoryChoices, itemMatches } from "../../data/ledgerFilter";
 import { addRefund, deleteEntry, loadAllEntries, loadEntries, refundable } from "../../data/months";
 import { formatMinor, parseMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem, type Occurrence } from "../../data/rules";
+import { incomeEditor } from "../../data/sideIncome";
 import { isCard, type Account, type Entry, type Person, type Rule } from "../../data/schema";
 import { AddForm } from "../add/AddForm";
+import { IncomeForm } from "../add/IncomeForm";
 import { PlanSheet } from "./PlanSheet";
 import { TransferForm } from "./TransferForm";
 import { MoneyInput } from "../../ui/MoneyInput";
@@ -224,7 +226,8 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
       {editing && (
         <Sheet locked onClose={() => setEditing(undefined)}>
           <h3>{editing.refund ? "Edit refund" : editing.kind === "income" ? "Edit income" : "Edit expense"}</h3>
-          <AddForm entry={editing} onDone={() => setEditing(undefined)} />
+          {/* One-off side income opens its own form; salary entries and refunds open the expense form as before. */}
+          {incomeEditor(editing) === "income" ? <IncomeForm entry={editing} onDone={() => setEditing(undefined)} /> : <AddForm entry={editing} onDone={() => setEditing(undefined)} />}
           {editing.kind === "expense" && onCard(editing) && (
             <div className="actions"><button className="btn ghost" onClick={() => void openRefund(editing)}>Refund</button></div>
           )}

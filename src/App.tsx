@@ -1,5 +1,6 @@
 import { useState, type ReactElement } from "react";
 import { AddForm, type SavedNote } from "./features/add/AddForm";
+import { IncomeForm } from "./features/add/IncomeForm";
 import { Dashboard } from "./features/dashboard/Dashboard";
 import { Forecast } from "./features/forecast/Forecast";
 import { Ledger } from "./features/ledger/Ledger";
@@ -11,6 +12,7 @@ import { SyncSheet } from "./features/sync/SyncSheet";
 import { LedgerProvider } from "./ui/Ledger";
 import { AddIcon, DashboardIcon, ForecastIcon, LedgerIcon, SettingsIcon, SplitsIcon } from "./ui/icons";
 import { Pill } from "./ui/Pill";
+import { Segmented } from "./ui/Segmented";
 import { SyncProvider, useSync } from "./ui/Sync";
 
 const NAV = ["Add", "Ledger", "Dashboard", "Splits", "Forecast", "Settings"] as const;
@@ -25,8 +27,22 @@ const EDIT_TABS: Tab[] = ["Add", "Forecast"]; // Settings locks its own edit con
 /** Lists read better in a narrower column on big screens; Dashboard and Forecast use the full one. */
 const READING_TABS: Tab[] = ["Add", "Ledger", "Splits", "Settings"];
 
+const ADD_KINDS = ["Expense", "Income"] as const;
+type AddKind = (typeof ADD_KINDS)[number];
+
+/** The Add tab: one form at a time, picked at the top. Each is its own form (AddForm is the expense form). */
+function AddTab({ onDone }: { onDone: (s?: SavedNote) => void }) {
+  const [kind, setKind] = useState<AddKind>("Expense");
+  return (
+    <div className="glasscard addcard">
+      <div className="addkind"><Segmented value={kind} options={ADD_KINDS} onChange={setKind} /></div>
+      {kind === "Expense" ? <AddForm onDone={onDone} /> : <IncomeForm onDone={onDone} />}
+    </div>
+  );
+}
+
 function Screen({ tab, go, setup, focusPerson, openPerson, saved, onSaved, focusCard, openCard }: { tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; focusCard?: string; openCard: (id: string) => void }) {
-  if (tab === "Add") return <div className="glasscard addcard"><AddForm onDone={(s) => { onSaved(s); go("Ledger"); }} /></div>;
+  if (tab === "Add") return <AddTab onDone={(s) => { onSaved(s); go("Ledger"); }} />;
   if (tab === "Ledger") return <Ledger key={saved?.date ?? ""} initialDate={saved?.date} notice={saved?.message} />;
   if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); go("Ledger"); }} onOpenCardSettings={openCard} />;
   if (tab === "Splits") return <Splits key={focusPerson ?? ""} initialPerson={focusPerson} />;
