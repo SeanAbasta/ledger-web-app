@@ -27,6 +27,7 @@ import { useTodayKey } from "../../ui/useTodayKey";
 import { CardTile } from "./CardTile";
 import { CardView } from "./CardView";
 import { FixSheet } from "./FixSheet";
+import { RecurringView } from "./RecurringView";
 
 interface View {
   base: string;
@@ -103,6 +104,8 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
   // A card opened from its tile: the per-card statement view replaces the Dashboard until Back.
   const [openCard, setOpenCard] = useState<string>();
   const [fixing, setFixing] = useState(false);
+  // A Dashboard sub-view (like the card view): the Recurring list.
+  const [sub, setSub] = useState<"recurring">();
   // Spending filter: "" is all accounts, an account id, or NO_ACCOUNT. Balances are never filtered.
   const [acct, setAcct] = useState("");
   const pop = usePopover<string>();
@@ -174,11 +177,25 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
   // Named from the loaded numbers' filter, so the tag never sits over the previous filter's figures while loading.
   const acctName = v.acct === NO_ACCOUNT ? "No account or removed" : accounts.find((a) => a.id === v.acct)?.name;
 
+  // Going back never slides the month in again.
+  const back = () => { setV({ ...v, dir: 0 }); setOpenCard(undefined); setSub(undefined); };
+
+  if (sub === "recurring") {
+    return (
+      <>
+        <div className="toolrow">
+          <span className="nav"><button className="title" onClick={back}>‹ Dashboard</button></span>
+        </div>
+        <RecurringView />
+      </>
+    );
+  }
+
   if (opened) {
     return (
       <>
         <div className="toolrow">
-          <span className="nav"><button className="title" onClick={() => { setV({ ...v, dir: 0 }); setOpenCard(undefined); }}>‹ Dashboard</button></span>
+          <span className="nav"><button className="title" onClick={back}>‹ Dashboard</button></span>
         </div>
         <CardView card={opened.card} st={opened.st} bd={opened.bd} banks={banks} items={items} accounts={accounts} onOpenLedger={onOpenLedger} onOpenCard={() => onOpenCardSettings(opened.card.id)} />
       </>
@@ -193,6 +210,9 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
           <button className="title" title="Go to this month" onClick={goToday}>{labelMonth(anchor)}</button>
           <button aria-label="Next month" onClick={() => go(1, (a) => addMonths(monthStart(a), 1))}>›</button>
           <button className={monthStart(anchor) === monthStart(today()) ? "today off" : "today"} onClick={goToday}>Today</button>
+        </span>
+        <span className="subviews">
+          <button className="btn ghost sm" onClick={() => setSub("recurring")}>Recurring</button>
         </span>
         {accounts.length > 0 && (
           <select className="acctpick" aria-label="Spending from" value={acct} onChange={(e) => setAcct(e.target.value)}>

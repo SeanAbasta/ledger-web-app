@@ -1,15 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getSettings, list, listAll, nameOf, upsert } from "../../data/collections";
+import { getSettings, list, listAll, nameOf } from "../../data/collections";
 import { toBase } from "../../data/base";
 import { addDays, addMonths, contains, labelDay, labelMonth, labelShort, monthStart, periodOf, today } from "../../data/dates";
 import { categoryChoices, itemMatches } from "../../data/ledgerFilter";
 import { addRefund, deleteEntry, loadAllEntries, loadEntries, refundable } from "../../data/months";
 import { formatMinor, parseMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem, type Occurrence } from "../../data/rules";
-import { REMOVED_PERSON } from "../../data/splits";
 import { isCard, type Account, type Entry, type Person, type Rule } from "../../data/schema";
 import { AddForm } from "../add/AddForm";
-import { OccurrenceForm } from "./OccurrenceForm";
+import { PlanSheet } from "./PlanSheet";
 import { TransferForm } from "./TransferForm";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
@@ -48,7 +47,6 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
   const [base, setBase] = useState("PHP");
   const [editing, setEditing] = useState<Entry>();
   const [occ, setOcc] = useState<Occurrence>();
-  const [editOcc, setEditOcc] = useState<Occurrence>();
   const [paid, setPaid] = useState<Entry>();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [refunding, setRefunding] = useState<{ entry: Entry; left: number }>();
@@ -130,22 +128,6 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
     } catch (err) {
       setRefundErr(err instanceof Error ? err.message : "Could not save");
     }
-  }
-
-  const personName = (id: string) => (id === "me" ? "me" : nameOf(id, people, REMOVED_PERSON));
-
-  async function skipOcc(o: Occurrence) {
-    const r = rules.find((x) => x.id === o.ruleId);
-    if (r) await upsert(store, "rules", { ...r, skipped: [...(r.skipped ?? []), o.date] });
-    setOcc(undefined);
-    changed();
-  }
-
-  async function endSeries(o: Occurrence) {
-    const r = rules.find((x) => x.id === o.ruleId);
-    if (r) await upsert(store, "rules", { ...r, end: addDays(o.date, -1) });
-    setOcc(undefined);
-    changed();
   }
 
   const total = (its: LedgerItem[]) =>
@@ -282,27 +264,8 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
           )}
         </Sheet>
       )}
-      {editOcc && rules.find((r) => r.id === editOcc.ruleId) && (
-        <Sheet locked onClose={() => setEditOcc(undefined)}>
-          <h3>Edit payment</h3>
-          <OccurrenceForm occ={editOcc} rule={rules.find((r) => r.id === editOcc.ruleId)!} onDone={() => setEditOcc(undefined)} />
-        </Sheet>
-      )}
-      {occ && (
-        <Sheet locked onClose={() => setOcc(undefined)}>
-          <h3>{occ.note || occ.category}</h3>
-          <p className="mute">
-            {labelDay(occ.date)} · {formatMinor(occ.amount, occ.currency)}
-            {occ.type === "installment" && ` · ${occ.index} of ${occ.count} · ${formatMinor(occ.remainingAfter ?? 0, occ.currency)} left after`}
-          </p>
-          {occ.split && <p className="mute small">Split with {occ.split.shares.map((s) => personName(s.personId)).join(", ")}</p>}
-          <div className="actions">
-            <button className="btn" onClick={() => { setEditOcc(occ); setOcc(undefined); }}>Edit</button>
-            <button className="btn ghost" onClick={() => void skipOcc(occ)}>Skip this one</button>
-            <button className="btn ghost danger" onClick={() => void endSeries(occ)}>End series</button>
-          </div>
-        </Sheet>
-      )}
+      {/* A generated payment: Edit, Skip this one, End series (shared with the Dashboard's Recurring list). */}
+      {occ && <PlanSheet occ={occ} rule={rules.find((r) => r.id === occ.ruleId)} people={people} onClose={() => setOcc(undefined)} />}
     </>
   );
 }

@@ -285,6 +285,9 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .catpick { max-width: 170px; text-overflow: ellipsis; }
 /* Dashboard: which account's spending is shown. Balances below are never filtered (the note says so). */
 .acctpick { max-width: 220px; text-overflow: ellipsis; }
+/* Dashboard sub-views (Recurring, Year): small buttons beside the spending filter. */
+.toolrow .subviews { display: flex; gap: var(--sp-2); margin-left: auto; }
+.row .planamt { text-align: right; white-space: nowrap; }
 .balnote { margin: var(--sp-4) 0 0; }
 .grp { font-size: var(--fs-md); font-weight: 600; color: var(--ink); margin: var(--sp-5) 0 var(--sp-2); display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); }
 .grp .r { color: var(--mute); font-weight: 500; }
