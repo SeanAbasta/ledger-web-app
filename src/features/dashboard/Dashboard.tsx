@@ -13,7 +13,7 @@ import { loadEntries } from "../../data/months";
 import { formatMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem } from "../../data/rules";
 import { myShare } from "../../data/splits";
-import { accountsWhatIf, dailyStats, matchesAccount, NO_ACCOUNT, pctChange, summarize, topCategories, type AccountFilter, type Summary } from "../../data/summary";
+import { accountsWhatIf, dailyStats, matchesAccount, NO_ACCOUNT, pctChange, plannedSummary, summarize, topCategories, type AccountFilter, type Summary } from "../../data/summary";
 import { orphans, type Orphans } from "../../data/usage";
 import { AccountOptions } from "../../ui/AccountOptions";
 import { BigAmount } from "../../ui/Amount";
@@ -32,6 +32,12 @@ import { RecurringView } from "./RecurringView";
 interface View {
   base: string;
   cur: Summary;
+  /** The category chart and daily bars: what was spent, plus the rest of the month's scheduled items when it is not over. */
+  chart: Summary;
+  /** The scheduled part of `chart` (after today). */
+  planned: number;
+  /** A month after the current one: only scheduled items, labelled Planned. */
+  future: boolean;
   prevTotal: number;
   stillDue: number;
   from: string;
@@ -79,15 +85,16 @@ function Donut({ cats, total, base, trigger }: { cats: Summary["byCategory"]; to
  *  (a stretched SVG squashed them). Heights go through React's style prop, which the CSP allows.
  *  Days that have happened with nothing spent get a short stub, so a quiet day reads as a day and not a gap. */
 function Bars({ days, from, elapsed, todayIdx, base, label }: { days: number[]; from: string; elapsed: number; todayIdx: number; base: string; label: string }) {
+  // Days that have not happened yet show what is scheduled, muted, so planned and real days differ.
   const max = Math.max(...days, 1);
   return (
     <div className="dbars" role="img" aria-label={label}>
       {days.map((v, i) => {
         const quiet = i < elapsed && v <= 0;
         // Weekly labels (1, 8, 15, ...), and today's own; a weekly one right next to today's is dropped.
-        const named = i === todayIdx || (i % 7 === 0 && Math.abs(i - todayIdx) > 1);
+        const named = i === todayIdx || (i % 7 === 0 && (todayIdx < 0 || Math.abs(i - todayIdx) > 1));
         return (
-          <span key={i} className={i === todayIdx ? "dbar now" : "dbar"} title={`${labelShort(addDays(from, i))}: ${formatMinor(v, base)}`}>
+          <span key={i} className={i === todayIdx ? "dbar now" : i >= elapsed ? "dbar plan" : "dbar"} title={`${labelShort(addDays(from, i))}: ${formatMinor(v, base)}${i >= elapsed && v ? " planned" : ""}`}>
             <span className="dfill"><i className={quiet ? "zero" : undefined} style={quiet ? undefined : { height: `${v > 0 ? Math.max((v / max) * 100, 2) : 0}%` }} /></span>
             <span className="dlab">{named ? i + 1 : ""}</span>
           </span>
@@ -135,7 +142,12 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
       const world = await loadWorld(store);
       // This month, last month and Still due all use the same filter, so the comparison is like for like.
       const filter: AccountFilter | undefined = acct ? { account: acct, live: world.accounts.map((a) => a.id) } : undefined;
-      const cur = summarize(from > t ? [] : ledgerItems(entries, rules, from, spentTo), base, from, to, world.entries, filter);
+      const future = from > t;
+      const cur = summarize(future ? [] : ledgerItems(entries, rules, from, spentTo), base, from, to, world.entries, filter);
+      // The chart also shows what is still scheduled this month (or, for a later month, only that).
+      const plan = future || isCurrent ? plannedSummary(ledgerItems(entries, rules, from, to), base, from, to, t, world.entries, filter) : undefined;
+      const chart = plan ?? cur;
+      const planned = plan?.planned ?? 0;
       const prev = summarize(ledgerItems(entries, rules, prevFrom, prevTo), base, prevFrom, prevTo, world.entries, filter);
       const stillDue = isCurrent
         ? rules.flatMap((r) => occurrences(r, addDays(t, 1), to)).filter((o) => o.kind === "expense" && matchesAccount({ type: "occurrence", date: o.date, occ: o }, filter))
@@ -151,19 +163,19 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
       if (stale) return;
       const d = dir.current;
       dir.current = 0;
-      setV((old) => ({ dir: old && old.from !== from ? d : 0, acct, base, cur, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, accounts: world.accounts, items: upToToday, salaryAccount: activeSalaryRule(world.rules, t)?.accountId, defaults: settings.defaults, orphans: orphans(world.entries, world.rules, allAccounts), allAccounts }));
+      setV((old) => ({ dir: old && old.from !== from ? d : 0, acct, base, cur, chart, planned, future, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, accounts: world.accounts, items: upToToday, salaryAccount: activeSalaryRule(world.rules, t)?.accountId, defaults: settings.defaults, orphans: orphans(world.entries, world.rules, allAccounts), allAccounts }));
     })();
     return () => { stale = true; };
   }, [store, rev, anchor, acct]);
 
   if (!v) return null;
-  const { base, cur, prevTotal, stillDue, from, isCurrent, balances, owed, next, cards, banks, accounts, items, salaryAccount, defaults } = v;
+  const { base, cur, chart, planned, future, prevTotal, stillDue, from, isCurrent, balances, owed, next, cards, banks, accounts, items, salaryAccount, defaults } = v;
   const fixable = v.orphans.entries.length + v.orphans.rules.length > 0;
   const showAccounts = balances.accounts.length > 0 || balances.unassigned !== 0 || fixable;
   const showOwed = owed.people.length > 0;
   const whatIf = accountsWhatIf(balances.totalBase, owed.net, cards.map((c) => c.st));
   const bottomCards = [showAccounts, showOwed, !!next].filter(Boolean).length;
-  const cats = topCategories(cur.byCategory);
+  const cats = topCategories(chart.byCategory);
   // Shares of what was spent per category. A refund for an earlier month's purchase can leave a
   // category below zero; it is left out of the chart, so shares use the categories shown.
   const catTotal = cats.reduce((a, c) => a + c.amount, 0);
@@ -172,6 +184,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
   // Days of this month that have happened: up to today, all of a past month, none of a future one.
   const elapsed = isCurrent ? todayIdx + 1 : from > today() ? 0 : cur.byDay.length;
   const daily = dailyStats(cur.byDay, elapsed);
+  const upcoming = isCurrent && planned !== 0; // the chart includes the rest of this month's scheduled items
   const dailyLabel = `Daily spending from ${labelShort(from)}, average ${formatMinor(daily.average, base)} a day${daily.peak ? `, highest ${formatMinor(daily.peak.amount, base)} on ${labelShort(addDays(from, daily.peak.index))}` : ""}`;
   const opened = cards.find((c) => c.card.id === openCard);
   // Named from the loaded numbers' filter, so the tag never sits over the previous filter's figures while loading.
@@ -227,12 +240,12 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
       <div key={from} className={v.dir === 1 ? "period next" : v.dir === -1 ? "period prev" : "period"}>
       {/* Spent leads; Still due and Last month sit side by side under it on phones, beside it on computers. */}
       <div className="statrow">
-        <div className="card stat hero"><div className="mute">Spent{acctName && <span className="tag">{acctName}</span>}</div><BigAmount minor={cur.total} currency={base} />
-          {prevTotal > 0 && (
+        <div className="card stat hero"><div className="mute">{future ? "Planned" : "Spent"}{acctName && <span className="tag">{acctName}</span>}</div><BigAmount minor={future ? chart.total : cur.total} currency={base} />
+          {!future && prevTotal > 0 && (
             // This month so far against last month's same days: full and orange once past it.
             <div className={cur.total > prevTotal ? "spentbar over" : "spentbar"} aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(1, cur.total / prevTotal)) * 100}%` }} /></div>
           )}
-          <div className="mute small">{change === null ? "No earlier data" : change === 0 ? "Same as last month" : `${Math.abs(change)}% ${change < 0 ? "less" : "more"} than last month`}</div></div>
+          <div className="mute small">{future ? "Scheduled payments only" : change === null ? "No earlier data" : change === 0 ? "Same as last month" : `${Math.abs(change)}% ${change < 0 ? "less" : "more"} than last month`}</div></div>
         <div className="card stat"><div className="mute">Still due</div><BigAmount minor={stillDue} currency={base} />
           <div className="mute small">{isCurrent ? "rest of this month" : "current month only"}</div></div>
         <div className="card stat"><div className="mute">Last month</div>
@@ -242,11 +255,11 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
       </div>
 
       {catTotal <= 0 ? (
-        <Empty icon={<DashboardIcon />} title="Nothing spent yet" note={acctName ? `${labelMonth(from)}, ${acctName}` : labelMonth(from)} />
+        <Empty icon={<DashboardIcon />} title={future ? "Nothing planned" : "Nothing spent yet"} note={acctName ? `${labelMonth(from)}, ${acctName}` : labelMonth(from)} />
       ) : (
         <div className="grid g2">
           <div ref={catRef} className={pop.open ? "card pad catcard popopen" : "card pad catcard"}>
-            <div className="mute">Categories</div>
+            <div className="mute">Categories{future ? <span className="tag">Planned</span> : upcoming && <span className="tag">incl. upcoming</span>}</div>
             <div className="donut"><Donut cats={cats} total={catTotal} base={base} trigger={pop.trigger} /></div>
             <ul className="legend">
               {cats.map((c) => (
@@ -263,14 +276,14 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
               return (
                 <Popover open={pop.open} container={catRef} popRef={pop.popRef} id="catpop" label={`${c.category} breakdown`}>
                   <div className="pophead"><i className={`tone-${categoryTone(c.category)}`} /><b>{c.category}</b></div>
-                  <div className="popamt"><b>{formatMinor(c.amount, base)}</b><span className="mute">{Math.round((c.amount / catTotal) * 100)}% of spending</span></div>
+                  <div className="popamt"><b>{formatMinor(c.amount, base)}</b><span className="mute">{Math.round((c.amount / catTotal) * 100)}% of {future ? "planned" : "spending"}</span></div>
                   {c.members ? (
                     <ul className="poplist">
                       {c.members.map((m) => <li key={m.category}><span>{m.category}</span><span>{formatMinor(m.amount, base)}</span></li>)}
                     </ul>
                   ) : (
                     <ul className="poplist">
-                      {(c.top ?? []).map((i, n) => <li key={n}><span>{i.label}<span className="mute"> {labelShort(i.date)}</span></span><span>{formatMinor(i.amount, base)}</span></li>)}
+                      {(c.top ?? []).map((i, n) => <li key={n}><span>{i.label}<span className="mute"> {labelShort(i.date)}</span>{i.planned && <span className="tag">planned</span>}</span><span>{formatMinor(i.amount, base)}</span></li>)}
                     </ul>
                   )}
                 </Popover>
@@ -279,13 +292,15 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
           </div>
           <div className="card pad">
             <div className="dailyhead">
-              <span className="mute">Daily</span>
+              <span className="mute">Daily{future ? <span className="tag">Planned</span> : upcoming && <span className="tag">incl. upcoming</span>}</span>
               {elapsed > 0 && <span className="mute small">Avg {formatMinor(daily.average, base)} a day</span>}
             </div>
-            <Bars days={cur.byDay} from={from} elapsed={elapsed} todayIdx={todayIdx} base={base} label={dailyLabel} />
+            <Bars days={chart.byDay} from={from} elapsed={elapsed} todayIdx={todayIdx} base={base} label={dailyLabel} />
             <div className="dailystats">
+              {future && <div className="row static"><span>Planned</span><span>{formatMinor(chart.total, base)}</span></div>}
+              {upcoming && <div className="row static"><span>Still scheduled</span><span>{formatMinor(planned, base)}</span></div>}
               {daily.peak && <div className="row static"><span>Highest day</span><span>{formatMinor(daily.peak.amount, base)} <span className="mute">{labelShort(addDays(from, daily.peak.index))}</span></span></div>}
-              <div className="row static"><span>No spending</span><span>{daily.quietDays} of {elapsed} {elapsed === 1 ? "day" : "days"}</span></div>
+              {!future && <div className="row static"><span>No spending</span><span>{daily.quietDays} of {elapsed} {elapsed === 1 ? "day" : "days"}</span></div>}
             </div>
           </div>
         </div>
@@ -344,7 +359,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
           <div className="card stat"><div className="mute">End of {labelMonth(next.month)}</div><BigAmount minor={next.end} currency={base} /><div className="mute small">{owed.net ? "forecast, after everyone settles up" : "forecast"}</div></div>
         )}
       </div>
-      {cur.unconverted > 0 && <p className="mute small">{cur.unconverted} foreign {cur.unconverted === 1 ? "amount has" : "amounts have"} no rate and {cur.unconverted === 1 ? "is" : "are"} left out.</p>}
+      {chart.unconverted > 0 && <p className="mute small">{chart.unconverted} foreign {chart.unconverted === 1 ? "amount has" : "amounts have"} no rate and {chart.unconverted === 1 ? "is" : "are"} left out.</p>}
       </div>
       {/* Outside the sliding period, so the sheet is never placed inside a moving box. */}
       {fixing && <FixSheet o={v.orphans} all={v.allAccounts} onClose={() => setFixing(false)} />}

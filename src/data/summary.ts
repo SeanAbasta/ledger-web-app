@@ -10,6 +10,8 @@ export interface SpendItem {
   label: string;
   date: IsoDate;
   amount: Minor;
+  /** Dated after today: scheduled, not spent yet (only set by plannedSummary). */
+  planned?: true;
 }
 
 export interface CategorySpend {
@@ -29,6 +31,11 @@ export interface Summary {
   byDay: Minor[];
   /** Foreign amounts without a rate, left out of the totals. */
   unconverted: number;
+}
+
+export interface PlannedSummary extends Summary {
+  /** The part of `total` dated after today: scheduled payments and future-dated entries, not spent yet. */
+  planned: Minor;
 }
 
 /** The Dashboard filter choice for spending with no account or on a removed one (the Accounts card's "Other"). */
@@ -61,12 +68,26 @@ export function matchesAccount(it: LedgerItem, f?: AccountFilter): boolean {
  * spending on that account counts (a refund by the account it came back to).
  */
 export function summarize(items: LedgerItem[], base: string, from: IsoDate, to: IsoDate, all: Entry[] = [], filter?: AccountFilter): Summary {
+  return tally(items, base, from, to, all, filter);
+}
+
+/**
+ * The Dashboard chart for a month that is not over: everything dated in it, spent so far plus what is
+ * scheduled after `today` (plan payments and future-dated entries; my share of splits, nothing estimated).
+ * `planned` is the scheduled part, and those items are marked in the breakdown.
+ */
+export function plannedSummary(items: LedgerItem[], base: string, from: IsoDate, to: IsoDate, today: IsoDate, all: Entry[] = [], filter?: AccountFilter): PlannedSummary {
+  return tally(items, base, from, to, all, filter, today) as PlannedSummary;
+}
+
+function tally(items: LedgerItem[], base: string, from: IsoDate, to: IsoDate, all: Entry[], filter?: AccountFilter, today?: IsoDate): Summary | PlannedSummary {
   const byId = new Map([...all, ...items.flatMap((it) => (it.type === "entry" ? [it.entry] : []))].map((e) => [e.id, e]));
   const byDay: Minor[] = Array(daysBetween(from, to) + 1).fill(0);
   const cats = new Map<string, Minor>();
   const picks = new Map<string, SpendItem[]>();
   let total = 0;
   let unconverted = 0;
+  let planned = 0;
   for (const it of items) {
     const x = it.type === "entry" ? it.entry : it.occ;
     const refund = it.type === "entry" && it.entry.refund;
@@ -79,15 +100,17 @@ export function summarize(items: LedgerItem[], base: string, from: IsoDate, to: 
       continue;
     }
     total += mine;
+    const later = today !== undefined && it.date > today;
+    if (later) planned += mine;
     const i = daysBetween(from, it.date);
     if (i >= 0 && i < byDay.length) byDay[i]! += mine;
     const c = x.category || "Other";
     cats.set(c, (cats.get(c) ?? 0) + mine);
-    if (!refund && mine > 0) picks.set(c, [...(picks.get(c) ?? []), { label: x.note || c, date: it.date, amount: mine }]);
+    if (!refund && mine > 0) picks.set(c, [...(picks.get(c) ?? []), { label: x.note || c, date: it.date, amount: mine, ...(later ? { planned: true as const } : {}) }]);
   }
   const topOf = (c: string) => (picks.get(c) ?? []).sort((a, b) => b.amount - a.amount || (a.date < b.date ? -1 : a.date > b.date ? 1 : 0)).slice(0, 3);
   const byCategory = [...cats.entries()].map(([category, amount]) => ({ category, amount, top: topOf(category) })).filter((c) => c.amount > 0).sort((a, b) => b.amount - a.amount);
-  return { total, byCategory, byDay, unconverted };
+  return today === undefined ? { total, byCategory, byDay, unconverted } : { total, byCategory, byDay, unconverted, planned };
 }
 
 /**

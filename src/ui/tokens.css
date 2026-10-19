@@ -423,6 +423,8 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .dbar i { display: block; width: 100%; max-width: 14px; margin: 0 auto; border-radius: 4px 4px 2px 2px; background: var(--accent); opacity: 0.45; }
 .dbar i.zero { height: 3px; opacity: 0.2; }
 .dbar.now i { opacity: 1; }
+/* Days still to come: what is scheduled, in grey so planned days never read as spending. */
+.dbar.plan i { background: var(--mute); opacity: 0.3; }
 .dlab { height: 16px; line-height: 16px; display: flex; justify-content: center; white-space: nowrap; font-size: var(--fs-xs); color: var(--mute); }
 .dbar.now .dlab { color: var(--accent-ink); font-weight: 600; }
 .dailystats { margin-top: var(--sp-3); }
