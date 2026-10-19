@@ -1,6 +1,7 @@
 import { useState, type ReactElement } from "react";
 import { AddForm, type SavedNote } from "./features/add/AddForm";
 import { IncomeForm } from "./features/add/IncomeForm";
+import { TransferForm } from "./features/ledger/TransferForm";
 import { Dashboard } from "./features/dashboard/Dashboard";
 import { Forecast } from "./features/forecast/Forecast";
 import { Ledger } from "./features/ledger/Ledger";
@@ -27,7 +28,7 @@ const EDIT_TABS: Tab[] = ["Add", "Forecast"]; // Settings locks its own edit con
 /** Lists read better in a narrower column on big screens; Dashboard and Forecast use the full one. */
 const READING_TABS: Tab[] = ["Add", "Ledger", "Splits", "Settings"];
 
-const ADD_KINDS = ["Expense", "Income"] as const;
+const ADD_KINDS = ["Expense", "Income", "Transfer"] as const;
 type AddKind = (typeof ADD_KINDS)[number];
 
 /** The Add tab: one form at a time, picked at the top. Each is its own form (AddForm is the expense form). */
@@ -36,7 +37,7 @@ function AddTab({ onDone }: { onDone: (s?: SavedNote) => void }) {
   return (
     <div className="glasscard addcard">
       <div className="addkind"><Segmented value={kind} options={ADD_KINDS} onChange={setKind} /></div>
-      {kind === "Expense" ? <AddForm onDone={onDone} /> : <IncomeForm onDone={onDone} />}
+      {kind === "Expense" ? <AddForm onDone={onDone} /> : kind === "Income" ? <IncomeForm onDone={onDone} /> : <TransferForm onDone={onDone} />}
     </div>
   );
 }

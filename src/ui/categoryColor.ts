@@ -27,6 +27,7 @@ const NAMED: Record<string, Tone> = {
   others: "gray",
   settlement: "gray",
   "card payment": "gray",
+  transfer: "gray",
 };
 
 /** Grey is kept for "Other" and money moves, so a named category never hashes to it. */
