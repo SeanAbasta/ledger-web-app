@@ -88,3 +88,60 @@ describe("owedSummary", () => {
     expect(owedSummary(people, [usd, paid], "PHP")).toMatchObject({ people: [], net: 0, skipped: 0 });
   });
 });
+
+describe("statement lines carry the full price", () => {
+  const p = "alex";
+  const ex = (id: string, amount: number, split: Entry["split"], extra: Partial<Entry> = {}) => it_({ id, date: "2026-10-05", amount, split, ...extra });
+
+  it("an expense I paid with a 50/50 split", () => {
+    const [l] = personLines(p, [ex("lunch", 50000, { paidBy: "me", mode: "half", shares: [{ personId: p, amount: 25000 }] })]);
+    expect(l).toMatchObject({ amount: 25000, total: 50000 });
+  });
+  it("an expense they paid: my share is negative, the total is the whole bill", () => {
+    const [l] = personLines(p, [ex("dinner", 120000, { paidBy: p, mode: "half", shares: [{ personId: "me", amount: 60000 }] })]);
+    expect(l).toMatchObject({ amount: -60000, total: 120000 });
+  });
+  it("a custom split, and the shares plus the payer's part add up to the total", () => {
+    const split = { paidBy: "me", mode: "custom" as const, shares: [{ personId: p, amount: 30000 }, { personId: "sam", amount: 20000 }] };
+    const items = [ex("groceries", 80000, split)];
+    const [a] = personLines(p, items);
+    const [b] = personLines("sam", items);
+    expect(a).toMatchObject({ amount: 30000, total: 80000 });
+    expect(b).toMatchObject({ amount: 20000, total: 80000 });
+    expect(a!.amount + b!.amount + 30000).toBe(a!.total); // my own part is the rest
+  });
+  it("they owe the whole amount", () => {
+    const [l] = personLines(p, [ex("taxi", 40000, { paidBy: "me", mode: "they-owe", shares: [{ personId: p, amount: 40000 }] })]);
+    expect(l).toMatchObject({ amount: 40000, total: 40000 });
+  });
+  it("a foreign entry keeps both amounts in its own currency", () => {
+    const [l] = personLines(p, [ex("hotel", 20000, { paidBy: "me", mode: "half", shares: [{ personId: p, amount: 10000 }] }, { currency: "USD", rate: "56" })]);
+    expect(l).toMatchObject({ currency: "USD", amount: 10000, total: 20000, rate: "56" });
+  });
+  it("installment and recurring payments use the payment's amount", () => {
+    const occ = (ruleId: string, type: "installment" | "recurring", amount: number): LedgerItem => ({
+      type: "occurrence", date: "2026-10-10",
+      occ: { ruleId, type, kind: "expense", date: "2026-10-10", amount, baseAmount: amount, currency: "PHP", note: "Laptop", split: { paidBy: "me", mode: "half", shares: [{ personId: p, amount: amount / 2 }] } },
+    });
+    const lines = personLines(p, [occ("r1", "installment", 100000), occ("r2", "recurring", 30000)]);
+    expect(lines.map((l) => [l.amount, l.total])).toEqual([[50000, 100000], [15000, 30000]]);
+  });
+  it("settlement lines have no total", () => {
+    const lines = personLines(p, [it_({ id: "s", date: "2026-10-06", amount: 5000, kind: "settlement", personId: p, direction: "in" })]);
+    expect(lines[0]!.settlement).toBe(true);
+    expect(lines[0]!.total).toBeUndefined();
+  });
+  it("owed and statement numbers are unchanged by the total", () => {
+    const items = [
+      ex("a", 50000, { paidBy: "me", mode: "half", shares: [{ personId: p, amount: 25000 }] }),
+      it_({ id: "s", date: "2026-10-06", amount: 5000, kind: "settlement", personId: p, direction: "in" }),
+      it_({ id: "b", date: "2026-10-07", amount: 120000, split: { paidBy: p, mode: "half", shares: [{ personId: "me", amount: 60000 }] } }),
+    ];
+    const st = statementOf(personLines(p, items));
+    expect(st.earlier).toEqual({ PHP: 20000 });
+    expect(st.lines.map((l) => l.amount)).toEqual([-60000]);
+    expect(st.net).toEqual({ PHP: -40000 });
+    const o = owedSummary([{ id: p, name: "Alex", updatedAt: "x" }], items, "PHP");
+    expect([o.owedToMe, o.iOwe, o.net]).toEqual([0, 40000, -40000]);
+  });
+});

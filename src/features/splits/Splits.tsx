@@ -100,7 +100,7 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
             {st.lines.length === 0 && !nonZero(st.earlier).length && <div className="row static"><span className="mute">Nothing since last settled</span></div>}
             {st.lines.map((l) => (
               <div key={l.id} className="row static">
-                <span>{labelShort(l.date)} &nbsp;{l.label}{l.mode && <span className="tag">{l.mode === "they-owe" ? "They owe" : l.mode === "i-owe" ? "I owe" : l.mode === "half" ? "50/50" : "Custom"}</span>}</span>
+                <span>{labelShort(l.date)} &nbsp;{l.label}{l.total !== undefined && <span className="mute small"> of {formatMinor(l.total, l.currency)}</span>}{l.mode && <span className="tag">{l.mode === "they-owe" ? "They owe" : l.mode === "i-owe" ? "I owe" : l.mode === "half" ? "50/50" : "Custom"}</span>}</span>
                 <span className={l.amount < 0 ? "pos" : ""}>{formatMinor(l.amount, l.currency)}</span>
               </div>
             ))}

@@ -14,13 +14,27 @@ const FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variab
 const W = 720;
 const PAD = 40;
 const ROW = 40;
+const HEAD = 30;
+const INK = "#1d1d1f";
+const MUTE = "#6e6e73";
+// Columns: date, item, then Total and Your share right aligned. The item gets about 298 px, so a name of
+// about 28 characters fits at 16 px (measured: 225 to 268 px, all capitals the widest) and longer ones end in "…".
+const X_DATE = PAD + 8;
+const X_ITEM = PAD + 84;
+const X_SHARE = W - PAD - 8;
+const X_TOTAL = X_SHARE - 130;
+const ITEM_MAX = X_TOTAL - 120 - X_ITEM;
 
 const owes = (name: string, amt: number) => (amt > 0 ? `${name} owes you` : `You owe ${name}`);
 
-/** Draw the statement as a PNG: a flat, light card with one accent. Always light, in either theme, since it is made to be shown to someone else. */
+/**
+ * Draw the statement as a PNG: a flat, light card with one accent. Always light, in either theme, since it
+ * is made to be shown to someone else. Each expense shows what it cost in full next to the person's share,
+ * so a share is never mistaken for the whole bill.
+ */
 export function renderStatement(m: StatementModel, scale = 2): Promise<Blob> {
   const rows = m.lines.length + (m.earlier.length ? m.earlier.length : 0);
-  const H = PAD + 92 + Math.max(rows, 1) * ROW + 40 + m.net.length * 64 + 56;
+  const H = PAD + 92 + HEAD + Math.max(rows, 1) * ROW + 40 + m.net.length * 64 + 56;
   const c = document.createElement("canvas");
   c.width = W * scale;
   c.height = H * scale;
@@ -49,9 +63,9 @@ export function renderStatement(m: StatementModel, scale = 2): Promise<Blob> {
   };
 
   let y = PAD + 28;
-  text(m.name, PAD + 8, y, `600 30px ${FONT}`, "#1d1d1f");
+  text(m.name, PAD + 8, y, `600 30px ${FONT}`, INK);
   y += 26;
-  text(`Statement · ${labelShort(m.asOf)}, ${m.asOf.slice(0, 4)}`, PAD + 8, y, `400 15px ${FONT}`, "#6e6e73");
+  text(`Statement · ${labelShort(m.asOf)}, ${m.asOf.slice(0, 4)}`, PAD + 8, y, `400 15px ${FONT}`, MUTE);
   y += 22;
 
   const line = () => {
@@ -61,31 +75,39 @@ export function renderStatement(m: StatementModel, scale = 2): Promise<Blob> {
     g.lineTo(W - PAD - 8, y);
     g.stroke();
   };
+
+  // Column labels.
+  y += HEAD;
+  const head = `500 13px ${FONT}`;
+  text("Date", X_DATE, y - 10, head, MUTE);
+  text("Item", X_ITEM, y - 10, head, MUTE);
+  text("Total", X_TOTAL, y - 10, head, MUTE, "right");
+  text("Your share", X_SHARE, y - 10, head, MUTE, "right");
   line();
 
-  const right = W - PAD - 8;
   for (const [cur, amt] of m.earlier) {
     y += ROW;
-    text("Earlier balance", PAD + 8, y - 14, `400 16px ${FONT}`, "#6e6e73");
-    text(formatMinor(amt, cur), right, y - 14, `400 16px ${FONT}`, "#6e6e73", "right");
+    text("Earlier balance", X_DATE, y - 14, `400 16px ${FONT}`, MUTE);
+    text(formatMinor(amt, cur), X_SHARE, y - 14, `400 16px ${FONT}`, MUTE, "right");
   }
   if (m.lines.length === 0 && m.earlier.length === 0) {
     y += ROW;
-    text("Nothing owed", PAD + 8, y - 14, `400 16px ${FONT}`, "#6e6e73");
+    text("Nothing owed", X_DATE, y - 14, `400 16px ${FONT}`, MUTE);
   }
   for (const l of m.lines) {
     y += ROW;
-    text(labelShort(l.date), PAD + 8, y - 14, `400 15px ${FONT}`, "#6e6e73");
-    text(l.label, PAD + 84, y - 14, `400 16px ${FONT}`, "#1d1d1f", "left", 360);
-    text(formatMinor(l.amount, l.currency), right, y - 14, `500 16px ${FONT}`, l.amount < 0 ? "#2fb457" : "#1d1d1f", "right");
+    text(labelShort(l.date), X_DATE, y - 14, `400 15px ${FONT}`, MUTE);
+    text(l.label, X_ITEM, y - 14, `400 16px ${FONT}`, INK, "left", ITEM_MAX);
+    if (l.total !== undefined) text(formatMinor(l.total, l.currency), X_TOTAL, y - 14, `400 16px ${FONT}`, MUTE, "right");
+    text(formatMinor(l.amount, l.currency), X_SHARE, y - 14, `500 16px ${FONT}`, l.amount < 0 ? "#2fb457" : INK, "right");
   }
 
   y += 16;
   line();
   for (const [cur, amt] of m.net) {
     y += 56;
-    text(owes(m.name, amt), PAD + 8, y - 16, `500 18px ${FONT}`, "#1d1d1f");
-    text(formatMinor(Math.abs(amt), cur), right, y - 14, `600 28px ${FONT}`, "#0a84ff", "right");
+    text(owes(m.name, amt), PAD + 8, y - 16, `500 18px ${FONT}`, INK);
+    text(formatMinor(Math.abs(amt), cur), X_SHARE, y - 14, `600 28px ${FONT}`, "#0a84ff", "right");
   }
   text("Ledger", W / 2, H - 34, `400 12px ${FONT}`, "#a1a1a6", "center");
 

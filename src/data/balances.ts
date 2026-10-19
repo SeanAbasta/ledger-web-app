@@ -13,6 +13,8 @@ export interface Line {
   mode?: SplitMode;
   /** The entry's exchange rate, when it is in a foreign currency and has one. */
   rate?: string;
+  /** Expense lines: what the item cost in full (the entry's or payment's amount, in its own currency). Derived, never stored. */
+  total?: Minor;
 }
 
 export type ByCurrency = Record<string, Minor>;
@@ -35,7 +37,7 @@ export function personLines(personId: string, items: LedgerItem[]): Line[] {
     let amount = 0;
     if (paidBy === "me") amount = shares.find((s) => s.personId === personId)?.amount ?? 0;
     else if (paidBy === personId) amount = -(shares.find((s) => s.personId === "me")?.amount ?? 0);
-    if (amount !== 0) out.push({ id, date: it.date, label, amount, currency: x.currency, mode, rate: "rate" in x ? x.rate : undefined });
+    if (amount !== 0) out.push({ id, date: it.date, label, amount, currency: x.currency, mode, rate: "rate" in x ? x.rate : undefined, total: x.amount });
   }
   // Same day: settlements come last, so a payment made today covers today's expenses.
   const rank = (l: Line) => (l.settlement ? 1 : 0);
