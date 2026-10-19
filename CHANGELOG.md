@@ -2,6 +2,22 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V1.3.1 (2026-10-19)
+
+More of your money in one place. Record income besides your salary and move money between your own bank accounts. See all your recurring payments together, what is planned for the rest of the month and the months ahead, and a whole year at a glance. Split statements now show what each item cost in full.
+
+No new kinds of data are stored, so an older copy of the app keeps working with everything here. Update both computers to get the new screens.
+
+- Add: a switch at the top picks Expense, Income or Transfer.
+- Income: record money from other sources (Gift, Interest, Sale, Side Job, Spare Change or Other) into a bank account, in that account's currency. It raises the account's balance and shows in the Ledger in green with a plus. It is never counted as spending. Salary is still set on Forecast.
+- Transfers: move money between two of your bank accounts in the same currency. The total stays the same, it is never spending or income, and a transfer dated later changes nothing until its date. Paying a card is still the Pay button on its tile.
+- Dashboard, Recurring: one list of every recurring payment and installment plan, with the next date, account and payments left, plus what they cost you a month (your share of splits). Tap one to edit, skip or end its next payment. Ended plans are tucked away at the end.
+- Dashboard, planned spending: the category chart and daily bars now include what is still scheduled this month, marked "incl. upcoming", with days still to come in grey. Spent stays what you have actually spent. A later month shows its scheduled payments as "Planned" instead of an empty page.
+- Dashboard, Year: spent, income and net for the year so far (or a whole past year), a month by month chart (tap a month for its numbers), your top categories, the average month, the highest and lowest month, and a comparison with the same dates last year.
+- Splits: the statement image shows each item's full price next to the person's share, under Date, Item, Total and Your share, so nobody thinks they paid for everything. The Splits list shows the full price too.
+- Editing a transfer or card payment also lets you change its note.
+- Fixed: the daily chart's first day label was missing on every month except the current one.
+
 ## V1.3.0 (2026-10-18)
 
 Filters and charts you can tap. See one category in the Ledger, one account's spending on the Dashboard, what is inside each slice of the category chart, and each month of the Forecast. Picking people for a split is a tap instead of typing.

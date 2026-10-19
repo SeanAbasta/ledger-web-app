@@ -3,13 +3,16 @@
 # Ledger
 
 **A quiet, local-first expense tracker.**
-Log it, split it, see where the month went.
+Log it, split it, see where the month and the year went.
 
-![Status](https://img.shields.io/badge/status-in%20development-F5A524?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.3.1-0A84FF?style=flat-square)
+![Status](https://img.shields.io/badge/status-in%20use-10B981?style=flat-square)
 ![React](https://img.shields.io/badge/React-TypeScript-3B82F6?style=flat-square)
 ![Local first](https://img.shields.io/badge/data-local--first-10B981?style=flat-square)
 ![Backend](https://img.shields.io/badge/backend-none-6B7280?style=flat-square)
 ![Cost](https://img.shields.io/badge/cost-free-8B5CF6?style=flat-square)
+
+[What it does](#what-it-does) · [How it works](#how-it-works) · [Make your own](#make-your-own-ledger) · [Privacy](#privacy-and-security) · [Changelog](CHANGELOG.md)
 
 </div>
 
@@ -17,47 +20,77 @@ Log it, split it, see where the month went.
 
 ## What is Ledger?
 
-Ledger is a personal expense tracker built to replace a spreadsheet. It does the handful of things that paid trackers each do only partly: log expenses, show history, summarize on a dashboard, split costs with named people, and look ahead at your balance.
+Ledger is a personal expense tracker that replaced a spreadsheet. It does the handful of things that paid trackers each do only partly: log spending and income, show the history, summarize the month and the year, split costs with friends and family, follow credit cards to the centavo, and look ahead at your balance.
 
 It runs in the browser, keeps your data on your own device first, and syncs between your computers through a private GitHub repository you own. There is no company server, no account to create, and nothing to subscribe to.
 
-> Built for one person. Designed to feel calm: few words, soft glass accents, light by default with an optional dark mode.
+> Built for one person. Designed to feel calm: few words, an Apple-like look, light by default with an optional dark mode, and a bottom tab bar on phones.
 
----
-
-## Quick start
-
-Ledger has no company behind it and no shared server, so **you make your own copy of it**. That takes about 15 minutes and costs nothing.
-
-1. **Make your own copy of the app** (a public repo of yours that GitHub Pages serves). [Steps](#1-make-your-own-copy-of-the-app)
-2. **Make a private repo for your data**, and a token that can only touch that repo. [Steps](#2-make-your-private-data-repo-and-token)
-3. **Connect them** in the app, once per computer. [Steps](#3-connect-your-computers)
-
-After that you only need a browser.
-
-**What you need:** a free [GitHub](https://github.com) account and a modern browser (Chrome, Edge, Safari or Firefox). You do not need to install anything or write code.
+**Getting started takes about 15 minutes:** copy the app, make a private repo for your data, connect. [Jump to the steps](#make-your-own-ledger).
 
 ---
 
 ## What it does
 
-| | Feature | What you get |
-|---|---|---|
-| **Add** | Fast entry | Amount, currency, category, note, date and account in one small form. Set default accounts and a default category in Settings, or start with the last ones you used. |
-| **Ledger** | History | Day, Week and Month views, newest first (inside each day too), search, a category filter, and a Today button (or T on a computer) to jump back. The period that holds today shows a quiet "Next 30 days" group, and upcoming payments also appear on their own dates. Each category has its own colour, the same as in the Dashboard chart. Tap any entry to edit or delete it, card payments included. For recurring payments you can change one payment, or this and every later one, so a price rise on a subscription is a single edit. |
-| **Dashboard** | Summary | Spent this month compared with last month, a category donut (tap a slice for its largest items), daily bars with your daily average and highest day, account balances, what is still due, and who owes you (tap a person to open their Splits page). The Accounts card also shows your total if everyone paid you back, and after your card bills. Filter the spending figures to one bank account or card. A Today button returns to the current month. |
-| **Splits** | Shared costs | Tap the people in the split and who paid, then choose how to split: they owe it all, you owe it all, 50/50, or custom amounts for 3 or more people. |
-| **Snapshot** | Easy settling | Turn a person's balance into a clean statement image you can copy or save, then record the settlement. |
-| **Currency** | Multi-currency | PHP by default. Foreign expenses keep their original amount and the exchange rate at the time, so history never shifts. |
-| **Credit cards** | Swipe once, pay once | Put an expense or an installment on a card. Each card shows its last statement and due date, what is unbilled, and the credit left, with each installment plan's hold named (for example "iPhone hold"). Each card has its own colour, picked in Settings, and a bar shows how much of the limit is in use. Pay the statement, pay everything including what is unbilled, or pay ahead, from a bank account in one tap: it is a transfer, so the spending is never counted twice. Refund a card expense from the Ledger, and move one statement's due date for a weekend or holiday. |
-| **Statements** | Every number explained | Tap a card to see its statement line by line, what is unbilled, and its installment plans. The lists always add up to the card's numbers. |
-| **Reconcile** | Match your bank | Type what your bank app shows. Ledger says what matches and names the likely cause of a gap, such as charges the bank posted a day late, charges still pending, or a balance from before you started. A charge the bank bills on the next statement can be moved there with one switch. |
-| **Recurring** | Rules, not rows | One-off, recurring (weekly, monthly, yearly) and installments such as "3 of 12, 8,000 left". Stored once, generated when needed. |
-| **Forecast** | Look ahead | Enter your salary per month or repeat it, choose the bank it is paid into, and see your balance projected 3, 6 or 12 months out from income, recurring costs, your average spending, and money people owe you. Tap a month for its details; the lowest point and any months below zero are called out. Card spending leaves your bank on the statement's due date, not on the day you swiped. |
-| **Accounts** | Safe to tidy up | Removing a bank account or card that is in use offers to move its entries, plans and defaults to another one first. Removed accounts can be restored with everything still attached, and a Fix link on the Dashboard moves anything left on a removed account. |
-| **Sync** | Two computers, one ledger | A verified handoff through a private GitHub repo. It shows when it is synced and only says "Safe to close" after checking. |
-| **Appearance** | Light or dark | Light by default. Switch to Dark, or Auto to follow your device, in Settings. It is a per-device choice and is not synced. On phones the tabs sit in a bar at the bottom, under your thumb. Sheets and buttons move gently, and only fade when your device asks for reduced motion. |
-| **Backup** | Your data, your files | Export everything as one file or as a spreadsheet, and import a backup. Nothing is deleted on import. |
+Ledger has six screens. Everything below is in the current release, V1.3.1.
+
+### Add
+
+One small card with a switch at the top: **Expense**, **Income** or **Transfer**.
+
+- **Expense:** amount, currency, category, note, date and account. Make it one-off, recurring (weekly, monthly, yearly) or an installment plan ("3 of 12"). Turn on **Split** to tap the people in it and who paid.
+- **Income:** money from other sources (Gift, Interest, Sale, Side Job, Spare Change, Other) into one of your bank accounts, in that account's currency. Salary lives on Forecast.
+- **Transfer:** move money between two of your bank accounts in the same currency. Your total stays the same.
+- Default accounts and a default category, or start with the last ones you used on this device.
+
+### Ledger
+
+Your history, newest first.
+
+- Day, Week and Month views, Search, a category filter, and a Today button (or press T on a computer).
+- Every row shows what it was, its category colour and tags (split, refund, recurring, "7 of 12", upcoming). Money in is green with a plus; money out is plain.
+- Upcoming plan payments show on their own dates, and the period that holds today has a short "Next 30 days" list.
+- Tap anything to edit it: expenses, income, refunds, transfers and card payments. For a recurring payment, change one payment or this and every later one, skip one, or end the series.
+- Refund a card expense from its edit sheet.
+
+### Dashboard
+
+The month at a glance, with three deeper views.
+
+- **Spent** this month (your share of splits) against the same days last month, **Still due**, and **Last month**.
+- A category chart and daily bars. Tap a slice or a legend row for its largest items. For the current month the chart also counts what is still scheduled, marked "incl. upcoming", with days still to come in grey. A later month shows what is **Planned**.
+- Filter the spending figures to one bank account or card.
+- **Credit cards:** each card shows its statement, due date, unbilled charges, credit left and installment holds (for example "Laptop hold"). Pay the statement, pay everything, or pay ahead from a bank account in one tap.
+- **Accounts** with your total, what it would be if everyone paid you back, and after your card bills. **Owed to you**, person by person. The forecast for the end of next month.
+- **Card view:** tap a card for its statement line by line, what is unbilled, and its plans, plus **Reconcile** to compare with your bank app. Ledger names the likely cause of a gap, such as charges posted a day late.
+- **Recurring:** every recurring payment and installment plan in one list, with the next date, account and payments left, and what they cost you a month.
+- **Year:** spent, income and net for the year so far or a past year, a month by month chart, your top categories, the average, highest and lowest month, and the same dates last year.
+
+### Splits
+
+- Balances per person, in each currency.
+- Split modes: they owe it all, you owe it all, 50/50, or custom amounts for 3 or more people.
+- **Snapshot:** turn a person's balance into a clean statement image (Date, Item, Total, Your share) to copy or save and send. It shows what each item cost in full next to their share.
+- **Settle up** records the payment and brings the balance to zero.
+
+### Forecast
+
+- Your salary per month, or repeat it every month, and the bank it is paid into.
+- Your balance projected 3, 6 or 12 months ahead from income, recurring costs, installments, your average spending, card bills on their due dates, and money people owe you.
+- Tap a month for its details. The lowest point and any months that end below zero are called out.
+
+### Settings
+
+- **General:** currency and appearance (Light, Dark, or Auto to follow your device).
+- **Accounts:** bank accounts and credit cards, card colours, defaults. Removing an account that is in use offers to move its entries and plans first, and removed accounts can be restored.
+- **People and categories.**
+- **Sync and backup:** connect GitHub, export everything as one file or a spreadsheet, and import a backup (nothing is deleted on import).
+
+### Also
+
+- **Multi-currency.** PHP by default. A foreign expense keeps its original amount and the rate you entered, so history never shifts.
+- **Works offline,** and installs as an app from your browser's menu.
+- **Gentle motion** that turns into simple fades when your device asks for reduced motion.
 
 ---
 
@@ -66,14 +99,14 @@ After that you only need a browser.
 Ledger stays small on purpose. It does **not**:
 
 - connect to banks or import bank feeds
-- scan receipts or read text from photos
+- scan receipts
 - set budgets or savings goals
 - support multiple users or shared accounts
-- ship a native mobile app
-- send notifications
+- ship a native mobile app or send notifications
 - track investments
 - store account or card numbers
 - work out card interest, late fees or minimum payments (it assumes you pay the full statement)
+- look up exchange rates online (you type the rate)
 - run a server, require a login, or cost money
 
 ---
@@ -87,26 +120,28 @@ flowchart LR
     C -->|pull on open| D[Browser on your other computer]
 ```
 
-**Local first.** Every change is saved in your browser right away, so the app works offline. Install it as an app from your browser's menu and it opens offline too.
+**Local first.** Every change is saved in your browser right away, so the app works offline.
 
 **Two repositories.** The app code lives in this public repo and is served as a static site. Your data lives in a separate private repo that only you can read. Code and data never mix.
 
-**One writer at a time.** You use one computer at a time, so Ledger treats sync as a handoff, not live merging. On open it checks for newer data and downloads it first. After saving it pushes your changes and confirms they landed before showing "Synced". If both computers changed, you choose which version to keep, or merge them, and the version you did not keep is saved to your Downloads first.
+**One writer at a time.** You use one computer at a time, so Ledger treats sync as a handoff, not live merging. On open it checks for newer data and downloads it first. After saving it pushes your changes and confirms they landed before showing "Synced". If both computers changed, you choose which version to keep, or merge them, and the version you did not keep is saved to your Downloads first. While offline, Ledger is read-only unless you choose to edit anyway.
 
-**Plain files.** Data is stored as readable JSON, one file per month, with money kept as whole centavos to avoid rounding errors. Git history doubles as your backup.
+**Plain files.** Data is stored as readable JSON, one file per month, with money kept as whole centavos to avoid rounding errors. Totals, balances and forecasts are worked out when you open a screen and never stored. Git history doubles as your backup.
 
 ---
 
 ## Make your own Ledger
 
-Each person runs their own copy, with their own two GitHub repos. Nothing is shared with the author or with anyone else, and each person's data lives only in their own browser and their own private repo.
+Ledger has no company behind it and no shared server, so **each person runs their own copy** with their own two GitHub repos. Nothing is shared with the author or with anyone else. It costs nothing.
+
+**What you need:** a free [GitHub](https://github.com) account and a modern browser (Chrome, Edge, Safari or Firefox). You do not need to install anything or write code.
 
 | Repo | Visibility | What it holds |
 |---|---|---|
 | **App** (your copy of this project) | Public | Code only. GitHub Pages needs a public repo on a free account. It never holds your data. |
-| **Data** (yours alone) | **Private** | Your expenses, as small JSON files. |
+| **Data** (yours alone) | **Private** | Your entries, as small JSON files. |
 
-> The author's own copy is live at https://seanabasta.github.io/ledger-web-app/ as a personal instance. Making your own copy is still the safest route: that way you decide what code runs with your token, and updates happen when you choose. If you know and trust the author and do not want to keep a copy, you can use this one instead. Connect it to your own private data repo and your own token (steps 2 and 3 below). Your data stays in your browser and your repo, and the author never sees it. You will get each update as soon as it is deployed, and you need to trust the code that is deployed there.
+> The author's own copy is live at https://seanabasta.github.io/ledger-web-app/ as a personal instance. Making your own copy is still the safest route: you decide what code runs with your token, and updates happen when you choose. If you know and trust the author and do not want to keep a copy, you can use this one instead with your own private data repo and your own token (steps 2 and 3 below). Your data stays in your browser and your repo, and the author never sees it. You get each update as soon as it is deployed, so you need to trust the code that is deployed there.
 
 ### 1. Make your own copy of the app
 
@@ -148,22 +183,22 @@ Then do steps 2 to 4 above (enable Actions if asked, set Pages to GitHub Actions
 2. Enter your GitHub username, your data repo name, the token and its expiry date, then **Verify**.
 3. Do the same on your other computer. It downloads everything on first open.
 
-That is all. Add expenses as normal and Ledger pushes them to your data repo a few seconds after each change.
+That is all. Add entries as normal and Ledger pushes them to your data repo a few seconds after each change.
 
 ### Every day
 
 1. Open Ledger and wait for "Checking for updates…" to finish and the pill to say **Synced**.
 2. Work as usual.
-3. Before closing, click the pill, press **Sync now**, and wait for **Synced. Safe to close.** Then close the tab. Then use your other computer the same way.
+3. Before closing, click the pill, press **Sync now**, and wait for **Synced. Safe to close.** Then close the tab, and use your other computer the same way.
 
 ### Keeping your copy up to date
 
-Your copy does not update by itself. When the author releases bug fixes or new features, **update your copy to get them**:
+Your copy does not update by itself. When the author releases fixes or new features, **update your copy to get them**:
 
 - **Forked:** on your fork's page, click **Sync fork, then Update branch**. The site rebuilds and redeploys on its own in about a minute.
-- **Cloned:** re-clone the project, or pull the new changes into your copy, then push to your repo.
+- **Cloned:** pull the new changes into your copy, then push to your repo.
 
-Then reload the app (and accept the update if you installed it as an app). An update only replaces the app's code. It does not change your data repo or your browser's copy. If a release ever has to change how data is stored, the release notes will say what to do. See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
+Then reload the app (and accept the update if you installed it as an app). An update only replaces the app's code. It does not change your data repo or your browser's copy. If a release ever has to change how data is stored, the release notes will say what to do. Update both computers so they show the same screens. See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
 
 ### Will my copy use the author's GitHub limits?
 
@@ -199,24 +234,19 @@ Back up now and then with Settings, **Backup file**. The data repo's history is 
 
 ## Status
 
-Ledger is deployed and in use. Sync between two computers has been confirmed against a real GitHub repo. The latest release is V1.3.0; see [CHANGELOG.md](CHANGELOG.md) for what changed in each version. It is still a personal project, so keep a backup.
+Ledger is deployed and in daily use. Sync between a Mac and a Windows PC has been confirmed against a real GitHub repo. The latest release is **V1.3.1**. It is still a personal project, so keep a backup.
 
-The first version was built in these milestones:
+| Version | Highlights |
+|---|---|
+| **V1.3.1** | One-off income, transfers between bank accounts, Recurring list, planned spending in the chart, Year report, full prices on split statements |
+| V1.3.0 | Tap to pick people in splits, Ledger category filter, Dashboard account filter, tap the chart for a breakdown, Forecast chart for 3, 6 or 12 months |
+| V1.2.4 | Safer removing of accounts and cards (move, restore, fix), edit card payments, salary "Paid into" |
+| V1.2.2 | A new look: grouped background, rounded figures, bottom tab bar on phones, card colours |
+| V1.2.0 | Card statements, Reconcile with the bank, Pay all, default accounts, motion |
+| V1.1.0 | Credit cards, transfers, refunds, card bills in the forecast |
+| V1.0.x | First release, dark mode, editing, Owed to you |
 
-| Milestone | Scope | Status |
-|---|---|---|
-| 1 | Project shell, data model, local storage, tests | Done |
-| 2 | Add form and Ledger, currency, recurring and installments | Done |
-| 3 | Dashboard | Done |
-| 4 | Splits and snapshot | Done |
-| 5 | Accounts, income and Forecast, Settings | Done |
-| 6 | GitHub sync layer | Done |
-| 7 | Token setup screen, sync status, conflict screen | Done |
-| 8 | Deployment to GitHub Pages, install as an app, export and import | Done |
-
-Later releases added dark mode, editing, credit cards, in V1.2.0 card statements, bank reconcile, Pay all and default accounts, in V1.2.2 a refreshed look with a bottom tab bar on phones, and in V1.2.4 safeguards for removing accounts and cards.
-
-The author's own copy is live at `https://seanabasta.github.io/ledger-web-app/`.
+Full notes for every version are in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -226,6 +256,7 @@ The author's own copy is live at `https://seanabasta.github.io/ledger-web-app/`.
 - **IndexedDB** for the local working copy
 - **GitHub REST API** (Git Data) for sync
 - **GitHub Pages** and **GitHub Actions** for hosting
+- **Vitest** for the tests (more than 300 of them, run before every deploy)
 
 Built with Claude Code.
 
@@ -248,7 +279,7 @@ Other commands:
 
 ```bash
 npm test          # run the tests
-npm run build     # production build into dist/
+npm run build     # type check and production build into dist/
 npm run preview   # serve the production build locally
 ```
 
