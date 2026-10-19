@@ -28,6 +28,7 @@ import { CardTile } from "./CardTile";
 import { CardView } from "./CardView";
 import { FixSheet } from "./FixSheet";
 import { RecurringView } from "./RecurringView";
+import { YearView } from "./YearView";
 
 interface View {
   base: string;
@@ -111,8 +112,8 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
   // A card opened from its tile: the per-card statement view replaces the Dashboard until Back.
   const [openCard, setOpenCard] = useState<string>();
   const [fixing, setFixing] = useState(false);
-  // A Dashboard sub-view (like the card view): the Recurring list.
-  const [sub, setSub] = useState<"recurring">();
+  // A Dashboard sub-view (like the card view): the Recurring list or the Year report.
+  const [sub, setSub] = useState<"recurring" | "year">();
   // Spending filter: "" is all accounts, an account id, or NO_ACCOUNT. Balances are never filtered.
   const [acct, setAcct] = useState("");
   const pop = usePopover<string>();
@@ -193,13 +194,13 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
   // Going back never slides the month in again.
   const back = () => { setV({ ...v, dir: 0 }); setOpenCard(undefined); setSub(undefined); };
 
-  if (sub === "recurring") {
+  if (sub) {
     return (
       <>
         <div className="toolrow">
           <span className="nav"><button className="title" onClick={back}>‹ Dashboard</button></span>
         </div>
-        <RecurringView />
+        {sub === "recurring" ? <RecurringView /> : <YearView />}
       </>
     );
   }
@@ -226,6 +227,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
         </span>
         <span className="subviews">
           <button className="btn ghost sm" onClick={() => setSub("recurring")}>Recurring</button>
+          <button className="btn ghost sm" onClick={() => setSub("year")}>Year</button>
         </span>
         {accounts.length > 0 && (
           <select className="acctpick" aria-label="Spending from" value={acct} onChange={(e) => setAcct(e.target.value)}>

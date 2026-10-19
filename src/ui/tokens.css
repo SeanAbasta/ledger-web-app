@@ -291,6 +291,23 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 /* Dashboard sub-views (Recurring, Year): small buttons beside the spending filter. */
 .toolrow .subviews { display: flex; gap: var(--sp-2); margin-left: auto; }
 .row .planamt { text-align: right; white-space: nowrap; }
+/* Year view: one column per month (a button: hover, tap or keyboard opens its popover), this month at full
+   strength, months still to come empty. A green dot under a column marks a month with income. */
+.ybars { position: relative; display: flex; align-items: stretch; gap: 4px; height: 180px; margin-top: var(--sp-2); }
+.ybars::after { content: ""; position: absolute; left: 0; right: 0; bottom: 26px; border-top: 1px solid var(--line); pointer-events: none; }
+.ybar { all: unset; box-sizing: border-box; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; cursor: pointer; border-radius: 6px; }
+.ybar:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); }
+.ybar .yfill { flex: 1; display: flex; align-items: flex-end; justify-content: center; }
+.ybar .yfill i { display: block; width: 100%; max-width: 22px; border-radius: 4px 4px 2px 2px; background: var(--accent); opacity: 0.45; }
+.ybar.now .yfill i { opacity: 1; }
+.ybar .ymark { height: 10px; display: flex; align-items: center; justify-content: center; }
+.yin { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--good-ink); }
+.yin.key { vertical-align: 1px; margin-right: 4px; }
+.yearhead .r { white-space: nowrap; }
+.yearcats .dot { display: inline-block; vertical-align: 1px; margin-right: 8px; }
+.ybar .ylab { height: 16px; line-height: 16px; text-align: center; font-size: var(--fs-xs); color: var(--mute); overflow: hidden; }
+.ybar.now .ylab { color: var(--accent-ink); font-weight: 600; }
+.ybar.later .ylab { opacity: 0.5; }
 .balnote { margin: var(--sp-4) 0 0; }
 .grp { font-size: var(--fs-md); font-weight: 600; color: var(--ink); margin: var(--sp-5) 0 var(--sp-2); display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); }
 .grp .r { color: var(--mute); font-weight: 500; }
@@ -385,6 +402,9 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
   .toolrow .filters { flex: 1 1 260px; }
   .toolrow .search { flex: 1 1 100px; width: auto; min-width: 0; }
   .toolrow .catpick { flex: 0 1 auto; max-width: 45%; }
+  /* Dashboard: the spending filter shrinks so Recurring and Year fit beside it. */
+  .toolrow .subviews { margin-left: 0; flex: none; }
+  .toolrow .acctpick { flex: 1 1 0; min-width: 0; max-width: none; }
 }
 
 /* dashboard */
