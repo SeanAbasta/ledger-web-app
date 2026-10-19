@@ -9,7 +9,7 @@ const e = (id: string, date: string, pesos: number, extra: Partial<Entry> = {}):
   id, kind: "expense", date, amount: pesos * P, currency: "PHP", category: "Food", accountId: "C", createdAt: id, updatedAt: "x", ...extra,
 });
 // Made-up card: cut-off on the 8th, so on Oct 10 the Oct 8 statement is out and Oct 9 is unbilled.
-const card: Account = { id: "C", name: "Visa", currency: "PHP", openingBalance: 0, type: "card", statementDay: 8, dueDays: 18, limit: 100000 * P, updatedAt: "x" };
+const card: Account = { id: "C", name: "Card A", currency: "PHP", openingBalance: 0, type: "card", statementDay: 8, dueDays: 18, limit: 100000 * P, updatedAt: "x" };
 const half = { paidBy: "me" as const, mode: "half" as const, shares: [{ personId: "m", amount: 300 * P }] };
 const entries = [e("a", "2026-10-07", 1000), e("b", "2026-10-08", 400), e("c", "2026-10-08", 600, { split: half }), e("d", "2026-10-09", 300), e("x", "2026-10-05", 250, { accountId: "B" })];
 const today = "2026-10-10";

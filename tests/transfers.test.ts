@@ -16,8 +16,8 @@ const P = 100; // centavos per peso
 const e = (id: string, date: string, pesos: number, extra: Partial<Entry> = {}): Entry => ({
   id, kind: "expense", date, amount: pesos * P, currency: "PHP", category: "Food", createdAt: "x", updatedAt: "x", ...extra,
 });
-const bank: Account = { id: "B", name: "BDO", currency: "PHP", openingBalance: 50000 * P, updatedAt: "x" };
-const card: Account = { id: "C", name: "Visa", currency: "PHP", openingBalance: 0, type: "card", statementDay: 15, dueDays: 20, limit: 100000 * P, updatedAt: "x" };
+const bank: Account = { id: "B", name: "Bank A", currency: "PHP", openingBalance: 50000 * P, updatedAt: "x" };
+const card: Account = { id: "C", name: "Card A", currency: "PHP", openingBalance: 0, type: "card", statementDay: 15, dueDays: 20, limit: 100000 * P, updatedAt: "x" };
 const items = (entries: Entry[], to = "2026-12-31") => ledgerItems(entries, [], "0000-01-01", to);
 
 let store: LedgerStore;
@@ -108,8 +108,8 @@ describe("compatibility", () => {
   // The shape a V1.0.3 export has: accounts with no type or card fields, the three old kinds only.
   const old = () => makeBundle({
     "settings.json": { schemaVersion: 1, baseCurrency: "PHP", defaultCurrency: "PHP", categories: ["Food"] },
-    "accounts.json": { accounts: [{ id: "B", name: "BDO", currency: "PHP", openingBalance: 5000000, updatedAt: "2026-10-01T00:00:00.000Z" }] },
-    "people.json": { people: [{ id: "m", name: "Maya", updatedAt: "2026-10-01T00:00:00.000Z" }] },
+    "accounts.json": { accounts: [{ id: "B", name: "Bank A", currency: "PHP", openingBalance: 5000000, updatedAt: "2026-10-01T00:00:00.000Z" }] },
+    "people.json": { people: [{ id: "m", name: "Sam", updatedAt: "2026-10-01T00:00:00.000Z" }] },
     "rules.json": { rules: [] },
     "months/2026-10.json": { month: "2026-10", entries: [
       { id: "1", kind: "expense", date: "2026-10-02", amount: 120000, currency: "PHP", category: "Food", accountId: "B", createdAt: "a", updatedAt: "a" },
@@ -158,7 +158,7 @@ describe("compatibility", () => {
       e("r", "2026-12-06", 500, { kind: "income", refund: true, accountId: "C" }),
     ], [], [bank, card]).split("\r\n");
     expect(csv[0]).toMatch(/,to_account$/);
-    expect(csv[1]).toBe("2026-12-05,transfer,Food,,7000.00,PHP,,BDO,,,,Visa");
-    expect(csv[2]).toBe("2026-12-06,refund,Food,,500.00,PHP,,Visa,,,,");
+    expect(csv[1]).toBe("2026-12-05,transfer,Food,,7000.00,PHP,,Bank A,,,,Card A");
+    expect(csv[2]).toBe("2026-12-06,refund,Food,,500.00,PHP,,Card A,,,,");
   });
 });

@@ -9,7 +9,7 @@ const kept = [{ id: "K1", name: "Sam" }];
 
 describe("picking people by tapping", () => {
   it("reads the picked names trimmed, without empties or case duplicates", () => {
-    expect(namesOf(" Alex, ,jordan , ALEX,Maya,")).toEqual(["Alex", "jordan", "Maya"]);
+    expect(namesOf(" Alex, ,jordan , ALEX,Sam,")).toEqual(["Alex", "jordan", "Sam"]);
     expect(namesOf("")).toEqual([]);
     expect(hasName("Alex, Jordan", " jordan ")).toBe(true);
     expect(hasName("Alex", "Al")).toBe(false);
@@ -17,11 +17,11 @@ describe("picking people by tapping", () => {
 
   it("toggles a name in and out in any case and keeps the order of taps", () => {
     let n = "";
-    n = toggleName(n, "Maya");
+    n = toggleName(n, "Sam");
     n = toggleName(n, "Alex");
-    expect(n).toBe("Maya, Alex");
-    expect(toggleName(n, "maya")).toBe("Alex");
-    expect(toggleName(toggleName(n, "MAYA"), "Maya")).toBe("Alex, Maya");
+    expect(n).toBe("Sam, Alex");
+    expect(toggleName(n, "sam")).toBe("Alex");
+    expect(toggleName(toggleName(n, "SAM"), "Sam")).toBe("Alex, Sam");
   });
 
   it("adds a typed name with the live spelling, never takes one out, and refuses empty or comma names", () => {
@@ -37,7 +37,7 @@ describe("picking people by tapping", () => {
 describe("Paid by when people change", () => {
   it("goes back to me when the payer is taken out, except in I owe", () => {
     for (const mode of ["they-owe", "half", "custom"] as const) expect(payerAfter("alex", mode, "Jordan", [])).toBe("me");
-    expect(payerAfter("alex", "i-owe", "Jordan, Maya", [])).toBe("jordan");
+    expect(payerAfter("alex", "i-owe", "Jordan, Sam", [])).toBe("jordan");
     expect(payerAfter("alex", "i-owe", "", kept)).toBe(keptKey("K1"));
     expect(payerAfter("alex", "i-owe", "", [])).toBe("me");
   });
@@ -49,9 +49,9 @@ describe("Paid by when people change", () => {
   });
 
   it("switching to I owe moves Paid by off me as before", () => {
-    expect(payerForMode("i-owe", "me", "Maya, Alex", [])).toBe("maya");
+    expect(payerForMode("i-owe", "me", "Sam, Alex", [])).toBe("sam");
     expect(payerForMode("i-owe", "me", "", kept)).toBe(keptKey("K1"));
-    expect(payerForMode("i-owe", "alex", "Maya, Alex", [])).toBe("alex");
+    expect(payerForMode("i-owe", "alex", "Sam, Alex", [])).toBe("alex");
     expect(payerForMode("they-owe", "alex", "Alex", [])).toBe("alex"); // unchanged: Save says "You must be the payer"
   });
 });

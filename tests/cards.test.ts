@@ -10,9 +10,9 @@ const P = 100; // centavos per peso
 const e = (id: string, date: string, pesos: number, extra: Partial<Entry> = {}): Entry => ({
   id, kind: "expense", date, amount: pesos * P, currency: "PHP", category: "Food", accountId: "C", createdAt: id, updatedAt: "x", ...extra,
 });
-const bank: Account = { id: "B", name: "BDO", currency: "PHP", openingBalance: 50000 * P, updatedAt: "x" };
+const bank: Account = { id: "B", name: "Bank A", currency: "PHP", openingBalance: 50000 * P, updatedAt: "x" };
 // Cut-off on the 15th, due 20 days later, so the Nov 15 statement is due Dec 5.
-const card: Account = { id: "C", name: "Visa", currency: "PHP", openingBalance: 0, type: "card", statementDay: 15, dueDays: 20, limit: 100000 * P, updatedAt: "x" };
+const card: Account = { id: "C", name: "Card A", currency: "PHP", openingBalance: 0, type: "card", statementDay: 15, dueDays: 20, limit: 100000 * P, updatedAt: "x" };
 const charges = [e("a", "2026-10-16", 1000), e("b", "2026-10-25", 1000), e("c", "2026-11-03", 1000, { category: "Shopping" }), e("d", "2026-11-15", 1000)];
 const iphone: Rule = { id: "I", type: "installment", kind: "expense", amount: 3000 * P, total: 72000 * P, count: 24, currency: "PHP", category: "Shopping", note: "iPhone", accountId: "C", frequency: "monthly", start: "2026-10-20", updatedAt: "x" };
 const pay = e("p", "2026-12-05", 7000, { kind: "transfer", accountId: "B", toAccountId: "C", category: "Card payment" });

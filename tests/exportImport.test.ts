@@ -14,13 +14,13 @@ const exp = { kind: "expense" as const, currency: "PHP", category: "Food" };
 describe("export and import", () => {
   it("round-trips through text into an empty device and marks everything for sync", async () => {
     await addEntry(store, { ...exp, date: "2026-10-07", amount: 125050, note: "Dinner" });
-    await upsert(store, "people", { name: "Maya" });
+    await upsert(store, "people", { name: "Sam" });
     const text = bundleText(await exportBundle(store));
     const other = await LedgerStore.open(`ei-${n++}`);
     const r = await importBundle(other, parseBundle(text));
     expect(r).toEqual({ files: 2, newEntries: 1 });
     expect((await listMonth(other, "2026-10"))[0]?.note).toBe("Dinner");
-    expect((await list(other, "people"))[0]?.name).toBe("Maya");
+    expect((await list(other, "people"))[0]?.name).toBe("Sam");
     expect((await other.dirtyPaths()).sort()).toEqual(["months/2026-10.json", "people.json"]);
   });
 
@@ -59,14 +59,14 @@ describe("csv", () => {
   it("writes readable rows with names, decimals and split shares", () => {
     const e = (o: Partial<Entry>): Entry => ({ id: "1", kind: "expense", date: "2026-10-07", amount: 125050, currency: "PHP", category: "Food", createdAt: "x", updatedAt: "x", ...o });
     const csv = entriesCsv(
-      [e({ id: "2", note: "Dinner, with Maya", split: { paidBy: "me", mode: "half", shares: [{ personId: "m", amount: 62525 }] }, accountId: "A" }), e({ id: "3", date: "2026-10-01", amount: 500, currency: "JPY", rate: "0.38" }), e({ id: "4", deleted: true })],
-      [{ id: "m", name: "Maya", updatedAt: "x" }],
-      [{ id: "A", name: "BDO", currency: "PHP", openingBalance: 0, updatedAt: "x" }],
+      [e({ id: "2", note: "Dinner, with Sam", split: { paidBy: "me", mode: "half", shares: [{ personId: "m", amount: 62525 }] }, accountId: "A" }), e({ id: "3", date: "2026-10-01", amount: 500, currency: "JPY", rate: "0.38" }), e({ id: "4", deleted: true })],
+      [{ id: "m", name: "Sam", updatedAt: "x" }],
+      [{ id: "A", name: "Bank A", currency: "PHP", openingBalance: 0, updatedAt: "x" }],
     );
     expect(csv.split("\r\n")).toEqual([
       "date,type,category,note,amount,currency,rate,account,paid_by,split,shares,to_account",
       "2026-10-01,expense,Food,,500,JPY,0.38,,,,,",
-      '2026-10-07,expense,Food,"Dinner, with Maya",1250.50,PHP,,BDO,me,half,Maya:625.25,',
+      '2026-10-07,expense,Food,"Dinner, with Sam",1250.50,PHP,,Bank A,me,half,Sam:625.25,',
       "",
     ]);
   });

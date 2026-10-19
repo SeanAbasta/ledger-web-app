@@ -58,7 +58,7 @@ describe("balances", () => {
 });
 
 describe("owedSummary", () => {
-  const people = [{ id: "maya", name: "Maya", updatedAt: "x" }, { id: "jon", name: "Jon", updatedAt: "x" }, { id: "ana", name: "Ana", updatedAt: "x" }];
+  const people = [{ id: "maya", name: "Sam", updatedAt: "x" }, { id: "jon", name: "Jon", updatedAt: "x" }, { id: "ana", name: "Ana", updatedAt: "x" }];
   const theyOwe = (id: string, date: string, amount: number, p: string, extra: Partial<Entry> = {}) =>
     it_({ id, date, amount, split: { paidBy: "me", mode: "they-owe", shares: [{ personId: p, amount }] }, ...extra });
   const iOwe = (id: string, date: string, amount: number, p: string) =>
@@ -66,7 +66,7 @@ describe("owedSummary", () => {
 
   it("totals per person and overall, largest first, owed to me minus what I owe", () => {
     const s = owedSummary(people, [theyOwe("a", "2026-10-01", 300, "jon"), theyOwe("b", "2026-10-02", 850, "maya"), iOwe("c", "2026-10-03", 48, "ana")], "PHP");
-    expect(s.people.map((p) => [p.person.name, p.base])).toEqual([["Maya", 850], ["Jon", 300], ["Ana", -48]]);
+    expect(s.people.map((p) => [p.person.name, p.base])).toEqual([["Sam", 850], ["Jon", 300], ["Ana", -48]]);
     expect([s.owedToMe, s.iOwe, s.net, s.skipped]).toEqual([1150, 48, 1102, 0]);
   });
   it("leaves out people who are settled and counts settlements", () => {

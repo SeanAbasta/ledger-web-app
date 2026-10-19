@@ -12,7 +12,7 @@ const e = (date: string, amount: number, extra: Partial<Entry> = {}): Entry => (
   id: date + amount + (extra.category ?? ""), kind: "expense", date, amount, currency: "PHP", category: "Food", createdAt: "x", updatedAt: "x", ...extra,
 });
 const rule = (r: Partial<Rule>): Rule => ({ id: "R", type: "recurring", kind: "expense", amount: 1000, currency: "PHP", frequency: "monthly", start: "2026-01-05", updatedAt: "x", ...r });
-const acct = (a: Partial<Account>): Account => ({ id: "A", name: "BDO", currency: "PHP", openingBalance: 100000, updatedAt: "x", ...a });
+const acct = (a: Partial<Account>): Account => ({ id: "A", name: "Bank A", currency: "PHP", openingBalance: 100000, updatedAt: "x", ...a });
 const items = (entries: Entry[], rules: Rule[] = [], to = "2026-10-31") => ledgerItems(entries, rules, "0000-01-01", to);
 
 describe("accountBalances", () => {
@@ -166,7 +166,7 @@ describe("money owed to me in the forecast", () => {
   });
   it("does not double count when someone pays me back", async () => {
     const { owedSummary } = await import("../src/data/balances");
-    const people = [{ id: "maya", name: "Maya", updatedAt: "x" }];
+    const people = [{ id: "maya", name: "Sam", updatedAt: "x" }];
     const lent = e("2026-10-02", 50000, { id: "L", accountId: "A", split: { paidBy: "me", mode: "they-owe", shares: [{ personId: "maya", amount: 50000 }] } });
     const paid = e("2026-10-05", 50000, { id: "P", kind: "settlement", personId: "maya", direction: "in", accountId: "A" });
     const project = (entries: Entry[]) => {

@@ -14,7 +14,7 @@ const e = (id: string, date: string, pesos: number, extra: Partial<Entry> = {}):
 });
 const bank: Account = { id: "B", name: "Bank", currency: "PHP", openingBalance: 50000 * P, updatedAt: "x" };
 // Made-up card: cut-off on the 8th, due 18 days later, so the Oct 8 statement is due Oct 26.
-const card: Account = { id: "C", name: "Visa", currency: "PHP", openingBalance: 0, type: "card", statementDay: 8, dueDays: 18, limit: 100000 * P, updatedAt: "x" };
+const card: Account = { id: "C", name: "Card A", currency: "PHP", openingBalance: 0, type: "card", statementDay: 8, dueDays: 18, limit: 100000 * P, updatedAt: "x" };
 const base = [e("a", "2026-10-07", 1000), e("b", "2026-10-08", 400), e("c", "2026-10-08", 600), e("d", "2026-10-09", 300)];
 const moveB = (es: Entry[]) => es.map((x) => (x.id === "b" ? { ...x, nextBill: true as const } : x));
 const pay = (id: string, date: string, pesos: number) => e(id, date, pesos, { kind: "transfer", accountId: "B", toAccountId: "C", category: "Card payment" });

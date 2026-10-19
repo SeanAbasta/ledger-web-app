@@ -63,11 +63,11 @@ describe("months", () => {
 
 describe("collections and settings", () => {
   it("upserts, lists and tombstones people", async () => {
-    const maya = await upsert(store, "people", { name: "Maya" });
+    const sam = await upsert(store, "people", { name: "Sam" });
     await upsert(store, "people", { name: "Jon" });
-    await upsert(store, "people", { id: maya.id, name: "Maya R." });
-    expect((await list(store, "people")).map((p) => p.name).sort()).toEqual(["Jon", "Maya R."]);
-    await remove(store, "people", maya.id);
+    await upsert(store, "people", { id: sam.id, name: "Sam R." });
+    expect((await list(store, "people")).map((p) => p.name).sort()).toEqual(["Jon", "Sam R."]);
+    await remove(store, "people", sam.id);
     expect((await list(store, "people")).map((p) => p.name)).toEqual(["Jon"]);
     expect(await store.dirtyPaths()).toContain("people.json");
   });
@@ -81,7 +81,7 @@ describe("collections and settings", () => {
   });
 
   it("putRemote does not mark dirty and clears stale dirty flags", async () => {
-    await upsert(store, "people", { name: "Maya" });
+    await upsert(store, "people", { name: "Sam" });
     await store.putRemote({ "people.json": { people: [] } });
     expect(await store.dirtyPaths()).toEqual([]);
     expect(await list(store, "people")).toEqual([]);

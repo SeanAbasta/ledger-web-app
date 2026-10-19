@@ -22,7 +22,7 @@ describe("handoff", () => {
     const mac = await dev("mac");
     const win = await dev("win");
     await addEntry(mac.store, { ...exp, date: "2026-10-07", amount: 125000 });
-    await upsert(mac.store, "people", { name: "Maya" });
+    await upsert(mac.store, "people", { name: "Sam" });
     expect(await check(mac.store, mac.c)).toBe("needs-push");
     expect(await push(mac.store, mac.c)).toMatchObject({ status: "pushed" });
     expect(await mac.store.dirtyPaths()).toEqual([]);
@@ -32,7 +32,7 @@ describe("handoff", () => {
 
     expect(await check(win.store, win.c)).toBe("pulled");
     expect((await listMonth(win.store, "2026-10"))[0]?.amount).toBe(125000);
-    expect((await list(win.store, "people"))[0]?.name).toBe("Maya");
+    expect((await list(win.store, "people"))[0]?.name).toBe("Sam");
     expect(await win.store.dirtyPaths()).toEqual([]);
     expect(await verify(win.store, win.c)).toEqual({ ok: true });
     expect(await check(win.store, win.c)).toBe("up-to-date");
@@ -174,7 +174,7 @@ describe("resolve", () => {
     await push(mac.store, mac.c);
     await check(win.store, win.c);
     await addEntry(mac.store, { ...exp, date: "2026-10-02", amount: 200 }); // mac moves on
-    await upsert(mac.store, "people", { name: "Maya" });
+    await upsert(mac.store, "people", { name: "Sam" });
     await push(mac.store, mac.c);
     await addEntry(win.store, { ...exp, date: "2026-10-03", amount: 300 }); // win edits stale
     expect(await check(win.store, win.c)).toBe("conflict");
@@ -212,7 +212,7 @@ describe("resolve", () => {
     expect(await push(win.store, win.c)).toMatchObject({ status: "pushed" });
     expect(await check(mac.store, mac.c)).toBe("pulled");
     expect(await amounts(mac.store)).toEqual([100, 200, 300]);
-    expect((await list(mac.store, "people"))[0]?.name).toBe("Maya");
+    expect((await list(mac.store, "people"))[0]?.name).toBe("Sam");
   });
 });
 
