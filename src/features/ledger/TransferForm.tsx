@@ -6,6 +6,7 @@ import { formatMinor, parseMinor } from "../../data/money";
 import { isCard, type Account, type Entry } from "../../data/schema";
 import { newTransfer, transferSources, transferTargets } from "../../data/transfers";
 import type { SavedNote } from "../add/AddForm";
+import { afterSave, savedLine } from "../add/afterSave";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
@@ -71,9 +72,10 @@ export function TransferForm({ entry, accounts: given, onDone }: { entry?: Entry
       }
       await addEntry(store, newTransfer({ amount: minor, from: accounts.find((a) => a.id === from), to: accounts.find((a) => a.id === to), date, note }));
       changed();
-      setAmount("");
-      setNote("");
-      onDone({ date, message: "Saved" });
+      const t = today();
+      const r = afterSave({ form: "transfer", amount, note, date, from, to }, t);
+      setAmount(r.amount); setNote(r.note); setDate(r.date);
+      onDone({ date, message: savedLine({ note, category: "Transfer", amount: minor, currency, date, today: t }) });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save");
     }

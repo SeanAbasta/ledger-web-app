@@ -14,6 +14,7 @@ import { Segmented } from "../../ui/Segmented";
 import { AccountOptions } from "../../ui/AccountOptions";
 import { MODE_LABEL } from "../../ui/splitLabels";
 import { CategoryChips } from "../../ui/CategoryChips";
+import { afterSave, opensLedger, savedLine } from "./afterSave";
 import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
@@ -26,8 +27,11 @@ const MODES = ["they-owe", "i-owe", "half", "custom"] as const;
 const FREQ = ["weekly", "monthly", "yearly"] as const;
 const FREQ_LABEL = { weekly: "Weekly", monthly: "Monthly", yearly: "Yearly" } as const;
 
-/** What was just added: a short line to show, and the date to open the Ledger at. */
-export interface SavedNote { message: string; date: string }
+/**
+ * What was just added: a short line to show, and the date to open the Ledger at. `open` is set when the
+ * Add tab should go straight to the Ledger (a plan that starts later); otherwise it stays on Add.
+ */
+export interface SavedNote { message: string; date: string; open?: boolean }
 
 /** New expense, or edit an existing one (pass `entry`). */
 export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: SavedNote) => void }) {
@@ -152,11 +156,16 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
       changed();
       if (entry) return onDone?.();
       rememberUsed({ expense: someoneElsePaid ? undefined : accountId, category });
-      setAmount("");
-      setNote("");
-      // A plan that starts later is easy to lose, so say when it begins.
-      const later = kind !== "one-off" && date > today();
-      onDone?.({ date, message: later ? `Saved. First payment ${labelShort(date)}${kind === "installment" ? `, ${n} payments` : ""}` : "Saved" });
+      // Stay on Add for the next one: clear what belongs to this item, keep account and category.
+      const t = today();
+      const r = afterSave({ form: "expense", amount, note, date, accountId, category, type: kind, freq, count, end, nextBill, split, names, newName, mode, paidBy, custom, kept }, t);
+      setAmount(r.amount); setNote(r.note); setDate(r.date);
+      setKind(r.type); setFreq(r.freq); setCount(r.count); setEnd(r.end); setNextBill(r.nextBill);
+      setSplit(r.split); setNames(r.names); setNewName(r.newName); setMode(r.mode); setPaidBy(r.paidBy); setCustom(r.custom); setKept(r.kept);
+      // A plan that starts later is easy to lose, so it still opens the Ledger at its first payment.
+      onDone?.(opensLedger(kind, date, t)
+        ? { date, open: true, message: `Saved. First payment ${labelShort(date)}${kind === "installment" ? `, ${n} payments` : ""}` }
+        : { date, message: savedLine({ note, category, amount: minor, currency, date, today: t }) });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save");
     }

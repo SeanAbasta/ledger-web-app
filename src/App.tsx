@@ -31,19 +31,34 @@ const READING_TABS: Tab[] = ["Add", "Ledger", "Splits", "Settings"];
 const ADD_KINDS = ["Expense", "Income", "Transfer"] as const;
 type AddKind = (typeof ADD_KINDS)[number];
 
-/** The Add tab: one form at a time, picked at the top. Each is its own form (AddForm is the expense form). */
-function AddTab({ onDone }: { onDone: (s?: SavedNote) => void }) {
+/**
+ * The Add tab: one form at a time, picked at the top. Each is its own form (AddForm is the expense form).
+ * After a save it stays here with a "Saved: ..." line and a View button, so several can be logged in a row;
+ * only a plan that starts later opens the Ledger at once (`open`).
+ */
+function AddTab({ onView }: { onView: (s: SavedNote) => void }) {
   const [kind, setKind] = useState<AddKind>("Expense");
+  const [saved, setSaved] = useState<SavedNote>();
+  const done = (s?: SavedNote) => {
+    if (!s) return;
+    // Nothing stays focused after a save (Return in a field would keep the phone keyboard up).
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    if (s.open) onView(s);
+    else setSaved(s);
+  };
   return (
     <div className="glasscard addcard">
-      <div className="addkind"><Segmented value={kind} options={ADD_KINDS} onChange={setKind} /></div>
-      {kind === "Expense" ? <AddForm onDone={onDone} /> : kind === "Income" ? <IncomeForm onDone={onDone} /> : <TransferForm onDone={onDone} />}
+      <div className="addkind"><Segmented value={kind} options={ADD_KINDS} onChange={(k) => { setSaved(undefined); setKind(k); }} /></div>
+      {saved && (
+        <p className="savedline" role="status">{saved.message}. <button type="button" className="link" onClick={() => onView(saved)}>View</button></p>
+      )}
+      {kind === "Expense" ? <AddForm onDone={done} /> : kind === "Income" ? <IncomeForm onDone={done} /> : <TransferForm onDone={done} />}
     </div>
   );
 }
 
 function Screen({ tab, go, setup, focusPerson, openPerson, saved, onSaved, focusCard, openCard }: { tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; focusCard?: string; openCard: (id: string) => void }) {
-  if (tab === "Add") return <AddTab onDone={(s) => { onSaved(s); go("Ledger"); }} />;
+  if (tab === "Add") return <AddTab onView={(s) => { onSaved(s); go("Ledger"); }} />;
   if (tab === "Ledger") return <Ledger key={saved?.date ?? ""} initialDate={saved?.date} notice={saved?.message} />;
   if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); go("Ledger"); }} onOpenCardSettings={openCard} />;
   if (tab === "Splits") return <Splits key={focusPerson ?? ""} initialPerson={focusPerson} />;

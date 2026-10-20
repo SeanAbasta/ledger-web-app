@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getSettings, listAll, nameOf } from "../../data/collections";
 import { startAccount } from "../../data/defaults";
-import { labelShort, today } from "../../data/dates";
+import { today } from "../../data/dates";
 import { addEntry, deleteEntry, updateEntry } from "../../data/months";
 import { formatMinor, parseMinor } from "../../data/money";
 import { incomeAccounts, newIncome, SIDE_INCOME } from "../../data/sideIncome";
@@ -13,6 +13,7 @@ import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 import type { SavedNote } from "./AddForm";
+import { afterSave, savedLine } from "./afterSave";
 
 const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[^\d.]/g, "");
 
@@ -66,9 +67,10 @@ export function IncomeForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?:
       changed();
       if (entry) return onDone?.();
       rememberUsed({ income: accountId });
-      setAmount("");
-      setNote("");
-      onDone?.({ date, message: date > today() ? `Saved for ${labelShort(date)}` : "Saved" });
+      const t = today();
+      const r = afterSave({ form: "income", amount, note, date, accountId, category }, t);
+      setAmount(r.amount); setNote(r.note); setDate(r.date);
+      onDone?.({ date, message: savedLine({ note, category, amount: minor, currency, date, today: t }) });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save");
     }
