@@ -2,6 +2,45 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V1.4.0 (2026-10-20)
+
+Faster everyday logging, mostly on the phone. Log several expenses in a row without leaving Add, pick the category with one tap, see who owes what before you save a split, and find an entry from any month. Deleting now asks for a second tap.
+
+No new kinds of data are stored, so an older copy of the app keeps working with everything here. Update both computers to get the new screens.
+
+Add:
+
+- After Save you stay on Add, with a line such as "Saved: Coffee ₱250.00. View". View opens the Ledger at that date. Amount, note, date, type, the split and Bill on next statement start fresh; account and category stay. A recurring or installment plan that starts later still opens the Ledger at its first payment.
+- Category is a row of buttons instead of a list. An entry whose category is not in Settings (a salary entry, a refund, a removed category) keeps it as an extra button.
+- Note is a full-width box ("What was it?") right after the category. Return in Note saves.
+- Split: pick who paid first. The modes then fit the payer: Even, They owe or Custom when you paid; Even, I owe or Custom when someone else did, so "You must be the payer" can no longer happen. A line under Mode says who owes whom ("Alex owes you ₱1,500.00") before you save, worked out the same way Save does.
+- Split, Custom when someone else paid: a new "You owe" box for your own share. Before, your share was always zero in that case.
+- "50/50" is now called "Even", since it splits equally among everyone, also with three or more people.
+
+Ledger:
+
+- Split rows show your share under the amount, for example "yours ₱1,500.00". Day totals still show the full amount paid.
+- An upcoming payment that is in the "Next 30 days" list is no longer also listed above today. It shows in the day list on the day it happens.
+- Search all months: while searching or filtering by category, "Search all months" shows every match from your first entry to 30 days ahead, plan payments included, grouped by month.
+- The "Tap an entry to edit it" hint is gone. Rows still show their arrow.
+
+Safer and clearer:
+
+- Delete, End series and Skip this one ask for a second tap ("Delete Coffee?"). Tapping elsewhere or waiting a few seconds cancels.
+- Dashboard: when you look at another month, a note says the cards, accounts and owed below show today's numbers.
+- Empty screens offer a way forward: "Add expense", "Search all months", or "Open Settings" when a transfer needs a second bank account.
+- The conflict choice reads "Keep GitHub's version", and "Re-pull" is now "Download again".
+
+Settings:
+
+- Leaving an account or card field without changing it no longer saves (and syncs) it again. A real change shows "Saved" for a moment.
+- After a change, the next field you tap in the same account keeps focus, so on the phone the keyboard stays up.
+
+Phones and computers:
+
+- On phones, the period arrows, Today, the segment buttons, switches and remove buttons are easier to tap, with nothing on screen moving.
+- On computers, Escape closes the top sheet, each sheet has a close button, and the keyboard focus ring shows on every control.
+
 ## V1.3.1 (2026-10-19)
 
 More of your money in one place. Record income besides your salary and move money between your own bank accounts. See all your recurring payments together, what is planned for the rest of the month and the months ahead, and a whole year at a glance. Split statements now show what each item cost in full.

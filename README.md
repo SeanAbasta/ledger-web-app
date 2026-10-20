@@ -5,7 +5,7 @@
 **A quiet, local-first expense tracker.**
 Log it, split it, see where the month and the year went.
 
-![Version](https://img.shields.io/badge/version-1.3.1-0A84FF?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.4.0-0A84FF?style=flat-square)
 ![Status](https://img.shields.io/badge/status-in%20use-10B981?style=flat-square)
 ![React](https://img.shields.io/badge/React-TypeScript-3B82F6?style=flat-square)
 ![Local first](https://img.shields.io/badge/data-local--first-10B981?style=flat-square)
@@ -32,13 +32,14 @@ It runs in the browser, keeps your data on your own device first, and syncs betw
 
 ## What it does
 
-Ledger has six screens. Everything below is in the current release, V1.3.1.
+Ledger has six screens. Everything below is in the current release, V1.4.0.
 
 ### Add
 
 One small card with a switch at the top: **Expense**, **Income** or **Transfer**.
 
-- **Expense:** amount, currency, category, note, date and account. Make it one-off, recurring (weekly, monthly, yearly) or an installment plan ("3 of 12"). Turn on **Split** to tap the people in it and who paid.
+- **Expense:** amount, currency, category (one tap), note, date and account. Make it one-off, recurring (weekly, monthly, yearly) or an installment plan ("3 of 12"). Turn on **Split** to tap the people in it and who paid, and see who owes what before you save.
+- After Save you stay on Add, ready for the next one, with a link to see it in the Ledger.
 - **Income:** money from other sources (Gift, Interest, Sale, Side Job, Spare Change, Other) into one of your bank accounts, in that account's currency. Salary lives on Forecast.
 - **Transfer:** move money between two of your bank accounts in the same currency. Your total stays the same.
 - Default accounts and a default category, or start with the last ones you used on this device.
@@ -47,8 +48,8 @@ One small card with a switch at the top: **Expense**, **Income** or **Transfer**
 
 Your history, newest first.
 
-- Day, Week and Month views, Search, a category filter, and a Today button (or press T on a computer).
-- Every row shows what it was, its category colour and tags (split, refund, recurring, "7 of 12", upcoming). Money in is green with a plus; money out is plain.
+- Day, Week and Month views, Search, a category filter, and a Today button (or press T on a computer). Search one period or all months.
+- Every row shows what it was, its category colour and tags (split, refund, recurring, "7 of 12", upcoming). Money in is green with a plus; money out is plain. Split rows also show your share.
 - Upcoming plan payments show on their own dates, and the period that holds today has a short "Next 30 days" list.
 - Tap anything to edit it: expenses, income, refunds, transfers and card payments. For a recurring payment, change one payment or this and every later one, skip one, or end the series.
 - Refund a card expense from its edit sheet.
@@ -234,11 +235,12 @@ Back up now and then with Settings, **Backup file**. The data repo's history is 
 
 ## Status
 
-Ledger is deployed and in daily use. Sync between a Mac and a Windows PC has been confirmed against a real GitHub repo. The latest release is **V1.3.1**. It is still a personal project, so keep a backup.
+Ledger is deployed and in daily use. Sync between a Mac and a Windows PC has been confirmed against a real GitHub repo. The latest release is **V1.4.0**. It is still a personal project, so keep a backup.
 
 | Version | Highlights |
 |---|---|
-| **V1.3.1** | One-off income, transfers between bank accounts, Recurring list, planned spending in the chart, Year report, full prices on split statements |
+| **V1.4.0** | Faster logging: stay on Add, category buttons, split preview, search all months, your share on split rows, a second tap to delete |
+| V1.3.1 | One-off income, transfers between bank accounts, Recurring list, planned spending in the chart, Year report, full prices on split statements |
 | V1.3.0 | Tap to pick people in splits, Ledger category filter, Dashboard account filter, tap the chart for a breakdown, Forecast chart for 3, 6 or 12 months |
 | V1.2.4 | Safer removing of accounts and cards (move, restore, fix), edit card payments, salary "Paid into" |
 | V1.2.2 | A new look: grouped background, rounded figures, bottom tab bar on phones, card colours |
