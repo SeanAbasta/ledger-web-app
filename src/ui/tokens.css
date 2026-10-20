@@ -79,12 +79,26 @@
   /* Width of the content column on big screens; lists read better narrower. */
   --content-max: 1120px;
   --reading-max: 760px;
-  /* Bars that content scrolls under: the page colour, slightly see-through, blurred behind. */
-  --bar-bg: rgba(226, 229, 233, 0.94);
+  /* The smoked lens: the top bar and the phone tab bar are smoked glass in both themes, like a camera's
+     top plate, and solid #16181c (the theme-color) without blur. Computers get an anodized rail. */
+  --lens: rgba(22, 24, 28, 0.93);
+  --lens-solid: #16181c;
+  --lens-ink: #f2f3f5; /* 13.5:1 on the lens */
+  --lens-mute: #a3a9b1; /* 6.6:1 */
+  --lens-key: #3a3d44; /* the active tab, a raised key */
+  --lens-key-edge: inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  --lens-edge: inset 0 -0.5px 0 rgba(255, 255, 255, 0.12), 0 1px 0 rgba(0, 0, 0, 0.18);
+  --lens-focus: #8cb4ff;
+  --lens-ok: #7be3a0; --lens-ok-bg: rgba(79, 209, 122, 0.16);
+  --lens-sync: #a9c6ff; --lens-sync-bg: rgba(140, 180, 255, 0.16);
+  --lens-off: #c3c8cf; --lens-off-bg: rgba(255, 255, 255, 0.1);
+  --lens-pend: #f5c36e; --lens-pend-bg: rgba(240, 168, 48, 0.18);
+  --bar-bg: var(--lens);
   --bar-h: 52px;
-  --side-bg: rgba(251, 251, 252, 0.6);
-  --tab-bg: rgba(251, 251, 252, 0.94);
-  --tab-shadow: 0 8px 30px rgba(17, 19, 22, 0.16);
+  --side-bg: linear-gradient(180deg, #1c1e23, #121317);
+  --tab-bg: rgba(24, 26, 30, 0.95);
+  --tab-edge: inset 0 1px 0 rgba(255, 255, 255, 0.16), inset 0 0 0 0.5px rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+  --tab-shadow: 0 14px 34px rgba(5, 8, 16, 0.34), 0 2px 6px rgba(5, 8, 16, 0.2);
   --tabbar-h: 62px; /* phone tab bar, for the space kept free under the content */
   /* Stacking: pinned day headers < top bar < phone tab bar < sheets. */
   --z-day: 2;
@@ -122,10 +136,7 @@
   --card-shadow: none;
   --plate: linear-gradient(180deg, #1d1f24, #17191d);
   --plate-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 0 0 0.5px rgba(255, 255, 255, 0.05), 0 12px 28px -14px rgba(0, 0, 0, 0.8);
-  --bar-bg: rgba(11, 12, 14, 0.92);
-  --side-bg: rgba(26, 28, 32, 0.6);
-  --tab-bg: rgba(28, 30, 34, 0.94);
-  --tab-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  --tab-shadow: 0 14px 34px rgba(0, 0, 0, 0.6), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
   --t-red: #f07068; --t-orange: #f0a04e; --t-yellow: #e6c24a; --t-green: #5cc27f; --t-mint: #4cc7b0; --t-teal: #4ac2c4; --t-cyan: #5ab8e6;
   --t-blue: #6aa0f5; --t-indigo: #8c8ff0; --t-purple: #b48af0; --t-pink: #f07aa0; --t-brown: #c2a27e; --t-gray: #9aa0a8;
   --surface: #1a1c20;
@@ -170,14 +181,16 @@ input, select, textarea { caret-color: var(--accent-ink); }
   align-self: start;
   height: 100vh;
   background: var(--side-bg);
-  border-right: 0.5px solid var(--line);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06);
+  color: var(--lens-mute);
+  --focus: var(--lens-focus);
   padding: var(--sp-4) 10px;
   padding-left: max(10px, env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-.brand { font-weight: 600; font-size: var(--fs-base); padding: 4px 10px 14px; }
+.brand { font-weight: 600; font-size: var(--fs-base); padding: 4px 10px 14px; color: var(--lens-ink); }
 .side button {
   all: unset;
   display: flex;
@@ -189,7 +202,8 @@ input, select, textarea { caret-color: var(--accent-ink); }
 }
 .side .icon { width: 18px; height: 18px; flex: none; }
 .side button:focus-visible { outline: 2px solid var(--focus); }
-.side button.on { background: var(--accent-soft); color: var(--accent-ink); font-weight: 500; }
+.side button:hover { color: var(--lens-ink); }
+.side button.on { background: var(--lens-key); box-shadow: var(--lens-key-edge); color: #fff; font-weight: 500; }
 /* Big screens: the page content stays in a centred column (--col), the background fills the rest.
    The top bar and the banner span the width but line their contents up with that column. */
 main { --col: var(--content-max); }
@@ -215,15 +229,21 @@ main.reading { --col: var(--reading-max); }
   background: var(--bar-bg);
   -webkit-backdrop-filter: blur(20px) saturate(1.8);
   backdrop-filter: blur(20px) saturate(1.8);
-  border-bottom: 0.5px solid var(--line);
+  box-shadow: var(--lens-edge);
 }
+.bar { --focus: var(--lens-focus); }
 /* No blur available, or Reduce Transparency: a solid bar. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .bar::before { background: var(--bg); } }
-@media (prefers-reduced-transparency: reduce) { .bar::before { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; } }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { @media (max-width: 700px) { .side::before { background: var(--surface); } } }
-@media (max-width: 700px) and (prefers-reduced-transparency: reduce) { .side::before { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .bar::before { background: var(--lens-solid); } }
+@media (prefers-reduced-transparency: reduce) { .bar::before { background: var(--lens-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { @media (max-width: 700px) { .side::before { background: var(--lens-solid); } } }
+@media (max-width: 700px) and (prefers-reduced-transparency: reduce) { .side::before { background: var(--lens-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 @media (prefers-reduced-transparency: reduce) { .glasscard { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
-.bar h1 { font-size: var(--fs-lg); font-weight: 600; color: var(--ink); margin: 0; }
+.bar h1 { font-size: var(--fs-lg); font-weight: 600; color: var(--lens-ink); margin: 0; }
+/* The sync pill on the lens: its own tints, readable on the smoked glass in both themes. */
+.bar .pill { background: var(--lens-ok-bg); color: var(--lens-ok); }
+.bar .pill.syncing { background: var(--lens-sync-bg); color: var(--lens-sync); }
+.bar .pill.offline { background: var(--lens-off-bg); color: var(--lens-off); }
+.bar .pill.needs-sync { background: var(--lens-pend-bg); color: var(--lens-pend); }
 .body { padding: var(--sp-5) max(var(--gutter), env(safe-area-inset-right)) var(--sp-5) var(--gutter); }
 .win .body > * { max-width: var(--col); margin-inline: auto; } /* .win: outranks fieldset.plain's margin: 0 */
 .mute { color: var(--mute); }
@@ -414,7 +434,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
     background: var(--tab-bg);
     -webkit-backdrop-filter: blur(24px) saturate(1.8);
     backdrop-filter: blur(24px) saturate(1.8);
-    border: 0.5px solid var(--glass-line);
+    box-shadow: var(--tab-edge);
   }
   .side button {
     flex: 1 1 0;
@@ -425,7 +445,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
     border-radius: 22px;
     font-size: 10px;
     font-weight: 500;
-    color: var(--mute);
+    color: var(--lens-mute);
   }
   .side button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .side .icon { width: 22px; height: 22px; }

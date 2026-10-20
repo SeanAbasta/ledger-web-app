@@ -41,5 +41,5 @@ export function saveTheme(t: Theme, s: Storage | undefined = ls()): boolean {
 export function applyTheme(t: Theme) {
   const dark = resolveTheme(t, typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches) === "dark";
   document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#000000" : "#f2f2f7");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#16181c");
 }

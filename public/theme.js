@@ -16,7 +16,7 @@
     var dark = p === "dark" || (p === "auto" && !!mq && mq.matches);
     document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
     var m = document.querySelector('meta[name="theme-color"]');
-    if (m) m.setAttribute("content", dark ? "#000000" : "#f2f2f7");
+    if (m) m.setAttribute("content", "#16181c"); // the smoked top bar, the same in both themes
   }
   apply();
   if (mq && mq.addEventListener) mq.addEventListener("change", apply); // "auto" follows the system live
