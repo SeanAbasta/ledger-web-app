@@ -13,6 +13,7 @@ import { IncomeForm } from "../add/IncomeForm";
 import { PlanSheet } from "./PlanSheet";
 import { shareLine } from "./rowShare";
 import { NEXT_CARD_ROWS, cardVisible, nextCardKeys, withoutCardRows } from "./nextCard";
+import { allTimeRange, groupByDay, groupByMonth } from "./allTime";
 import { TransferForm } from "./TransferForm";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
@@ -59,6 +60,9 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
   const [refundAmt, setRefundAmt] = useState("");
   const [refundDate, setRefundDate] = useState(today());
   const [refundErr, setRefundErr] = useState("");
+  // "Search all months": while searching or filtering, look through every month instead of the period.
+  const [scope, setScope] = useState<"period" | "all">("period");
+  const [allData, setAllData] = useState<{ entries: Entry[]; rules: Rule[] }>();
 
   const [from, to] = periodOf(view, anchor);
   // The period whose data is on screen. The list keeps showing it until the next period has loaded,
@@ -84,7 +88,7 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
     return () => { stale = true; };
   }, [store, rev, from, to]);
 
-  const go = (d: Dir, next: (a: string) => string) => { dir.current = d; setAnchor(next); };
+  const go = (d: Dir, next: (a: string) => string) => { dir.current = d; setScope("period"); setAnchor(next); };
 
   const t = today();
   // "Next 30 days" counts from today, so it only shows on the period that holds today (it repeated upcoming rows elsewhere).
@@ -97,6 +101,24 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
   const items = useMemo(() => all.filter((it) => itemMatches(it, q, cat)), [all, q, cat]);
   const choices = useMemo(() => categoryChoices(all, categories, cat), [all, categories, cat]);
   const filtered = !!q.trim() || !!cat;
+  const allScope = scope === "all" && filtered;
+  // Clearing Search and the category goes back to the period.
+  useEffect(() => { if (!filtered) setScope("period"); }, [filtered]);
+  // Its own load and stale flag, so the period's slide and stale guard are untouched.
+  useEffect(() => {
+    if (scope !== "all") return;
+    let stale = false;
+    (async () => {
+      const [e, r] = await Promise.all([loadAllEntries(store), list(store, "rules")]);
+      if (!stale) setAllData({ entries: e, rules: r });
+    })();
+    return () => { stale = true; };
+  }, [store, rev, scope]);
+  const months = useMemo(() => {
+    if (!allScope || !allData) return undefined;
+    const range = allTimeRange(allData.entries, allData.rules, t);
+    return groupByMonth(range ? ledgerItems(allData.entries, allData.rules, range[0], range[1]).filter((it) => itemMatches(it, q, cat)) : []);
+  }, [allScope, allData, q, cat, t]);
   const upcoming = (it: LedgerItem) => it.type === "occurrence" && it.date > t;
   const due = useMemo(
     () => rules.flatMap((r) => occurrences(r, addDays(t, 1), addDays(t, 30))).sort((a, b) => (a.date < b.date ? -1 : 1)).filter((o) => o.kind === "expense"),
@@ -107,11 +129,7 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
   const showCard = cardVisible(listHasToday, due, filtered);
   const listed = useMemo(() => withoutCardRows(items, nextCardKeys(due, showCard)), [items, due, showCard]);
 
-  const groups = useMemo(() => {
-    const g = new Map<string, LedgerItem[]>();
-    for (const it of listed) g.set(it.date, [...(g.get(it.date) ?? []), it]);
-    return [...g.entries()];
-  }, [listed]);
+  const groups = useMemo(() => groupByDay(listed), [listed]);
 
   const accountName = (id?: string) => nameOf(id, accounts, "Removed account");
   const onCard = (e: Entry) => accounts.some((a) => a.id === e.accountId && !a.deleted && isCard(a));
@@ -154,10 +172,49 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
   // Money in (income, refunds, someone paying me back) is green with a plus; money out is plain.
   const moneyIn = (x: Entry | Occurrence) => x.kind === "income" || (x.kind === "settlement" && "direction" in x && x.direction === "in");
 
+  // One day: its pinned header with the day total, then its rows. Used by the period and by all months.
+  const dayBlock = (date: string, its: LedgerItem[]) => (
+    <div key={date}>
+      {/* The day stays pinned under the top bar while its rows scroll. */}
+      <div className="grp day">{labelDay(date)}<span className="r">{dayTotal(total(its))}</span></div>
+      <div className="card">
+        {its.map((it) => {
+          const x = it.type === "entry" ? it.entry : it.occ;
+          const b = toBase(x, base);
+          const transfer = it.type === "entry" && it.entry.kind === "transfer";
+          const later = upcoming(it);
+          const share = shareLine(it); // split rows: what it cost me (day totals stay the full amount)
+          return (
+            <button key={it.type === "entry" ? it.entry.id : it.occ.ruleId + it.date} className="row item" title="Edit" onClick={() => (it.type === "entry" ? (it.entry.kind === "settlement" || it.entry.kind === "transfer" ? setPaid(it.entry) : setEditing(it.entry)) : setOcc(it.occ))}>
+              {/* What it was first; then its colour, category (or the two accounts of a transfer) and tags. */}
+              <span className="main">
+                <span className="l1">{x.note || x.category || "Transfer"}</span>
+                <span className="l2">
+                  <i className={`dot tone-${categoryTone(x.category)}`} aria-hidden="true" />
+                  <span>{transfer ? `${accountName(it.entry.accountId)} to ${accountName(it.entry.toAccountId)}` : x.category || "Other"}</span>
+                  {x.split && <span className="tag">split</span>}
+                  {it.type === "entry" && it.entry.refund && <span className="tag">refund</span>}
+                  {it.type === "entry" && it.entry.nextBill && <span className="tag">next bill</span>}
+                  {it.type === "occurrence" && <span className="tag">{it.occ.type === "installment" ? `${it.occ.index} of ${it.occ.count}` : "recurring"}</span>}
+                  {later && <span className="tag">upcoming</span>}
+                </span>
+              </span>
+              <span className={later ? "money later" : moneyIn(x) ? "money in" : "money"}>
+                <span>{moneyIn(x) ? "+" : ""}{formatMinor(x.amount, x.currency)}</span>
+                {x.currency !== base && b !== undefined && <span className="approx">≈ {formatMinor(b, base)}</span>}
+                {share && <span className="share">{share}</span>}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   return (
     <>
       <div className="toolrow">
-        <Segmented value={view} options={VIEWS} onChange={(v) => { dir.current = 0; setView(v); }} />
+        <Segmented value={view} options={VIEWS} onChange={(v) => { dir.current = 0; setScope("period"); setView(v); }} />
         <span className="nav">
           <button aria-label="Previous" onClick={() => go(-1, (a) => shift(view, a, -1))}>‹</button>
           <button className="title" title="Go to today" onClick={goToday}>{title(view, anchor)}</button>
@@ -174,7 +231,25 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
       </div>
 
       {notice && <p className="mute small hint" role="status">{notice}</p>}
+      {filtered && (
+        <p className="mute small hint scopeline">
+          {allScope
+            ? <>In all months. <button type="button" className="link" onClick={() => setScope("period")}>Back to {title(view, shown.from)}</button></>
+            : <>In {title(view, shown.from)}. <button type="button" className="link" onClick={() => setScope("all")}>Search all months</button></>}
+        </p>
+      )}
 
+      {allScope ? (
+        // All months: outside the keyed period div, so it never slides; month headings, then the usual days.
+        months && (months.length === 0
+          ? <Empty icon={<LedgerIcon />} title="No matches" note={`Nothing${cat ? ` in ${cat}` : ""} in any month${q.trim() ? ` has "${q.trim()}"` : ""}`} />
+          : months.map(([m, days]) => (
+            <div key={m}>
+              <div className="grp month">{labelMonth(`${m}-01`)}</div>
+              {days.map(([date, its]) => dayBlock(date, its))}
+            </div>
+          )))
+      ) : (
       <div key={`${shown.from}/${shown.to}`} className={shown.dir === 1 ? "period next" : shown.dir === -1 ? "period prev" : "period"}>
       {showCard && (
         <>
@@ -193,44 +268,9 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
       {groups.length === 0 && (filtered
         ? <Empty icon={<LedgerIcon />} title="No matches" note={`Nothing${cat ? ` in ${cat}` : ""} in ${title(view, shown.from)}${q.trim() ? ` has "${q.trim()}"` : ""}`} />
         : <Empty icon={<LedgerIcon />} title="Nothing logged" note={title(view, shown.from)} />)}
-      {groups.map(([date, its]) => (
-        <div key={date}>
-          {/* The day stays pinned under the top bar while its rows scroll. */}
-          <div className="grp day">{labelDay(date)}<span className="r">{dayTotal(total(its))}</span></div>
-          <div className="card">
-            {its.map((it) => {
-              const x = it.type === "entry" ? it.entry : it.occ;
-              const b = toBase(x, base);
-              const transfer = it.type === "entry" && it.entry.kind === "transfer";
-              const later = upcoming(it);
-              const share = shareLine(it); // split rows: what it cost me (day totals stay the full amount)
-              return (
-                <button key={it.type === "entry" ? it.entry.id : it.occ.ruleId + it.date} className="row item" title="Edit" onClick={() => (it.type === "entry" ? (it.entry.kind === "settlement" || it.entry.kind === "transfer" ? setPaid(it.entry) : setEditing(it.entry)) : setOcc(it.occ))}>
-                  {/* What it was first; then its colour, category (or the two accounts of a transfer) and tags. */}
-                  <span className="main">
-                    <span className="l1">{x.note || x.category || "Transfer"}</span>
-                    <span className="l2">
-                      <i className={`dot tone-${categoryTone(x.category)}`} aria-hidden="true" />
-                      <span>{transfer ? `${accountName(it.entry.accountId)} to ${accountName(it.entry.toAccountId)}` : x.category || "Other"}</span>
-                      {x.split && <span className="tag">split</span>}
-                      {it.type === "entry" && it.entry.refund && <span className="tag">refund</span>}
-                      {it.type === "entry" && it.entry.nextBill && <span className="tag">next bill</span>}
-                      {it.type === "occurrence" && <span className="tag">{it.occ.type === "installment" ? `${it.occ.index} of ${it.occ.count}` : "recurring"}</span>}
-                      {later && <span className="tag">upcoming</span>}
-                    </span>
-                  </span>
-                  <span className={later ? "money later" : moneyIn(x) ? "money in" : "money"}>
-                    <span>{moneyIn(x) ? "+" : ""}{formatMinor(x.amount, x.currency)}</span>
-                    {x.currency !== base && b !== undefined && <span className="approx">≈ {formatMinor(b, base)}</span>}
-                    {share && <span className="share">{share}</span>}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+      {groups.map(([date, its]) => dayBlock(date, its))}
       </div>
+      )}
 
       {editing && (
         <Sheet locked onClose={() => setEditing(undefined)}>
