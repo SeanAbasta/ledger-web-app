@@ -24,6 +24,7 @@ import { Popover, usePopover } from "../../ui/Popover";
 import { DashboardIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
 import { useTodayKey } from "../../ui/useTodayKey";
+import { balanceNote } from "./balanceNote";
 import { CardTile } from "./CardTile";
 import { CardView } from "./CardView";
 import { FixSheet } from "./FixSheet";
@@ -190,6 +191,8 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
   const opened = cards.find((c) => c.card.id === openCard);
   // Named from the loaded numbers' filter, so the tag never sits over the previous filter's figures while loading.
   const acctName = v.acct === NO_ACCOUNT ? "No account or removed" : accounts.find((a) => a.id === v.acct)?.name;
+  // Named from what is loaded (month and filter), never the pickers, so it never sits over older numbers.
+  const note = balanceNote(v.from, today(), acctName);
 
   // Going back never slides the month in again.
   const back = () => { setV({ ...v, dir: 0 }); setOpenCard(undefined); setSub(undefined); };
@@ -307,7 +310,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
           </div>
         </div>
       )}
-      {acctName && <p className="mute small hint balnote">Filtered to {acctName}. Cards, accounts and owed below show everything.</p>}
+      {note && <p className="mute small hint balnote">{note}</p>}
       {cards.length > 0 && (
         <div className={`grid ${cards.length % 3 === 0 ? "g3" : "g2"}`}>
           {cards.map(({ card, st }) => <CardTile key={card.id} card={card} color={cardColor(card, accounts)} st={st} banks={banks} defaultBank={salaryAccount} defaults={defaults} onOpen={() => setOpenCard(card.id)} />)}
