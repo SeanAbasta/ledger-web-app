@@ -103,7 +103,11 @@ export function CardTile({ card, color, st, banks, defaultBank, defaults, onOpen
           <div className="usedrow">
             <div className={used >= 0.9 ? "usedbar high" : "usedbar"} role="meter" aria-label="Credit used" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(used * 100)} aria-valuetext={`${Math.round(used * 100)}% of the limit used`}>
               <i style={{ width: `${used > 0 ? Math.max(2, used * 100) : 0}%` }} />
+              <svg className="ticks" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                {[10, 20, 30, 40, 50, 60, 70, 80, 90].map((x) => <line key={x} x1={x} y1={0} x2={x} y2={10} />)}
+              </svg>
             </div>
+            <span className="usedcap" aria-hidden="true">{Math.round(used * 100)}% used</span>
           </div>
         </>
       )}

@@ -70,6 +70,8 @@
   --cell-3-ink: #111316;
   --cell-4: var(--accent);
   --cell-hi: rgba(255, 255, 255, 0.5);
+  --face-edge: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 -1px 0 rgba(0, 0, 0, 0.25), 0 6px 16px -8px rgba(5, 8, 16, 0.5);
+  --chip-metal: linear-gradient(135deg, #f3f4f6, #b9bec6);
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   /* Figures: set like an engraved readout, light display weight with the sign and centavos raised. */
   --fig: -apple-system, "SF Pro Display", BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
@@ -785,14 +787,18 @@ fieldset:disabled .pick { cursor: default; }
 
 /* Card tiles: the top is a card face in the card's colour (picked in Settings, src/ui/cardColor.ts),
    like Apple Wallet. Tapping it opens the per-card view. White text on the darker left of each gradient. */
-.face-blue { --face: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #60a5fa 100%); }
-.face-green { --face: linear-gradient(135deg, #065f46 0%, #059669 60%, #34d399 100%); }
-.face-purple { --face: linear-gradient(135deg, #4c1d95 0%, #7c3aed 60%, #a78bfa 100%); }
-.face-orange { --face: linear-gradient(135deg, #9a3412 0%, #ea580c 60%, #fb923c 100%); }
-.face-red { --face: linear-gradient(135deg, #7f1d1d 0%, #dc2626 60%, #f87171 100%); }
-.face-pink { --face: linear-gradient(135deg, #831843 0%, #db2777 60%, #f472b6 100%); }
-.face-teal { --face: linear-gradient(135deg, #134e4a 0%, #0d9488 60%, #2dd4bf 100%); }
-.face-graphite { --face: linear-gradient(135deg, #111827 0%, #374151 60%, #6b7280 100%); }
+/* Anodized card faces: the card's colour from its 800 shade to its 700 or 600 shade (whichever keeps
+   white text at 4.5:1 or more: blue 600 5.2:1, purple 600 5.7:1, red 600 4.8:1, pink 600 4.6:1, green
+   700 5.5:1, orange 700 5.2:1, teal 700 5.5:1, graphite 600 7.6:1), a bright chamfer along the top, an
+   engraved white name and a small metal chip. Settings' swatches use the same faces. */
+.face-blue { --face: linear-gradient(170deg, #1e40af 0%, #1d4ed8 45%, #2563eb 100%); }
+.face-green { --face: linear-gradient(170deg, #14532d 0%, #166534 45%, #15803d 100%); }
+.face-purple { --face: linear-gradient(170deg, #581c87 0%, #6b21a8 45%, #9333ea 100%); }
+.face-orange { --face: linear-gradient(170deg, #7c2d12 0%, #9a3412 45%, #c2410c 100%); }
+.face-red { --face: linear-gradient(170deg, #7f1d1d 0%, #991b1b 45%, #dc2626 100%); }
+.face-pink { --face: linear-gradient(170deg, #831843 0%, #9d174d 45%, #db2777 100%); }
+.face-teal { --face: linear-gradient(170deg, #134e4a 0%, #115e59 45%, #0f766e 100%); }
+.face-graphite { --face: linear-gradient(170deg, #111827 0%, #1f2937 45%, #4b5563 100%); }
 .cardhead {
   all: unset;
   box-sizing: border-box;
@@ -805,23 +811,31 @@ fieldset:disabled .pick { cursor: default; }
   padding: var(--sp-4);
   margin: 0 0 var(--sp-2);
   background: var(--face, var(--fill-2));
+  box-shadow: var(--face-edge);
   color: #fff;
 }
-/* a soft circle in the corner, for a little depth */
-.cardhead::after { content: ""; position: absolute; right: -30px; top: -40px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); pointer-events: none; }
+/* the metal chip, low on the right */
+.cardhead::after { content: ""; position: absolute; right: 16px; bottom: 16px; width: 34px; height: 24px; border-radius: var(--r-tag); background: var(--chip-metal); box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.3); opacity: 0.85; pointer-events: none; }
 .cardhead:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.cardhead .mute, .cardhead .chev { color: rgba(255, 255, 255, 0.82); }
+.cardhead .mute, .cardhead .chev { color: #fff; }
+.cardhead > .mute:first-child { font-weight: 600; letter-spacing: 0.02em; }
 .cardhead .chev { float: right; display: inline-flex; }
 .cardhead .chev .icon { width: 16px; height: 16px; }
 .cardhead .big { font-size: var(--fs-3xl); color: #fff; }
-.cardhead .big .cur, .cardhead .big .cents { color: rgba(255, 255, 255, 0.75); }
+.cardhead .big .cur, .cardhead .big .cents { color: #fff; }
+.cardhead .big.word { font-weight: 400; }
 /* Credit used: a bar under Credit left, in place of that row's divider; orange from 90%. */
 .row.credit { border-bottom: 0; padding-bottom: var(--sp-1); }
 .usedrow { padding: var(--sp-1) 0 var(--sp-3); border-bottom: 1px solid var(--line); }
 .usedrow:last-child { border-bottom: 0; }
-.usedbar { height: 6px; border-radius: 3px; background: var(--fill-2); overflow: hidden; }
-.usedbar i { display: block; height: 100%; border-radius: 3px; background: var(--accent-data); }
+/* Graduated every 10% (SVG lines drawn in the plate's colour, not stripes), with "N% used" after it. */
+.usedrow { display: flex; align-items: center; gap: var(--sp-2); }
+.usedbar { flex: 1; position: relative; height: 7px; border-radius: 4px; background: var(--fill-2); box-shadow: var(--input-edge); overflow: hidden; }
+.usedbar i { display: block; height: 100%; border-radius: 4px; background: var(--accent-data); }
 .usedbar.high i { background: var(--warn); }
+.usedbar .ticks { position: absolute; inset: 0; width: 100%; height: 100%; }
+.usedbar .ticks line { stroke: var(--surface); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.usedcap { flex: none; font-size: var(--fs-xs); color: var(--mute); }
 /* Settings: a card's colour. The swatches stay on one line and move under the label when narrow. */
 .field:has(> .swatches) { flex-wrap: wrap; row-gap: var(--sp-2); }
 .swatches { display: flex; gap: 6px; margin-left: auto; }
