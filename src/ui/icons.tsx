@@ -3,9 +3,9 @@ import type { ReactNode } from "react";
 // A small built-in icon set: inline SVG drawn in the text colour, so the strict CSP needs no icon font
 // or image files. Decorative only (aria-hidden); the label next to each icon carries the meaning.
 
-function Icon({ children }: { children: ReactNode }) {
+function Icon({ children, cls = "icon" }: { children: ReactNode; cls?: string }) {
   return (
-    <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+    <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
       {children}
     </svg>
   );
@@ -33,3 +33,8 @@ export const SettingsIcon = () => (
     <circle cx="12" cy="12" r="3" />
   </Icon>
 );
+
+// Small glyphs in the same stroke as the tab icons: period arrows, back links, row chevrons, close and remove.
+export const PrevIcon = () => <Icon cls="icon glyph"><path d="M14.5 6l-6 6 6 6" /></Icon>;
+export const NextIcon = () => <Icon cls="icon glyph"><path d="M9.5 6l6 6-6 6" /></Icon>;
+export const CloseIcon = () => <Icon cls="icon glyph"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" /></Icon>;

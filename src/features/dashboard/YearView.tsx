@@ -6,7 +6,7 @@ import { yearReport, type YearReport } from "../../data/ytd";
 import { BigAmount } from "../../ui/Amount";
 import { categoryTone } from "../../ui/categoryColor";
 import { Empty } from "../../ui/Empty";
-import { DashboardIcon } from "../../ui/icons";
+import { DashboardIcon, NextIcon, PrevIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
 import { Popover, usePopover } from "../../ui/Popover";
 
@@ -38,9 +38,9 @@ export function YearView() {
   const picker = (
     <div className="toolrow">
       <span className="nav">
-        <button aria-label="Previous year" onClick={() => setYear((y) => y - 1)}>‹</button>
+        <button aria-label="Previous year" onClick={() => setYear((y) => y - 1)}><PrevIcon /></button>
         <button className="title" title="Go to this year" onClick={() => setYear(thisYear)}>{year}</button>
-        <button aria-label="Next year" onClick={() => setYear((y) => y + 1)}>›</button>
+        <button aria-label="Next year" onClick={() => setYear((y) => y + 1)}><NextIcon /></button>
       </span>
     </div>
   );

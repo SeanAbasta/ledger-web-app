@@ -26,6 +26,7 @@ import { Segmented } from "../../ui/Segmented";
 import { AccountOptions } from "../../ui/AccountOptions";
 import { applyTheme, loadTheme, saveTheme, THEMES, type Theme } from "../../ui/theme";
 import { accountEdit, accountFieldsOf, cardEdit, cardFieldsOf, freshFields, plain, type AccountFields, type CardFields } from "./accountEdit";
+import { CloseIcon, PrevIcon } from "../../ui/icons";
 
 
 /** "Saved" for a moment next to a row's ✕ after a real change (the flag lives in Settings, so it survives the row reloading). */
@@ -59,7 +60,7 @@ function AccountRow({ a, base, saved, onSave, onRemove }: { a: Account; base: st
       <div className="acct">
         <input aria-label="Account name" value={name} onChange={(e) => setName(e.target.value)} {...track("name")} />
         <SavedTick on={saved} />
-        <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}>✕</button>
+        <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}><CloseIcon /></button>
       </div>
       <label className="field"><b>Currency</b>
         <select aria-label="Currency" value={currency} onChange={(e) => { setCurrency(e.target.value); commit({ currency: e.target.value }); }}>
@@ -106,7 +107,7 @@ function CardRow({ a, base, color, saved, onSave, onRemove }: { a: Account; base
       <div className="acct">
         <input aria-label="Card name" value={name} onChange={(e) => setName(e.target.value)} {...track("name")} />
         <SavedTick on={saved} />
-        <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}>✕</button>
+        <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}><CloseIcon /></button>
       </div>
       <label className="field"><b>Cut-off day</b><input aria-label="Cut-off day" inputMode="numeric" placeholder="1 to 31" value={day} onChange={(e) => setDay(e.target.value)} {...track("day")} /></label>
       <label className="field"><b>Days until due</b><input aria-label="Days from cut-off to due date" inputMode="numeric" value={dueDays} onChange={(e) => setDueDays(e.target.value)} {...track("dueDays")} /></label>
@@ -361,7 +362,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
 
   return (
     <div className="stack">
-      <div className="toolrow"><span className="nav"><button className="title" onClick={() => go()}>‹ Settings</button></span></div>
+      <div className="toolrow"><span className="nav"><button className="title back" onClick={() => go()}><PrevIcon />Settings</button></span></div>
       <h2 className="ptitle">{PAGES.find(([p]) => p === page)![1]}</h2>
       {page === "sync" && (
         <>
@@ -489,7 +490,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
                   <div key={p.id} className="acct">
                     <input aria-label="Name" defaultValue={p.name} onBlur={async (e) => { const n = e.target.value.trim(); if (n && n !== p.name) { await upsert(store, "people", { ...p, name: n }); changed(); markSaved(p.id); } }} />
                     <SavedTick on={!!savedIds[p.id]} />
-                    <button className="x" aria-label={`Remove ${p.name}`} onClick={() => askRemovePerson(p)}>✕</button>
+                    <button className="x" aria-label={`Remove ${p.name}`} onClick={() => askRemovePerson(p)}><CloseIcon /></button>
                   </div>
                 ))}
                 <form className="acct" onSubmit={async (e) => { e.preventDefault(); if (!person.trim()) return; await upsert(store, "people", { name: person.trim() }); setPerson(""); changed(); }}>
@@ -502,7 +503,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
               <div className="card pad">
                 <div className={`chips${editCats ? " editing" : ""}`}>
                   {s.categories.map((c) => (
-                    <span key={c} className="chip">{c}{editCats && <button type="button" aria-label={`Remove ${c}`} onClick={() => void save({ categories: s.categories.filter((x) => x !== c) })}>✕</button>}</span>
+                    <span key={c} className="chip">{c}{editCats && <button type="button" aria-label={`Remove ${c}`} onClick={() => void save({ categories: s.categories.filter((x) => x !== c) })}><CloseIcon /></button>}</span>
                   ))}
                 </div>
                 <form className="acct" onSubmit={async (e) => { e.preventDefault(); const n = cat.trim(); if (!n || s.categories.includes(n)) return; await save({ categories: [...s.categories, n] }); setCat(""); }}>

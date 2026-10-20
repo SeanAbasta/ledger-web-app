@@ -7,7 +7,7 @@ export function Gate() {
   if (status.state === "checking") {
     return (
       <div className="scrim" role="alertdialog" aria-label="Checking for updates">
-        <div className="glasscard sheet center">
+        <div className="glasscard sheet center gate">
           <div className="spinner" />
           <h3>Checking for updates…</h3>
           <p className="mute">Getting the latest from your other device.</p>
@@ -19,7 +19,7 @@ export function Gate() {
   if (status.state === "conflict") {
     return (
       <div className="scrim" role="alertdialog" aria-label="Two versions">
-        <div className="glasscard sheet center">
+        <div className="glasscard sheet center gate">
           <h3>Two versions</h3>
           <p className="mute">This device and GitHub both changed.</p>
           <button className="choice" onClick={() => void engine.resolve("local")}>Keep this device<small>Replace GitHub with what is here</small></button>

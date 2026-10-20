@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { dropSheet, isTopSheet, pushSheet, type SheetStack } from "./sheetStack";
+import { CloseIcon } from "./icons";
 import { useSync } from "./Sync";
 
 const OUT_MS = 200; // matches the closing transition in tokens.css
@@ -88,7 +89,7 @@ export function Sheet({ children, onClose, locked }: { children: ReactNode; onCl
     <div className={closing ? "scrim drawer closing" : "scrim drawer"} onMouseDown={(e) => e.target === e.currentTarget && dismiss()}>
       <div ref={box} className="glasscard sheet" role="dialog" aria-modal="true" tabIndex={-1}>
         <div className="grab" aria-hidden="true" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}><i /></div>
-        <button type="button" className="close" aria-label="Close" onClick={dismiss}>✕</button>
+        <button type="button" className="close" aria-label="Close" onClick={dismiss}><CloseIcon /></button>
         <fieldset className="plain" disabled={!!locked && readOnly}>{children}</fieldset>
       </div>
     </div>

@@ -12,6 +12,7 @@ import { useLedger } from "../../ui/Ledger";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Sheet } from "../../ui/Sheet";
+import { NextIcon } from "../../ui/icons";
 
 const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[^\d.]/g, "");
 
@@ -84,7 +85,7 @@ export function CardTile({ card, color, st, banks, defaultBank, defaults, onOpen
     <div className="card pad">
       {/* The top of the tile is the card face, in the card's colour; tapping it opens the per-card view. */}
       <button className={`cardhead face-${color}`} title="See what makes up these numbers" onClick={onOpen}>
-        <div className="mute">{card.name}<span className="chev">›</span></div>
+        <div className="mute">{card.name}<span className="chev"><NextIcon /></span></div>
         {st.remaining ? <BigAmount minor={st.remaining} currency={cur} /> : <BigAmount currency={cur} word={st.paid ? "Paid" : "Nothing due"} />}
         <div className="mute small">
           {st.statement ? `statement of ${labelShort(st.cutoff)}${st.paid ? `, ${fmt(st.statement)}` : ""}` : `no statement on ${labelShort(st.cutoff)}`}

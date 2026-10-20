@@ -21,7 +21,7 @@ import { cardColor } from "../../ui/cardColor";
 import { categoryTone } from "../../ui/categoryColor";
 import { Empty } from "../../ui/Empty";
 import { Popover, usePopover } from "../../ui/Popover";
-import { DashboardIcon } from "../../ui/icons";
+import { DashboardIcon, NextIcon, PrevIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
 import { useTodayKey } from "../../ui/useTodayKey";
 import { balanceNote } from "./balanceNote";
@@ -201,7 +201,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
     return (
       <>
         <div className="toolrow">
-          <span className="nav"><button className="title" onClick={back}>‹ Dashboard</button></span>
+          <span className="nav"><button className="title back" onClick={back}><PrevIcon />Dashboard</button></span>
         </div>
         {sub === "recurring" ? <RecurringView /> : <YearView />}
       </>
@@ -212,7 +212,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
     return (
       <>
         <div className="toolrow">
-          <span className="nav"><button className="title" onClick={back}>‹ Dashboard</button></span>
+          <span className="nav"><button className="title back" onClick={back}><PrevIcon />Dashboard</button></span>
         </div>
         <CardView card={opened.card} st={opened.st} bd={opened.bd} banks={banks} items={items} accounts={accounts} onOpenLedger={onOpenLedger} onOpenCard={() => onOpenCardSettings(opened.card.id)} />
       </>
@@ -223,9 +223,9 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
     <>
       <div className="toolrow">
         <span className="nav">
-          <button aria-label="Previous month" onClick={() => go(-1, (a) => addMonths(monthStart(a), -1))}>‹</button>
+          <button aria-label="Previous month" onClick={() => go(-1, (a) => addMonths(monthStart(a), -1))}><PrevIcon /></button>
           <button className="title" title="Go to this month" onClick={goToday}>{labelMonth(anchor)}</button>
-          <button aria-label="Next month" onClick={() => go(1, (a) => addMonths(monthStart(a), 1))}>›</button>
+          <button aria-label="Next month" onClick={() => go(1, (a) => addMonths(monthStart(a), 1))}><NextIcon /></button>
           <button className={monthStart(anchor) === monthStart(today()) ? "today off" : "today"} onClick={goToday}>Today</button>
         </span>
         <span className="subviews">

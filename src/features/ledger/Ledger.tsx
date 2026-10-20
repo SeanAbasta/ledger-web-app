@@ -22,7 +22,7 @@ import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
 import { categoryTone } from "../../ui/categoryColor";
 import { Empty } from "../../ui/Empty";
-import { LedgerIcon } from "../../ui/icons";
+import { LedgerIcon, NextIcon, PrevIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
 import { useTodayKey } from "../../ui/useTodayKey";
 
@@ -219,9 +219,9 @@ export function Ledger({ initialDate, notice, onAdd }: { initialDate?: string; n
       <div className="toolrow">
         <Segmented value={view} options={VIEWS} onChange={(v) => { dir.current = 0; setScope("period"); setView(v); }} />
         <span className="nav">
-          <button aria-label="Previous" onClick={() => go(-1, (a) => shift(view, a, -1))}>‹</button>
+          <button aria-label="Previous" onClick={() => go(-1, (a) => shift(view, a, -1))}><PrevIcon /></button>
           <button className="title" title="Go to today" onClick={goToday}>{title(view, anchor)}</button>
-          <button aria-label="Next" onClick={() => go(1, (a) => shift(view, a, 1))}>›</button>
+          <button aria-label="Next" onClick={() => go(1, (a) => shift(view, a, 1))}><NextIcon /></button>
           <button className={hasToday ? "today off" : "today"} onClick={goToday}>Today</button>
         </span>
         <span className="filters">

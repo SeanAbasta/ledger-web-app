@@ -36,7 +36,21 @@
   --plate: linear-gradient(180deg, #fdfdfe, #f7f8fa);
   --plate-shadow: inset 0 1px 0 #fff, inset 0 0 0 0.5px rgba(17, 19, 22, 0.07), 0 1px 1px rgba(17, 19, 22, 0.05), 0 10px 24px -14px rgba(20, 30, 50, 0.28);
   --surface: #fbfbfc; /* a plate, solid */
-  --seg-on: #fff;
+  /* Controls: a machined slot with a raised key, a polished bead, chamfered buttons, inset fields. */
+  --seg-track: #e6e8ec;
+  --seg-edge: inset 0 1px 2px rgba(17, 19, 22, 0.12), inset 0 0 0 0.5px rgba(17, 19, 22, 0.06);
+  --seg-on: linear-gradient(180deg, #fff, #f1f3f6);
+  --seg-on-edge: inset 0 1px 0 #fff, 0 1px 2px rgba(17, 19, 22, 0.18), 0 0 0 0.5px rgba(17, 19, 22, 0.1);
+  --btn-edge: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 -1px 0 rgba(0, 0, 0, 0.18), 0 1px 2px rgba(5, 8, 16, 0.3);
+  --ghost-edge: inset 0 1px 0 #fff, inset 0 0 0 0.5px rgba(17, 19, 22, 0.1);
+  --input-edge: inset 0 1px 2px rgba(17, 19, 22, 0.08);
+  --toggle-off: #c9cdd3;
+  --toggle-edge: inset 0 1px 2px rgba(17, 19, 22, 0.2), inset 0 0 0 0.5px rgba(17, 19, 22, 0.14);
+  --knob: radial-gradient(circle at 35% 30%, #fff, #e9ebee 70%, #d9dce1);
+  --knob-shadow: 0 1px 3px rgba(17, 19, 22, 0.35), inset 0 0 0 0.5px rgba(17, 19, 22, 0.12);
+  /* Drawn chevrons for rows and select boxes, tinted graphite (mask images take the colour from background). */
+  --chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 6l6 6-6 6'/%3E%3C/svg%3E");
+  --select-chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235a5f66' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3C/svg%3E");
   --fill: #eceef1; /* tracks and fields */
   --fill-2: #e6e8ec; /* tags, chips, quiet buttons */
   --fill-3: #c9cdd3; /* switch off, grab handle */
@@ -140,7 +154,18 @@
   --t-red: #f07068; --t-orange: #f0a04e; --t-yellow: #e6c24a; --t-green: #5cc27f; --t-mint: #4cc7b0; --t-teal: #4ac2c4; --t-cyan: #5ab8e6;
   --t-blue: #6aa0f5; --t-indigo: #8c8ff0; --t-purple: #b48af0; --t-pink: #f07aa0; --t-brown: #c2a27e; --t-gray: #9aa0a8;
   --surface: #1a1c20;
-  --seg-on: #3a3d44;
+  --seg-track: #121417;
+  --seg-edge: inset 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 0 0 0.5px rgba(255, 255, 255, 0.05);
+  --seg-on: linear-gradient(180deg, #3a3d44, #2c2f35);
+  --seg-on-edge: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 1px 2px rgba(0, 0, 0, 0.5);
+  --btn-edge: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 -1px 0 rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.5);
+  --ghost-edge: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --input-edge: inset 0 1px 2px rgba(0, 0, 0, 0.45);
+  --toggle-off: #3a3d44;
+  --toggle-edge: inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --knob: radial-gradient(circle at 35% 30%, #fff, #dfe2e6 70%, #c5c9cf);
+  --knob-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  --select-chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a1a7af' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3C/svg%3E");
   --fill: #25282d;
   --fill-2: #2a2d33;
   --fill-3: #4a4e55;
@@ -268,7 +293,11 @@ button { font: inherit; color: inherit; }
 input, select {
   font: inherit; color: inherit; background: var(--fill);
   border: 0; border-radius: var(--r-input); padding: 6px 10px; min-width: 0;
+  box-shadow: var(--input-edge);
 }
+/* Select boxes draw their own chevron (the system arrow differs on every platform). */
+select { -webkit-appearance: none; appearance: none; padding-right: 28px; background: var(--select-chev) right 8px center / 14px no-repeat, var(--fill); }
+.amt input { box-shadow: none; }
 input:focus, select:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
 /* Open lists: Chrome on Windows cannot draw the translucent --fill, so it falls back to white and the
    light text disappears. Opaque theme colours keep the list readable in light and dark. The closed
@@ -311,26 +340,30 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 @media (max-width: 480px) { .amt input { font-size: var(--fs-xl); } }
 .actions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-3); }
 .actions.wrap { flex-wrap: wrap; }
-.btn { background: var(--accent); color: var(--on-accent); border: 0; font-weight: 500; padding: 8px 18px; border-radius: 999px; cursor: pointer; }
-.btn.ghost { background: var(--fill-2); color: var(--ink); }
+.btn { background: var(--accent); color: var(--on-accent); border: 0; font-weight: 500; padding: 8px 18px; border-radius: 999px; cursor: pointer; box-shadow: var(--btn-edge); }
+.btn.ghost { background: var(--fill-2); color: var(--ink); box-shadow: var(--ghost-edge); }
 .btn.danger { color: var(--err); }
 /* Delete, Skip and End series after the first tap: filled, asking for a second tap. */
 .btn.armed.danger { background: var(--err-fill); color: #fff; }
-.seg { display: inline-flex; background: var(--fill-2); border-radius: var(--r-ctl); padding: 2px; }
+.seg { display: inline-flex; background: var(--seg-track); box-shadow: var(--seg-edge); border-radius: var(--r-ctl); padding: 2px; }
 .seg button { all: unset; padding: 4px 12px; border-radius: 8px; font-size: var(--fs-md); font-weight: 500; color: var(--mute); cursor: pointer; white-space: nowrap; }
 @media (max-width: 400px) { .seg button { padding: 4px 9px; } }
 /* A segmented control too wide for its row (split Mode on small phones) moves to its own line, right aligned. */
 .field:has(> .seg) { flex-wrap: wrap; row-gap: 6px; }
 .field > .seg { margin-left: auto; }
-.seg button.on { background: var(--seg-on); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
-.toggle { all: unset; width: 42px; height: 24px; border-radius: 999px; background: var(--fill-3); position: relative; cursor: pointer; }
-.toggle i { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: left 0.15s; }
+.seg button.on { background: var(--seg-on); color: var(--ink); box-shadow: var(--seg-on-edge); }
+.toggle { all: unset; width: 42px; height: 24px; border-radius: 999px; background: var(--toggle-off); box-shadow: var(--toggle-edge); position: relative; cursor: pointer; }
+.toggle i { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--knob); box-shadow: var(--knob-shadow); transition: transform 0.15s; }
 .toggle.on { background: var(--accent); }
-.toggle.on i { left: 20px; }
+.toggle.on i { transform: translateX(18px); }
 .toolrow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
 .nav { display: inline-flex; align-items: center; gap: 10px; color: var(--mute); }
-.nav button { all: unset; cursor: pointer; font-size: 18px; padding: 0 6px; }
+.nav button { all: unset; cursor: pointer; font-size: 18px; padding: 0 6px; display: inline-flex; align-items: center; }
 .nav button.title { font-size: inherit; padding: 0; }
+/* Drawn glyphs (src/ui/icons.tsx): the period arrows, back links, close and remove. */
+.icon.glyph { width: 18px; height: 18px; flex: none; }
+.nav button.back { gap: 2px; color: var(--accent-ink); font-weight: 500; }
+.nav button.back .icon { width: 17px; height: 17px; margin-left: -4px; }
 .nav button.today { font-size: var(--fs-sm); font-weight: 600; padding: 4px 11px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); }
 .nav button:focus-visible { outline: 2px solid var(--focus); border-radius: 6px; }
 /* The pill keeps its space while hidden, so the arrows never move under the pointer when it appears. */
@@ -384,7 +417,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 /* The sheet box takes focus on open (no ring: it is not a control). Wider screens get a ✕ at the top right. */
 .sheet { position: relative; }
 .sheet:focus { outline: none; }
-.sheet .close { all: unset; position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; color: var(--mute); background: var(--fill-2); cursor: pointer; }
+.sheet .close { all: unset; position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: var(--mute); background: var(--fill-2); box-shadow: var(--ghost-edge); cursor: pointer; }
 .sheet .close:hover { color: var(--ink); }
 .sheet > fieldset > h3:first-child { padding-right: 32px; }
 @keyframes fade-in { from { opacity: 0; } }
@@ -541,9 +574,9 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .row.whatif { border-bottom: 0; padding: 2px 0; font-size: var(--fs-sm); color: var(--mute); }
 .row.whatif.first { padding-top: var(--sp-2); }
 .choices { display: flex; gap: 6px; margin: 4px 0 2px; }
-.choice { all: unset; box-sizing: border-box; flex: 1; min-width: 0; text-align: center; padding: 7px 8px; border-radius: var(--r-ctl); background: var(--fill); border: 1px solid var(--line); cursor: pointer; font-size: var(--fs-md); font-weight: 500; }
+.choice { all: unset; box-sizing: border-box; flex: 1; min-width: 0; text-align: center; padding: 7px 8px; border-radius: var(--r-ctl); background: var(--fill); box-shadow: var(--input-edge); cursor: pointer; font-size: var(--fs-md); font-weight: 500; }
 .choice small { display: block; font-size: var(--fs-xs); font-weight: 400; color: var(--mute); overflow-wrap: anywhere; }
-.choice.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+.choice.on { box-shadow: inset 0 0 0 1.5px var(--accent-ink); background: var(--accent-soft); color: var(--accent-ink); }
 .choice.on small { color: var(--accent-ink); }
 .choice:focus-visible { outline: 2px solid var(--focus); }
 .btn:disabled { opacity: 0.4; cursor: default; }
@@ -564,10 +597,11 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 }
 .cardacct { padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
 .cardacct .field:last-of-type { border-bottom: 0; }
-.x { all: unset; cursor: pointer; color: var(--mute); padding: 4px 8px; border-radius: 6px; }
+.x { all: unset; cursor: pointer; color: var(--mute); padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; }
+.x .icon, .chip button .icon, .sheet .close .icon { width: 14px; height: 14px; }
 .x:hover { background: var(--fill-2); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.chip { background: var(--fill-2); border-radius: 999px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 2px; }
+.chip { background: var(--fill-2); box-shadow: var(--ghost-edge); border-radius: 999px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 2px; }
 /* Edit mode: a 32 px remove target per chip and more room between chips. */
 .chips.editing { gap: 10px; }
 .chips.editing .chip { padding: 0 0 0 12px; }
@@ -628,8 +662,9 @@ fieldset.plain:disabled { opacity: 0.55; }
 .check { width: 44px; height: 44px; border-radius: 50%; background: var(--good-soft); color: var(--good); display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 10px; }
 .spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--accent-soft); border-top-color: var(--accent-data); margin: 0 auto 12px; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.choice { display: block; width: 100%; padding: 10px; border-radius: var(--r-ctl); background: var(--choice); border: 1px solid var(--line); margin-bottom: 8px; font-weight: 500; cursor: pointer; }
-.choice small { display: block; color: var(--mute); font-weight: 400; }
+/* The Gate's conflict choices: full-width plates, one per line (scoped, so the Pay sheet keeps its own). */
+.gate .choice { display: block; width: 100%; padding: 10px; border-radius: var(--r-ctl); background: var(--choice); box-shadow: var(--ghost-edge); border: 1px solid var(--line); margin-bottom: 8px; font-weight: 500; text-align: center; }
+.gate .choice small { display: block; color: var(--mute); font-weight: 400; }
 .note { font-size: var(--fs-sm); color: var(--mute); text-align: left; background: var(--warn-soft); border-radius: var(--r-ctl); padding: 8px 10px; margin: 12px 0; }
 details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 .steps { margin: 6px 0 0; padding-left: 18px; }
@@ -642,9 +677,9 @@ details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 
 /* editing: clickable rows get a chevron */
 .row:not(.static) { align-items: center; }
-.row:not(.static)::after { content: "›"; color: var(--mute); opacity: 0.6; font-size: 18px; line-height: 1; }
+.row:not(.static)::after { content: ""; flex: none; width: 14px; height: 14px; background: var(--mute); opacity: 0.7; -webkit-mask: var(--chev) center / contain no-repeat; mask: var(--chev) center / contain no-repeat; }
 /* A row that edits a value in place (the card's due date) says "Change"; › means it opens a page. */
-.row.edit::after { content: "Change"; color: var(--accent-ink); opacity: 1; font-size: var(--fs-md); font-weight: 500; line-height: inherit; }
+.row.edit::after { content: "Change"; width: auto; height: auto; background: none; -webkit-mask: none; mask: none; color: var(--accent-ink); opacity: 1; font-size: var(--fs-md); font-weight: 500; line-height: inherit; }
 .hint { margin: 10px 0 0; }
 /* Ledger "Search all months": month headings above the usual day headers. */
 .grp.month { font-size: var(--fs-lg); margin-top: var(--sp-6); }
@@ -690,8 +725,8 @@ details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 .field.stack { flex-direction: column; align-items: stretch; gap: var(--sp-2); }
 .field.stack input.notefield { max-width: none; text-align: left; }
 .picks { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
-.pick { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; min-height: 32px; max-width: 100%; padding: 0 14px; border-radius: 999px; background: var(--fill-2); color: var(--ink); font-size: var(--fs-md); font-weight: 500; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pick.on { background: var(--accent); color: var(--on-accent); }
+.pick { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; min-height: 32px; max-width: 100%; padding: 0 14px; border-radius: 999px; background: var(--fill-2); box-shadow: var(--ghost-edge); color: var(--ink); font-size: var(--fs-md); font-weight: 500; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pick.on { background: var(--accent); color: var(--on-accent); box-shadow: var(--btn-edge); }
 .pick:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 fieldset:disabled .pick { cursor: default; }
 .addpick { display: flex; gap: var(--sp-2); align-items: center; }
@@ -726,7 +761,8 @@ fieldset:disabled .pick { cursor: default; }
 .cardhead::after { content: ""; position: absolute; right: -30px; top: -40px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); pointer-events: none; }
 .cardhead:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .cardhead .mute, .cardhead .chev { color: rgba(255, 255, 255, 0.82); }
-.cardhead .chev { float: right; }
+.cardhead .chev { float: right; display: inline-flex; }
+.cardhead .chev .icon { width: 16px; height: 16px; }
 .cardhead .big { font-size: var(--fs-3xl); color: #fff; }
 .cardhead .big .cur, .cardhead .big .cents { color: rgba(255, 255, 255, 0.75); }
 /* Credit used: a bar under Credit left, in place of that row's divider; orange from 90%. */
