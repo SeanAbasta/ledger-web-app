@@ -594,6 +594,9 @@ details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 /* A row that edits a value in place (the card's due date) says "Change"; › means it opens a page. */
 .row.edit::after { content: "Change"; color: var(--accent-ink); opacity: 1; font-size: var(--fs-md); font-weight: 500; line-height: inherit; }
 .hint { margin: 10px 0 0; }
+/* Split preview under Mode: one line per person, worked out live; a problem shows in its place. */
+.splitpreview { padding: var(--sp-2) 0; border-bottom: 1px solid var(--line); font-size: var(--fs-md); }
+.splitpreview p { margin: 2px 0; }
 /* Add tab after a save: "Saved: Coffee ₱250.00. View", under the Expense / Income / Transfer switch. */
 .savedline { margin: var(--sp-3) 0 0; text-align: center; font-size: var(--fs-md); color: var(--mute); }
 .savedline button.link { all: unset; cursor: pointer; color: var(--accent-ink); font-weight: 500; padding: 4px 2px; }

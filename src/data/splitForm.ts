@@ -90,7 +90,11 @@ export async function resolveNames(store: LedgerStore, names: string[], people: 
   return out;
 }
 
-/** The split to save. `named` are the typed names resolved to people; kept people always take part. */
+/**
+ * The split to save. `named` are the typed names resolved to people; kept people always take part.
+ * When someone else paid, Custom also carries my own share (the "You owe" field, key "me"); an empty one
+ * saves no share, as before.
+ */
 export function splitFromForm(f: SplitFormState, named: Person[], amount: Minor, currency: string, original?: { amount: Minor; split: Split }): Split {
   const ids = new Map<string, string>([...named.map((p) => [p.name.toLowerCase(), p.id] as const), ...f.kept.map((k) => [keptKey(k.id), k.id] as const)]);
   const share = (k: string, personId: string): SplitShare => ({ personId, amount: parseMinor(f.custom[k] ?? "0", currency) ?? 0 });
@@ -100,6 +104,6 @@ export function splitFromForm(f: SplitFormState, named: Person[], amount: Minor,
     paidBy: f.paidBy === "me" ? "me" : ids.get(f.paidBy) ?? "me",
     mode: f.mode,
     people: [...named.map((p) => p.id), ...f.kept.map((k) => k.id)],
-    custom: [...named.map((p) => share(p.name.toLowerCase(), p.id)), ...f.kept.map((k) => share(keptKey(k.id), k.id))],
+    custom: [...named.map((p) => share(p.name.toLowerCase(), p.id)), ...f.kept.map((k) => share(keptKey(k.id), k.id)), ...(f.paidBy === "me" ? [] : [share("me", "me")])],
   });
 }

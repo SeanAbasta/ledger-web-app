@@ -15,6 +15,7 @@ import { AccountOptions } from "../../ui/AccountOptions";
 import { MODE_LABEL } from "../../ui/splitLabels";
 import { CategoryChips } from "../../ui/CategoryChips";
 import { afterSave, opensLedger, savedLine } from "./afterSave";
+import { modeAfterPayer, modesFor, splitPreview } from "./splitPreview";
 import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
@@ -23,7 +24,6 @@ import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 type Kind = "one-off" | "recurring" | "installment";
 const KINDS = ["one-off", "recurring", "installment"] as const;
 const KIND_LABEL = { "one-off": "One-off", recurring: "Recurring", installment: "Installment" } as const;
-const MODES = ["they-owe", "i-owe", "half", "custom"] as const;
 const FREQ = ["weekly", "monthly", "yearly"] as const;
 const FREQ_LABEL = { weekly: "Weekly", monthly: "Monthly", yearly: "Yearly" } as const;
 
@@ -185,8 +185,19 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
   const tap = (n: string) => {
     const next = toggleName(names, n);
     setNames(next);
-    setPaidBy(payerAfter(paidBy, mode, next, kept));
+    const p = payerAfter(paidBy, mode, next, kept);
+    setPaidBy(p);
+    setMode(modeAfterPayer(mode, p));
   };
+  // Picking who paid swaps a mode that no longer fits (They owe and I owe), so no invalid pair can be saved.
+  const pickPayer = (k: string) => {
+    setPaidBy(k);
+    setMode(modeAfterPayer(mode, k));
+  };
+  // Who owes whom before Save, worked out by the same code Save uses.
+  const preview = split && entry?.kind !== "income"
+    ? splitPreview({ names, paidBy, mode, custom, kept }, amount, currency || settings.defaultCurrency, people, entry ? "one-off" : kind, count, entry?.split ? { amount: entry.amount, split: entry.split } : undefined)
+    : undefined;
   const add = () => {
     setNames(addName(names, newName, people));
     setNewName("");
@@ -256,19 +267,29 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
             <div className="field"><b>Also in this split</b>
               <span className="kept">{kept.map((k) => <span key={k.id}>{k.name}<span className="tag">removed</span></span>)}</span></div>
           )}
-          <div className="field"><b>Mode</b><Segmented value={mode} options={MODES} labels={MODE_LABEL} onChange={(m) => { setMode(m); setPaidBy(payerForMode(m, paidBy, names, kept)); }} /></div>
           <div className="field stack"><b>Paid by</b>
             <div className="picks" role="radiogroup" aria-label="Paid by">
               {[["me", "Me"] as const, ...picks, ...kept.map((k) => [keptKey(k.id), `${k.name} (removed)`] as const)].map(([k, n]) => (
-                <button key={k} type="button" role="radio" aria-checked={k === paidBy} className={k === paidBy ? "pick on" : "pick"} onClick={() => setPaidBy(k)}>{n}</button>
+                <button key={k} type="button" role="radio" aria-checked={k === paidBy} className={k === paidBy ? "pick on" : "pick"} onClick={() => pickPayer(k)}>{n}</button>
               ))}
             </div></div>
-          {mode === "custom" && picks.map(([k, n]) => (
+          {/* Only the modes that fit who paid: Even, They owe, Custom when I paid; Even, I owe, Custom when someone else did. */}
+          <div className="field"><b>Mode</b><Segmented value={mode} options={modesFor(paidBy)} labels={MODE_LABEL} onChange={(m) => { setMode(m); setPaidBy(payerForMode(m, paidBy, names, kept)); }} /></div>
+          {/* Custom: what each person owes the payer. When someone else paid, my own share too; the payer owes nothing. */}
+          {mode === "custom" && paidBy !== "me" && (
+            <label className="field"><b>You owe</b><MoneyInput value={custom.me ?? ""} onChange={(v) => setCustom({ ...custom, me: v })} currency={currency} /></label>
+          )}
+          {mode === "custom" && picks.filter(([k]) => k !== paidBy).map(([k, n]) => (
             <label className="field" key={k}><b>{n} owes</b><MoneyInput value={custom[k] ?? ""} onChange={(v) => setCustom({ ...custom, [k]: v })} currency={currency} /></label>
           ))}
-          {mode === "custom" && kept.map((k) => (
+          {mode === "custom" && kept.filter((k) => keptKey(k.id) !== paidBy).map((k) => (
             <label className="field" key={k.id}><b>{k.name} owes<span className="tag">removed</span></b><MoneyInput value={custom[keptKey(k.id)] ?? ""} onChange={(v) => setCustom({ ...custom, [keptKey(k.id)]: v })} currency={currency} /></label>
           ))}
+          {preview && (
+            <div className="splitpreview" aria-live="polite">
+              {"error" in preview ? <p className="err">{preview.error}</p> : preview.lines.map((l, i) => <p key={i}>{l}</p>)}
+            </div>
+          )}
         </>
       )}
 

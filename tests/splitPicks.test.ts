@@ -100,3 +100,53 @@ describe("saving after taps", () => {
     expect((await list(store, "people")).map((p) => p.name).sort()).toEqual(["Alex", "Jordan", "Taylor"]);
   });
 });
+
+describe("Custom when someone else paid: my own share (You owe)", () => {
+  const alex = person("P-ALEX", "Alex");
+  const sam = person("P-SAM", "Sam");
+  const people = [alex, sam];
+  const f = (custom: Record<string, string>, paidBy = "alex") => ({ names: "Alex, Sam", paidBy, mode: "custom" as const, custom, kept: [] });
+
+  it("saves my share and Sam's when Alex paid", () => {
+    const split = splitFromForm(f({ me: "1000", sam: "500" }), people, 300000, "PHP");
+    expect(split.paidBy).toBe(alex.id);
+    expect(split.shares).toEqual([{ personId: sam.id, amount: 50000 }, { personId: "me", amount: 100000 }]);
+  });
+
+  it("my share of it is what I owe", async () => {
+    const { myShare } = await import("../src/data/splits");
+    const split = splitFromForm(f({ me: "1000", sam: "500" }), people, 300000, "PHP");
+    expect(myShare(300000, split)).toBe(100000);
+  });
+
+  it("I owe Alex my share and Sam's share never touches me", async () => {
+    const { personLines } = await import("../src/data/balances");
+    const split = splitFromForm(f({ me: "1000", sam: "500" }), people, 300000, "PHP");
+    const entry = { id: "E1", kind: "expense" as const, date: "2026-10-12", amount: 300000, currency: "PHP", category: "Food", note: "Dinner", split, createdAt: "2026-10-12T00:00:00Z", updatedAt: "2026-10-12T00:00:00Z" };
+    const items = [{ type: "entry" as const, date: entry.date, entry }];
+    expect(personLines(alex.id, items).map((l) => l.amount)).toEqual([-100000]);
+    expect(personLines(sam.id, items)).toEqual([]);
+  });
+
+  it("an empty You owe saves no share for me, as before", () => {
+    expect(splitFromForm(f({ sam: "500" }), people, 300000, "PHP").shares).toEqual([{ personId: sam.id, amount: 50000 }]);
+    expect(splitFromForm(f({ me: "", sam: "500" }), people, 300000, "PHP").shares).toEqual([{ personId: sam.id, amount: 50000 }]);
+  });
+
+  it("You owe plus the others over the amount is still refused", () => {
+    expect(() => splitFromForm(f({ me: "2000", sam: "1500" }), people, 300000, "PHP")).toThrow("Custom shares exceed the amount");
+  });
+
+  it("opening and saving the entry unchanged keeps the stored split", () => {
+    const stored = splitFromForm(f({ me: "1000", sam: "500" }), people, 300000, "PHP");
+    const form = splitFormOf(stored, "PHP", people, people);
+    expect(form.custom.me).toBe("1000.00");
+    expect(splitFromForm(form, people, 300000, "PHP", { amount: 300000, split: stored })).toBe(stored);
+  });
+
+  it("a split I paid never gets a share for me", () => {
+    const split = splitFromForm(f({ me: "1000", alex: "500" }, "me"), people, 300000, "PHP");
+    expect(split.paidBy).toBe("me");
+    expect(split.shares).toEqual([{ personId: alex.id, amount: 50000 }]);
+  });
+});
