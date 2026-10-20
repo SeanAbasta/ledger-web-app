@@ -176,7 +176,7 @@ input, select, textarea { caret-color: var(--accent-ink); }
   cursor: pointer;
 }
 .side .icon { width: 18px; height: 18px; flex: none; }
-.side button:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); }
+.side button:focus-visible { outline: 2px solid var(--focus); }
 .side button.on { background: var(--accent-soft); color: var(--accent-ink); font-weight: 500; }
 /* Big screens: the page content stays in a centred column (--col), the background fills the rest.
    The top bar and the banner span the width but line their contents up with that column. */
@@ -237,7 +237,7 @@ input, select {
   font: inherit; color: inherit; background: var(--fill);
   border: 0; border-radius: 8px; padding: 6px 10px; min-width: 0;
 }
-input:focus, select:focus { outline: 2px solid rgba(10, 132, 255, 0.45); }
+input:focus, select:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
 /* Open lists: Chrome on Windows cannot draw the translucent --fill, so it falls back to white and the
    light text disappears. Opaque theme colours keep the list readable in light and dark. The closed
    select keeps its own background. */
@@ -299,7 +299,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .nav button { all: unset; cursor: pointer; font-size: 18px; padding: 0 6px; }
 .nav button.title { font-size: inherit; padding: 0; }
 .nav button.today { font-size: var(--fs-sm); font-weight: 600; padding: 4px 11px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); }
-.nav button:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); border-radius: 6px; }
+.nav button:focus-visible { outline: 2px solid var(--focus); border-radius: 6px; }
 /* The pill keeps its space while hidden, so the arrows never move under the pointer when it appears. */
 .nav button.today.off { visibility: hidden; }
 .search { width: 150px; }
@@ -316,7 +316,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .ybars { position: relative; display: flex; align-items: stretch; gap: 4px; height: 180px; margin-top: var(--sp-2); }
 .ybars::after { content: ""; position: absolute; left: 0; right: 0; bottom: 26px; border-top: 1px solid var(--line); pointer-events: none; }
 .ybar { all: unset; box-sizing: border-box; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; cursor: pointer; border-radius: 6px; }
-.ybar:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); }
+.ybar:focus-visible { outline: 2px solid var(--focus); }
 .ybar .yfill { flex: 1; display: flex; align-items: flex-end; justify-content: center; }
 .ybar .yfill i { display: block; width: 100%; max-width: 22px; border-radius: 4px 4px 2px 2px; background: var(--accent-data); opacity: 0.45; }
 .ybar.now .yfill i { opacity: 1; }
@@ -457,7 +457,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .legend li { min-width: 0; }
 /* Legend rows are buttons: they open the category's breakdown (hover, tap or keyboard). */
 .legend button { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: var(--sp-2); width: 100%; padding: 3px 0; min-width: 0; cursor: pointer; border-radius: 6px; }
-.legend button:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); outline-offset: 2px; }
+.legend button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 @media (max-width: 700px) { .legend button { min-height: 44px; } }
 .donut .seg { cursor: pointer; }
 .legend .r { margin-left: auto; color: var(--mute); }
@@ -512,7 +512,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .choice small { display: block; font-size: var(--fs-xs); font-weight: 400; color: var(--mute); overflow-wrap: anywhere; }
 .choice.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
 .choice.on small { color: var(--accent-ink); }
-.choice:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); }
+.choice:focus-visible { outline: 2px solid var(--focus); }
 .btn:disabled { opacity: 0.4; cursor: default; }
 .pos { color: var(--good-ink); }
 .snap { width: 100%; border-radius: 12px; display: block; }
@@ -540,10 +540,10 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .chips.editing .chip { padding: 0 0 0 12px; }
 .chip button { all: unset; cursor: pointer; color: var(--mute); width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
 .grp button.link { all: unset; cursor: pointer; color: var(--accent-ink); font-size: var(--fs-md); font-weight: 500; letter-spacing: 0; text-transform: none; }
-.grp button.link:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); border-radius: 6px; }
+.grp button.link:focus-visible { outline: 2px solid var(--focus); border-radius: 6px; }
 fieldset:disabled .grp button.link { opacity: 0.5; cursor: default; }
 .row button.link { all: unset; cursor: pointer; color: var(--accent-ink); font-weight: 500; margin-left: var(--sp-2); }
-.row button.link:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); border-radius: 6px; }
+.row button.link:focus-visible { outline: 2px solid var(--focus); border-radius: 6px; }
 .fixlist { max-height: 40vh; overflow-y: auto; margin: var(--sp-3) 0; }
 .line { stroke: var(--accent-data); }
 /* Forecast projected balance: SVG line, HTML dots, labels and tap targets placed in percent. */
@@ -570,7 +570,7 @@ fieldset:disabled .grp button.link { opacity: 0.5; cursor: default; }
 .fval.end.below { transform: translate(-100%, 50%); }
 .fhit { all: unset; position: absolute; top: 0; bottom: 0; cursor: pointer; border-radius: 6px; -webkit-tap-highlight-color: transparent; }
 .fhit:hover, .fhit[aria-expanded="true"] { background: var(--fill); }
-.fhit:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); outline-offset: -2px; }
+.fhit:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .flabs { grid-column: 2; position: relative; height: 18px; margin-top: var(--sp-1); font-size: var(--fs-xs); color: var(--mute); }
 .flab { position: absolute; transform: translateX(-50%); white-space: nowrap; }
 .flab.start { transform: none; }
@@ -659,7 +659,7 @@ details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 .picks { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .pick { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; min-height: 32px; max-width: 100%; padding: 0 14px; border-radius: 999px; background: var(--fill-2); color: var(--ink); font-size: var(--fs-md); font-weight: 500; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pick.on { background: var(--accent); color: var(--on-accent); }
-.pick:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); outline-offset: 2px; }
+.pick:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 fieldset:disabled .pick { cursor: default; }
 .addpick { display: flex; gap: var(--sp-2); align-items: center; }
 .field .addpick input { flex: 1; min-width: 0; max-width: none; text-align: left; }
@@ -691,7 +691,7 @@ fieldset:disabled .pick { cursor: default; }
 }
 /* a soft circle in the corner, for a little depth */
 .cardhead::after { content: ""; position: absolute; right: -30px; top: -40px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255, 255, 255, 0.08); pointer-events: none; }
-.cardhead:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.6); outline-offset: 2px; }
+.cardhead:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .cardhead .mute, .cardhead .chev { color: rgba(255, 255, 255, 0.82); }
 .cardhead .chev { float: right; }
 .cardhead .big { font-size: var(--fs-3xl); color: #fff; }
@@ -708,7 +708,7 @@ fieldset:disabled .pick { cursor: default; }
 .swatches { display: flex; gap: 6px; margin-left: auto; }
 .swatch { all: unset; box-sizing: border-box; width: 28px; height: 28px; border-radius: 50%; background: var(--face); cursor: pointer; }
 .swatch.on { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
-.swatch:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.6); outline-offset: 3px; }
+.swatch:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 fieldset:disabled .swatch { cursor: default; }
 /* Settings sub-page title, same size as the per-card view's */
 .ptitle { font-size: var(--fs-xl); font-weight: 600; margin: var(--sp-3) 0 0; }
@@ -771,9 +771,9 @@ button.row:active:not(:disabled), .cardhead:active, .legend button:active { opac
    keyboard only, never on a tap or click). Rows draw it inside, since they fill their card. */
 .seg button:focus-visible, .toggle:focus-visible, .x:focus-visible, .who:focus-visible, .btn:focus-visible,
 button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visible {
-  outline: 2px solid rgba(10, 132, 255, 0.45); outline-offset: 2px;
+  outline: 2px solid var(--focus); outline-offset: 2px;
 }
-.row:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); outline-offset: -2px; border-radius: 10px; }
+.row:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; border-radius: 10px; }
 /* Phones: 44 px tap areas without moving anything. An invisible ::before grows the hit area of the
    period arrows and Today (44 x 44), segment buttons (44 tall, at most 9 px above and below), switches
    (62 x 44) and remove buttons (44 x 44). The arrows sit 14 px from the title so their areas stop short of it. */
