@@ -88,7 +88,7 @@ export function IncomeForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?:
         <span className="cur mute">{currency}</span>
       </div>
       <div className="field stack"><b>Category</b><CategoryChips list={SIDE_INCOME} value={category} onChange={setCategory} /></div>
-      <label className="field"><b>Note</b><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" /></label>
+      <label className="field stack"><b>Note</b><input className="notefield" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What was it?" /></label>
       <label className="field"><b>Date</b><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
       {(banks.length > 0 || kept) && (
         <label className="field"><b>Paid into</b>

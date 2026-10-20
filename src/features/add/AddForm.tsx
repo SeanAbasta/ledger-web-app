@@ -195,7 +195,8 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
         <label className="field"><b>Rate</b><input placeholder={`${settings.baseCurrency} per 1 ${currency}`} inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} /></label>
       )}
       <div className="field stack"><b>Category</b><CategoryChips list={settings.categories} value={category} onChange={setCategory} /></div>
-      <label className="field"><b>Note</b><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" /></label>
+      {/* Full width right after the category: every expense gets a note, and it is the row's title in the Ledger. */}
+      <label className="field stack"><b>Note</b><input className="notefield" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What was it?" /></label>
       <label className="field"><b>{kind === "one-off" ? "Date" : "Starts"}{card && validDate && cutoffFor(card, date) === date && <span className="tag">statement day</span>}</b><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
       {accounts.length > 0 && (
         <label className="field"><b>Account{!entry && !someoneElsePaid && accountId && accountId === startAcct.id && <span className="tag">{startAcct.from}</span>}</b>

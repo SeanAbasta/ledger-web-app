@@ -628,6 +628,7 @@ details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 /* Split People and Paid by: tap to pick. The label sits on top and the chips wrap under it.
    Picked chips are filled with the accent; phones get 44 px tall targets. */
 .field.stack { flex-direction: column; align-items: stretch; gap: var(--sp-2); }
+.field.stack input.notefield { max-width: none; text-align: left; }
 .picks { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .pick { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; min-height: 32px; max-width: 100%; padding: 0 14px; border-radius: 999px; background: var(--fill-2); color: var(--ink); font-size: var(--fs-md); font-weight: 500; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pick.on { background: var(--accent); color: #fff; }
