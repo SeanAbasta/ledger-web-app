@@ -24,7 +24,7 @@ describe("shareLine", () => {
     expect(shareLine(entry(200000, buildSplit({ amount: 200000, paidBy: "alex", mode: "i-owe", people: ["alex"] })))).toBe("yours ₱2,000.00");
   });
   it("a plan payment uses its own split", () => {
-    const rule: Rule = { id: "R1", type: "recurring", kind: "expense", amount: 100000, currency: "PHP", category: "Bills", note: "Internet", frequency: "monthly", start: "2026-10-05", split: buildSplit({ amount: 100000, paidBy: "me", mode: "half", people: ["alex"] }), updatedAt: "2026-10-01T00:00:00Z" };
+    const rule: Rule = { id: "R1", type: "recurring", kind: "expense", amount: 100000, currency: "PHP", category: "Bills", note: "Phone plan", frequency: "monthly", start: "2026-10-05", split: buildSplit({ amount: 100000, paidBy: "me", mode: "half", people: ["alex"] }), updatedAt: "2026-10-01T00:00:00Z" };
     const [occ] = ledgerItems([], [rule], "2026-10-01", "2026-10-31");
     expect(occ?.type).toBe("occurrence");
     expect(shareLine(occ!)).toBe("yours ₱500.00");

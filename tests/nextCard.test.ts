@@ -19,7 +19,7 @@ const rules = [
   plan("Rent", "2026-09-20"), // today's payment
   plan("Laptop", "2026-11-05", { type: "installment", count: 6, total: 600000, amount: 100000 }),
 ];
-const entries = [entry("Coffee", T), entry("Concert", "2026-10-28")]; // a future-dated one-off
+const entries = [entry("Coffee", T), entry("Dinner", "2026-10-28")]; // a future-dated one-off
 
 describe("Next 30 days card rows leave the day list", () => {
   it("lists the first five keys only while the card is visible", () => {
@@ -37,7 +37,7 @@ describe("Next 30 days card rows leave the day list", () => {
     const shown = withoutCardRows(items, nextCardKeys(due, cardVisible(true, due, false)));
     expect(names(items)).toContain("Phone@2026-10-25");
     expect(names(shown)).not.toContain("Phone@2026-10-25");
-    expect(names(shown)).toEqual(expect.arrayContaining(["Salary@2026-10-30", "Rent@2026-10-20", "Coffee", "Concert"]));
+    expect(names(shown)).toEqual(expect.arrayContaining(["Salary@2026-10-30", "Rent@2026-10-20", "Coffee", "Dinner"]));
     expect(shown).toHaveLength(items.length - 1);
   });
 

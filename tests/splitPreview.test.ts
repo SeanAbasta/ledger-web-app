@@ -60,13 +60,13 @@ describe("splitPreview", () => {
   });
 
   it("names a person not saved yet, without writing anything", () => {
-    expect(lines(splitPreview(form({ names: "Alex, Jo" }), "3000", "PHP", people, "one-off", "12"))).toEqual(["Alex owes you ₱1,000.00", "Jo owes you ₱1,000.00"]);
+    expect(lines(splitPreview(form({ names: "Alex, Sam" }), "3000", "PHP", [alex], "one-off", "12"))).toEqual(["Alex owes you ₱1,000.00", "Sam owes you ₱1,000.00"]);
   });
 
   it("names a removed person in the split as removed", () => {
-    const f = form({ names: "Alex", kept: [{ id: "K1", name: "Robin" }] });
-    expect(lines(splitPreview(f, "3000", "PHP", people, "one-off", "12"))).toEqual(["Alex owes you ₱1,000.00", "Robin (removed) owes you ₱1,000.00"]);
-    expect(lines(splitPreview({ ...f, paidBy: keptKey("K1"), mode: "i-owe" }, "3000", "PHP", people, "one-off", "12"))).toEqual(["You owe Robin (removed) ₱3,000.00"]);
+    const f = form({ names: "Alex", kept: [{ id: "K1", name: "Sam" }] });
+    expect(lines(splitPreview(f, "3000", "PHP", [alex], "one-off", "12"))).toEqual(["Alex owes you ₱1,000.00", "Sam (removed) owes you ₱1,000.00"]);
+    expect(lines(splitPreview({ ...f, paidBy: keptKey("K1"), mode: "i-owe" }, "3000", "PHP", [alex], "one-off", "12"))).toEqual(["You owe Sam (removed) ₱3,000.00"]);
   });
 
   it("an installment shows each payment's split", () => {

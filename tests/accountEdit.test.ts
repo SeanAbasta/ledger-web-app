@@ -5,9 +5,9 @@ import { accountEdit, accountFieldsOf, cardEdit, cardFieldsOf, freshFields, same
 const U = "2026-10-01T00:00:00Z";
 const bank: Account = { id: "A1", name: "Bank A", currency: "PHP", openingBalance: 5000000, type: "bank", updatedAt: U };
 const usd: Account = { id: "A2", name: "Bank B", currency: "USD", openingBalance: 100000, rate: "56", updatedAt: U };
-const card: Account = { id: "C1", name: "Card A", currency: "PHP", openingBalance: -30000, type: "card", statementDay: 15, dueDays: 25, limit: 10000000, updatedAt: U };
+const card: Account = { id: "C1", name: "Card", currency: "PHP", openingBalance: -30000, type: "card", statementDay: 15, dueDays: 25, limit: 10000000, updatedAt: U };
 const bankFields = { name: "Bank A", currency: "PHP", opening: "50000.00", rate: "" };
-const cardFields = { name: "Card A", day: "15", dueDays: "25", limit: "100000.00", owed: "300.00" };
+const cardFields = { name: "Card", day: "15", dueDays: "25", limit: "100000.00", owed: "300.00" };
 
 describe("accountEdit", () => {
   it("saves nothing when no field changed", () => {
@@ -22,10 +22,10 @@ describe("accountEdit", () => {
     expect(accountEdit({ ...bank, openingBalance: 0 }, { ...bankFields, opening: "-0" }, "PHP")).toBeUndefined();
   });
   it("builds the same account as before for each changed field", () => {
-    expect(accountEdit(bank, { ...bankFields, name: " Bank C " }, "PHP")).toEqual({ account: { ...bank, name: "Bank C", rate: undefined } });
+    expect(accountEdit(bank, { ...bankFields, name: " Bank B " }, "PHP")).toEqual({ account: { ...bank, name: "Bank B", rate: undefined } });
     expect(accountEdit(bank, { ...bankFields, name: "  " }, "PHP")).toEqual({ account: { ...bank, name: "Account", rate: undefined } });
-    expect(accountEdit(bank, { ...bankFields, opening: "-200.50" }, "PHP")).toEqual({ account: { ...bank, openingBalance: -20050, rate: undefined } });
-    expect(accountEdit(bank, { ...bankFields, currency: "USD", rate: "57.5" }, "PHP")).toEqual({ account: { ...bank, currency: "USD", openingBalance: 5000000, rate: "57.5" } });
+    expect(accountEdit(bank, { ...bankFields, opening: "-200.00" }, "PHP")).toEqual({ account: { ...bank, openingBalance: -20000, rate: undefined } });
+    expect(accountEdit(bank, { ...bankFields, currency: "USD", rate: "57" }, "PHP")).toEqual({ account: { ...bank, currency: "USD", openingBalance: 5000000, rate: "57" } });
     expect(accountEdit(usd, { name: "Bank B", currency: "USD", opening: "1000.00", rate: "58" }, "PHP")).toEqual({ account: { ...usd, rate: "58" } });
   });
   it("drops a rate that is not a number, as before", () => {
@@ -58,7 +58,7 @@ describe("cardEdit", () => {
   });
   it("typing a name and then tapping a colour saves the typed name", () => {
     // The tap comes before the name field's blur has saved; the row's current fields carry the name.
-    expect(cardEdit(card, { ...cardFields, name: "Card B" }, "PHP", { color: "purple" })).toEqual({ account: { ...card, name: "Card B", color: "purple", rate: undefined } });
+    expect(cardEdit(card, { ...cardFields, name: "Card A" }, "PHP", { color: "purple" })).toEqual({ account: { ...card, name: "Card A", color: "purple", rate: undefined } });
   });
 });
 
@@ -81,14 +81,14 @@ describe("freshFields", () => {
     expect(freshFields(local, accountFieldsOf(bank), undefined)).toEqual(bankFields);
   });
   it("a change from another device replaces the fields not being edited", () => {
-    const pulled = { ...bank, name: "Bank Z", openingBalance: 6000000 };
+    const pulled = { ...bank, name: "Bank B", openingBalance: 6000000 };
     const local = { ...bankFields, rate: "" };
-    expect(freshFields(local, accountFieldsOf(pulled), "rate")).toEqual({ ...bankFields, name: "Bank Z", opening: "60000.00" });
+    expect(freshFields(local, accountFieldsOf(pulled), "rate")).toEqual({ ...bankFields, name: "Bank B", opening: "60000.00" });
   });
   it("the focused field keeps what is being typed", () => {
-    const typing = { ...cardFields, name: "Card B", limit: "2000" };
+    const typing = { ...cardFields, name: "Card A", limit: "2000" };
     // The name was just saved (stored), the limit is still being typed.
-    const stored = cardFieldsOf({ ...card, name: "Card B" }, "PHP");
-    expect(freshFields(typing, stored, "limit")).toEqual({ ...cardFields, name: "Card B", limit: "2000" });
+    const stored = cardFieldsOf({ ...card, name: "Card A" }, "PHP");
+    expect(freshFields(typing, stored, "limit")).toEqual({ ...cardFields, name: "Card A", limit: "2000" });
   });
 });

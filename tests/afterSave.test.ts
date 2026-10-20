@@ -17,11 +17,11 @@ const expense: ExpenseFields = {
   nextBill: true,
   split: true,
   names: "Alex, Sam",
-  newName: "Jo",
+  newName: "Sam",
   mode: "custom",
   paidBy: "alex",
   custom: { alex: "1000", me: "500" },
-  kept: [{ id: "p1", name: "Old friend" }],
+  kept: [{ id: "p1", name: "Sam" }],
 };
 
 describe("afterSave", () => {
@@ -48,11 +48,11 @@ describe("afterSave", () => {
     });
   });
   it("resets income amount, note and date and keeps category and account", () => {
-    const f: IncomeFields = { form: "income", amount: "500", note: "Old chair", date: "2026-10-01", accountId: "bank-a", category: "Sale" };
+    const f: IncomeFields = { form: "income", amount: "500", note: "Laptop", date: "2026-10-01", accountId: "bank-a", category: "Sale" };
     expect(afterSave(f, TODAY)).toEqual({ form: "income", amount: "", note: "", date: TODAY, accountId: "bank-a", category: "Sale" });
   });
   it("resets transfer amount, note and date and keeps From and To", () => {
-    const f: TransferFields = { form: "transfer", amount: "2000", note: "Savings", date: "2026-10-25", from: "bank-a", to: "bank-b" };
+    const f: TransferFields = { form: "transfer", amount: "2000", note: "Coffee", date: "2026-10-25", from: "bank-a", to: "bank-b" };
     expect(afterSave(f, TODAY)).toEqual({ form: "transfer", amount: "", note: "", date: TODAY, from: "bank-a", to: "bank-b" });
   });
   it("does not change the fields it was given", () => {
