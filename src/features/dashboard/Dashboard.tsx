@@ -8,7 +8,7 @@ import { isCard, type Account, type Defaults } from "../../data/schema";
 import { forecast } from "../../data/forecast";
 import { itemsToDate, loadWorld } from "../../data/world";
 import { getSettings, list, listAll } from "../../data/collections";
-import { addDays, addMonths, labelMonth, labelShort, monthEnd, monthStart, today } from "../../data/dates";
+import { addDays, addMonths, labelMonth, labelShort, monthEnd, monthStart, today, weekday } from "../../data/dates";
 import { loadEntries } from "../../data/months";
 import { formatMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem } from "../../data/rules";
@@ -84,22 +84,28 @@ function Donut({ cats, total, base, trigger }: { cats: Summary["byCategory"]; to
   );
 }
 
-/** One column per day, today's at full strength. HTML columns keep the rounded tops round at any width
- *  (a stretched SVG squashed them). Heights go through React's style prop, which the CSP allows.
- *  Days that have happened with nothing spent get a short stub, so a quiet day reads as a day and not a gap. */
-function Bars({ days, from, elapsed, todayIdx, base, label }: { days: number[]; from: string; elapsed: number; todayIdx: number; base: string; label: string }) {
-  // Days that have not happened yet show what is scheduled, muted, so planned and real days differ.
+const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
+
+/** The Daily card as a lattice of day cells, seven to a row from Monday (the Ledger's Week order). Spend
+ *  lights a cell in four steps against the month's highest day. Today is ringed; days still to come with
+ *  something scheduled are outlined (never lit, so planned days never read as spending); quiet days that
+ *  have happened are a plain track; days still to come with nothing are empty. */
+function Lattice({ days, from, elapsed, todayIdx, base, label }: { days: number[]; from: string; elapsed: number; todayIdx: number; base: string; label: string }) {
   const max = Math.max(...days, 1);
+  const lead = weekday(from);
   return (
-    <div className="dbars" role="img" aria-label={label}>
+    <div className="lattice" role="img" aria-label={label}>
+      {WEEK.map((w, i) => <span key={`w${i}`} className="wk" aria-hidden="true">{w}</span>)}
+      {Array.from({ length: lead }, (_, i) => <span key={`b${i}`} className="cell blank" />)}
       {days.map((v, i) => {
-        const quiet = i < elapsed && v <= 0;
-        // Weekly labels (1, 8, 15, ...), and today's own; a weekly one right next to today's is dropped.
-        const named = i === todayIdx || (i % 7 === 0 && (todayIdx < 0 || Math.abs(i - todayIdx) > 1));
+        const past = i < elapsed;
+        // Steps on the square root of the share of the highest day, so one rent day does not leave every other day on step 1.
+        const lit = v <= 0 ? 0 : Math.sqrt(v / max);
+        const step = lit === 0 ? 0 : lit > 0.75 ? 4 : lit > 0.5 ? 3 : lit > 0.25 ? 2 : 1;
+        const cls = past ? (step ? `cell l${step}` : "cell quiet") : v > 0 ? "cell plan" : "cell later";
         return (
-          <span key={i} className={i === todayIdx ? "dbar now" : i >= elapsed ? "dbar plan" : "dbar"} title={`${labelShort(addDays(from, i))}: ${formatMinor(v, base)}${i >= elapsed && v ? " planned" : ""}`}>
-            <span className="dfill"><i className={quiet ? "zero" : undefined} style={quiet ? undefined : { height: `${v > 0 ? Math.max((v / max) * 100, 2) : 0}%` }} /></span>
-            <span className="dlab">{named ? i + 1 : ""}</span>
+          <span key={i} className={i === todayIdx ? `${cls} now` : cls} title={`${labelShort(addDays(from, i))}: ${formatMinor(v, base)}${!past && v ? " planned" : ""}`}>
+            {i + 1}
           </span>
         );
       })}
@@ -300,7 +306,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
               <span className="mute">Daily{future ? <span className="tag">Planned</span> : upcoming && <span className="tag">incl. upcoming</span>}</span>
               {elapsed > 0 && <span className="mute small">Avg {formatMinor(daily.average, base)} a day</span>}
             </div>
-            <Bars days={chart.byDay} from={from} elapsed={elapsed} todayIdx={todayIdx} base={base} label={dailyLabel} />
+            <Lattice days={chart.byDay} from={from} elapsed={elapsed} todayIdx={todayIdx} base={base} label={dailyLabel} />
             <div className="dailystats">
               {future && <div className="row static"><span>Planned</span><span>{formatMinor(chart.total, base)}</span></div>}
               {upcoming && <div className="row static"><span>Still scheduled</span><span>{formatMinor(planned, base)}</span></div>}

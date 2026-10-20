@@ -63,6 +63,13 @@
   --err: #b3261e;
   --err-fill: #b3261e; /* the armed Delete (white 6.3:1) */
   --track: #e6e8ec;
+  /* Day lattice steps: opaque mixes of the data blue into the plate, then the accent fill. */
+  --cell-1: color-mix(in srgb, var(--accent-data) 16%, #fbfbfc);
+  --cell-2: color-mix(in srgb, var(--accent-data) 32%, #fbfbfc);
+  --cell-3: color-mix(in srgb, var(--accent-data) 52%, #fbfbfc);
+  --cell-3-ink: #111316;
+  --cell-4: var(--accent);
+  --cell-hi: rgba(255, 255, 255, 0.5);
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   /* Figures: set like an engraved readout, light display weight with the sign and centavos raised. */
   --fig: -apple-system, "SF Pro Display", BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
@@ -181,6 +188,12 @@
   --err: #ff7a70; /* 6.7:1 */
   --err-fill: #c0362c; /* white 5.5:1 */
   --track: #25282d;
+  --cell-1: color-mix(in srgb, var(--accent-data) 18%, #1a1c20);
+  --cell-2: color-mix(in srgb, var(--accent-data) 32%, #1a1c20);
+  --cell-3: color-mix(in srgb, var(--accent-data) 48%, #1a1c20);
+  --cell-3-ink: #fff;
+  --cell-4: var(--accent);
+  --cell-hi: rgba(255, 255, 255, 0.08);
   color-scheme: dark;
 }
 @media (max-width: 700px) { :root { --gutter: 16px; } }
@@ -540,22 +553,25 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .donut .seg { cursor: pointer; }
 .legend .r { margin-left: auto; color: var(--mute); }
 .legend i { width: 9px; height: 9px; border-radius: 3px; flex: none; background: var(--tone, var(--t-gray)); }
-/* Daily bars: one column per day with round tops, today's at full strength. (Named .dbar: a plain .bar
-   rule once matched <header class="bar"> and drew the page title at 45%.) Each column is the bar area
-   plus a 16 px label row; the baseline sits on top of the label row. Quiet days that have happened get
-   a short stub (.zero), future days draw nothing. */
+/* The Daily card: a lattice of machined day cells (Dashboard.tsx Lattice), lit by spend in four opaque
+   anodized-blue steps. Day numbers are ink on steps 1 to 3 and white on step 4 (4.5:1 or more on each).
+   Today: a 2 px ink ring with a chamfer. Scheduled days to come: a dashed outline. Quiet days: a track. */
 .dailyhead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
-.dbars { position: relative; display: flex; align-items: stretch; gap: 3px; height: 166px; margin-top: var(--sp-2); }
-.dbars::after { content: ""; position: absolute; left: 0; right: 0; bottom: 16px; border-top: 1px solid var(--line); }
-.dbar { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
-.dfill { flex: 1; display: flex; align-items: flex-end; }
-.dbar i { display: block; width: 100%; max-width: 14px; margin: 0 auto; border-radius: 4px 4px 2px 2px; background: var(--accent-data); opacity: 0.45; }
-.dbar i.zero { height: 3px; opacity: 0.2; }
-.dbar.now i { opacity: 1; }
-/* Days still to come: what is scheduled, in grey so planned days never read as spending. */
-.dbar.plan i { background: var(--mute); opacity: 0.3; }
-.dlab { height: 16px; line-height: 16px; display: flex; justify-content: center; white-space: nowrap; font-size: var(--fs-xs); color: var(--mute); }
-.dbar.now .dlab { color: var(--accent-ink); font-weight: 600; }
+.lattice { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: var(--sp-3); }
+.lattice .wk { font-size: var(--fs-xs); font-weight: 600; color: var(--mute); text-align: center; padding-bottom: 2px; }
+.lattice .cell { aspect-ratio: 1.35; border-radius: 6px; display: flex; align-items: flex-start; justify-content: flex-start; padding: 3px 5px; font-size: var(--fs-xs); font-weight: 500; line-height: 1.2; color: var(--mute); box-sizing: border-box; min-width: 0; }
+.lattice .blank { visibility: hidden; }
+.lattice .quiet { background: var(--fill); box-shadow: var(--input-edge); }
+.lattice .l1 { background: var(--cell-1); color: var(--ink); }
+.lattice .l2 { background: var(--cell-2); color: var(--ink); }
+.lattice .l3 { background: var(--cell-3); color: var(--cell-3-ink); }
+.lattice .l4 { background: var(--cell-4); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28); }
+.lattice .l1, .lattice .l2, .lattice .l3 { box-shadow: inset 0 1px 0 var(--cell-hi); }
+.lattice .plan { box-shadow: inset 0 0 0 1px transparent; outline: 1px dashed var(--fill-3); outline-offset: -1px; }
+.lattice .later { color: var(--mute); }
+.lattice .now { box-shadow: inset 0 0 0 2px var(--ink), inset 0 3px 0 var(--cell-hi); color: var(--ink); font-weight: 700; }
+.lattice .l4.now { box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3px #fff; color: #fff; }
+@media (min-width: 1000px) { .lattice .cell { aspect-ratio: 1.6; } }
 .dailystats { margin-top: var(--sp-3); }
 @media (max-width: 700px) { .g3, .g2 { grid-template-columns: 1fr; } }
 /* Dashboard top row: Spent as the hero, Still due and Last month as two smaller tiles. One row on
