@@ -7,6 +7,8 @@ import { isCard, type Account, type Entry } from "../../data/schema";
 import { newTransfer, transferSources, transferTargets } from "../../data/transfers";
 import type { SavedNote } from "../add/AddForm";
 import { MoneyInput } from "../../ui/MoneyInput";
+import { ConfirmButton } from "../../ui/ConfirmButton";
+import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
 
 const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[^\d.]/g, "");
@@ -114,7 +116,7 @@ export function TransferForm({ entry, accounts: given, onDone }: { entry?: Entry
       <p className="mute small">Moves money between your accounts. Not counted as spending.</p>
       {error && <p className="err" role="alert">{error}</p>}
       <div className="actions">
-        {entry && <button type="button" className="btn ghost danger" onClick={() => void remove()}>Delete</button>}
+        {entry && <ConfirmButton danger label="Delete" ask={confirmLabel("delete", entry)} onConfirm={() => void remove()} />}
         <button type="submit" className="btn">Save</button>
       </div>
     </form>

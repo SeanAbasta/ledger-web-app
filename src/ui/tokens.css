@@ -263,6 +263,8 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .btn { background: var(--accent); color: #fff; border: 0; font-weight: 500; padding: 8px 18px; border-radius: 999px; cursor: pointer; }
 .btn.ghost { background: var(--fill-2); color: var(--ink); }
 .btn.danger { color: var(--err); }
+/* Delete, Skip and End series after the first tap: filled, asking for a second tap. */
+.btn.armed.danger { background: var(--err); color: #fff; }
 .seg { display: inline-flex; background: var(--fill-2); border-radius: 9px; padding: 2px; }
 .seg button { all: unset; padding: 4px 12px; border-radius: 7px; font-size: var(--fs-md); font-weight: 500; color: var(--mute); cursor: pointer; white-space: nowrap; }
 @media (max-width: 400px) { .seg button { padding: 4px 9px; } }

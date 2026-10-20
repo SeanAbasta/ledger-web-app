@@ -15,6 +15,8 @@ import { TransferForm } from "./TransferForm";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { Sheet } from "../../ui/Sheet";
+import { ConfirmButton } from "../../ui/ConfirmButton";
+import { confirmLabel } from "../../ui/confirm";
 import { categoryTone } from "../../ui/categoryColor";
 import { Empty } from "../../ui/Empty";
 import { LedgerIcon } from "../../ui/icons";
@@ -245,7 +247,7 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
             {labelDay(paid.date)} · {formatMinor(paid.amount, paid.currency)}
           </p>
           <div className="actions">
-            <button className="btn ghost danger" onClick={async () => { await deleteEntry(store, paid.date.slice(0, 7), paid.id); setPaid(undefined); changed(); }}>Delete</button>
+            <ConfirmButton danger label="Delete" ask={confirmLabel("delete", paid)} onConfirm={async () => { await deleteEntry(store, paid.date.slice(0, 7), paid.id); setPaid(undefined); changed(); }} />
           </div>
         </Sheet>
       )}

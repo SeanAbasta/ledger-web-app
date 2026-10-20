@@ -6,6 +6,8 @@ import type { Occurrence } from "../../data/rules";
 import { REMOVED_PERSON } from "../../data/splits";
 import type { Person, Rule } from "../../data/schema";
 import { Sheet } from "../../ui/Sheet";
+import { ConfirmButton } from "../../ui/ConfirmButton";
+import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
 import { OccurrenceForm } from "./OccurrenceForm";
 
@@ -51,8 +53,8 @@ export function PlanSheet({ occ, rule, people, onClose }: { occ: Occurrence; rul
       {occ.split && <p className="mute small">Split with {occ.split.shares.map((s) => personName(s.personId)).join(", ")}</p>}
       <div className="actions">
         <button className="btn" onClick={() => setEditing(true)}>Edit</button>
-        <button className="btn ghost" onClick={() => void skip()}>Skip this one</button>
-        <button className="btn ghost danger" onClick={() => void endSeries()}>End series</button>
+        <ConfirmButton label="Skip this one" ask={confirmLabel("skip", occ)} onConfirm={() => void skip()} />
+        <ConfirmButton danger label="End series" ask={confirmLabel("end", occ)} onConfirm={() => void endSeries()} />
       </div>
     </Sheet>
   );

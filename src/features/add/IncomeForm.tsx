@@ -7,6 +7,8 @@ import { formatMinor, parseMinor } from "../../data/money";
 import { incomeAccounts, newIncome, SIDE_INCOME } from "../../data/sideIncome";
 import { monthOf, type Account, type Entry } from "../../data/schema";
 import { MoneyInput } from "../../ui/MoneyInput";
+import { ConfirmButton } from "../../ui/ConfirmButton";
+import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 import type { SavedNote } from "./AddForm";
@@ -99,7 +101,7 @@ export function IncomeForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?:
       <p className="mute small">Money from other sources. Salary is set on Forecast.</p>
       {error && <p className="err" role="alert">{error}</p>}
       <div className="actions">
-        {entry && <button type="button" className="btn ghost danger" onClick={() => void remove()}>Delete</button>}
+        {entry && <ConfirmButton danger label="Delete" ask={confirmLabel("delete", entry)} onConfirm={() => void remove()} />}
         <button type="submit" className="btn">Save</button>
       </div>
     </form>
