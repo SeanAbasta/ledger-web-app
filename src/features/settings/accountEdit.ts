@@ -1,5 +1,5 @@
-import { parseMinor } from "../../data/money";
-import type { Account } from "../../data/schema";
+import { formatMinor, parseMinor } from "../../data/money";
+import { DEFAULT_DUE_DAYS, type Account } from "../../data/schema";
 
 /**
  * What a Settings account or card row saves when a field is left. Built from the fields as typed (never
@@ -43,4 +43,28 @@ export function cardEdit(a: Account, f: CardFields, base: string, extra: Partial
   const o = f.owed.trim() ? parseMinor(f.owed, base) : 0;
   if (o === null) return { error: "Enter a valid amount owed" };
   return changedFrom(a, { ...a, name: f.name.trim() || "Card", currency: base, rate: undefined, statementDay: d, dueDays: dd, limit: lim, openingBalance: o ? -o : 0, ...extra });
+}
+
+/** An amount as a row shows it while editing: digits, point and minus, no currency sign or commas. */
+export const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[^\d.-]/g, "");
+
+/** A bank account row's fields as they start from the stored account. */
+export const accountFieldsOf = (a: Account): AccountFields => ({ name: a.name, currency: a.currency, opening: plain(a.openingBalance, a.currency), rate: a.rate ?? "" });
+
+/** A card row's fields as they start from the stored card. */
+export const cardFieldsOf = (a: Account, base: string): CardFields => ({
+  name: a.name,
+  day: String(a.statementDay ?? ""),
+  dueDays: String(a.dueDays ?? DEFAULT_DUE_DAYS),
+  limit: a.limit !== undefined ? plain(a.limit, base) : "",
+  owed: a.openingBalance ? plain(-a.openingBalance, base) : "",
+});
+
+/**
+ * A row's fields after the stored account changed (a save, a pull from the other device, Restore, Move
+ * before remove): every field takes the stored value except the one being typed in, which keeps what
+ * is typed. The row keeps its place (keyed by id only), so focus and the phone keyboard stay.
+ */
+export function freshFields<F extends object>(local: F, stored: F, focused?: keyof F): F {
+  return focused === undefined ? { ...stored } : { ...stored, [focused]: local[focused] };
 }

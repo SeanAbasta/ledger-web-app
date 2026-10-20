@@ -25,9 +25,8 @@ import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { AccountOptions } from "../../ui/AccountOptions";
 import { applyTheme, loadTheme, saveTheme, THEMES, type Theme } from "../../ui/theme";
-import { accountEdit, cardEdit } from "./accountEdit";
+import { accountEdit, accountFieldsOf, cardEdit, cardFieldsOf, freshFields, plain, type AccountFields, type CardFields } from "./accountEdit";
 
-const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[^\d.-]/g, "");
 
 /** "Saved" for a moment next to a row's ✕ after a real change (the flag lives in Settings, so it survives the row reloading). */
 const SavedTick = ({ on }: { on?: boolean }) => (on ? <span className="savedtick" role="status">Saved</span> : null);
@@ -37,6 +36,17 @@ function AccountRow({ a, base, saved, onSave, onRemove }: { a: Account; base: st
   const [currency, setCurrency] = useState(a.currency);
   const [opening, setOpening] = useState(plain(a.openingBalance, a.currency));
   const [rate, setRate] = useState(a.rate ?? "");
+  // The row is keyed by id only, so it stays mounted (and focused) after a save. When the stored account
+  // changes, every field but the one being typed in takes the stored value.
+  const focused = useRef<keyof AccountFields | undefined>(undefined);
+  const seen = useRef(a.updatedAt);
+  useEffect(() => {
+    if (seen.current === a.updatedAt) return;
+    seen.current = a.updatedAt;
+    const f = freshFields({ name, currency, opening, rate }, accountFieldsOf(a), focused.current);
+    setName(f.name); setCurrency(f.currency); setOpening(f.opening); setRate(f.rate);
+  }, [a]);
+  const track = (k: keyof AccountFields) => ({ onFocus: () => { focused.current = k; }, onBlur: () => { focused.current = undefined; commit(); } });
   // Only a real change is saved (an unchanged blur writes nothing); an unreadable balance is ignored, as before.
   const commit = (over: Partial<{ name: string; currency: string; opening: string; rate: string }> = {}) => {
     const r = accountEdit(a, { name, currency, opening, rate, ...over }, base);
@@ -47,7 +57,7 @@ function AccountRow({ a, base, saved, onSave, onRemove }: { a: Account; base: st
   return (
     <div className="cardacct">
       <div className="acct">
-        <input aria-label="Account name" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => commit()} />
+        <input aria-label="Account name" value={name} onChange={(e) => setName(e.target.value)} {...track("name")} />
         <SavedTick on={saved} />
         <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}>✕</button>
       </div>
@@ -56,10 +66,10 @@ function AccountRow({ a, base, saved, onSave, onRemove }: { a: Account; base: st
           {[...new Set([...CURRENCIES, currency])].map((c) => <option key={c}>{c}</option>)}
         </select></label>
       <label className="field wide"><b>Balance before your first entry<span className="mute small sub">Use today's balance only if nothing is logged yet</span></b>
-        <MoneyInput aria-label="Balance before your first entry" placeholder="0" allowNegative currency={currency} value={opening} onChange={setOpening} onBlur={() => commit()} /></label>
+        <MoneyInput aria-label="Balance before your first entry" placeholder="0" allowNegative currency={currency} value={opening} onChange={setOpening} {...track("opening")} /></label>
       {currency !== base && (
         <label className="field"><b>{base} per 1 {currency}</b>
-          <input aria-label={`${base} per 1 ${currency}`} inputMode="decimal" placeholder="Rate" value={rate} onChange={(e) => setRate(e.target.value)} onBlur={() => commit()} /></label>
+          <input aria-label={`${base} per 1 ${currency}`} inputMode="decimal" placeholder="Rate" value={rate} onChange={(e) => setRate(e.target.value)} {...track("rate")} /></label>
       )}
     </div>
   );
@@ -73,6 +83,16 @@ function CardRow({ a, base, color, saved, onSave, onRemove }: { a: Account; base
   const [limit, setLimit] = useState(a.limit !== undefined ? plain(a.limit, base) : "");
   const [owed, setOwed] = useState(a.openingBalance ? plain(-a.openingBalance, base) : "");
   const [error, setError] = useState("");
+  // Keyed by id only (see AccountRow): a stored change refreshes every field but the focused one.
+  const focused = useRef<keyof CardFields | undefined>(undefined);
+  const seen = useRef(a.updatedAt);
+  useEffect(() => {
+    if (seen.current === a.updatedAt) return;
+    seen.current = a.updatedAt;
+    const f = freshFields({ name, day, dueDays, limit, owed }, cardFieldsOf(a, base), focused.current);
+    setName(f.name); setDay(f.day); setDueDays(f.dueDays); setLimit(f.limit); setOwed(f.owed);
+  }, [a, base]);
+  const track = (k: keyof CardFields) => ({ onFocus: () => { focused.current = k; }, onBlur: () => { focused.current = undefined; commit(); } });
   // Saves from the fields as typed, so tapping a colour right after typing a name keeps the name.
   // Only a real change is saved (an unchanged blur writes nothing).
   const commit = (extra: Partial<Account> = {}) => {
@@ -84,14 +104,14 @@ function CardRow({ a, base, color, saved, onSave, onRemove }: { a: Account; base
   return (
     <div className="cardacct" id={`card-${a.id}`}>
       <div className="acct">
-        <input aria-label="Card name" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => commit()} />
+        <input aria-label="Card name" value={name} onChange={(e) => setName(e.target.value)} {...track("name")} />
         <SavedTick on={saved} />
         <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}>✕</button>
       </div>
-      <label className="field"><b>Cut-off day</b><input aria-label="Cut-off day" inputMode="numeric" placeholder="1 to 31" value={day} onChange={(e) => setDay(e.target.value)} onBlur={() => commit()} /></label>
-      <label className="field"><b>Days until due</b><input aria-label="Days from cut-off to due date" inputMode="numeric" value={dueDays} onChange={(e) => setDueDays(e.target.value)} onBlur={() => commit()} /></label>
-      <label className="field"><b>Credit limit</b><MoneyInput aria-label="Credit limit" placeholder="Optional" currency={base} value={limit} onChange={setLimit} onBlur={() => commit()} /></label>
-      <label className="field"><b>Owed at start</b><MoneyInput aria-label="Owed at start" placeholder="0" currency={base} value={owed} onChange={setOwed} onBlur={() => commit()} /></label>
+      <label className="field"><b>Cut-off day</b><input aria-label="Cut-off day" inputMode="numeric" placeholder="1 to 31" value={day} onChange={(e) => setDay(e.target.value)} {...track("day")} /></label>
+      <label className="field"><b>Days until due</b><input aria-label="Days from cut-off to due date" inputMode="numeric" value={dueDays} onChange={(e) => setDueDays(e.target.value)} {...track("dueDays")} /></label>
+      <label className="field"><b>Credit limit</b><MoneyInput aria-label="Credit limit" placeholder="Optional" currency={base} value={limit} onChange={setLimit} {...track("limit")} /></label>
+      <label className="field"><b>Owed at start</b><MoneyInput aria-label="Owed at start" placeholder="0" currency={base} value={owed} onChange={setOwed} {...track("owed")} /></label>
       <div className="field"><b>Colour</b>
         <div className="swatches" role="radiogroup" aria-label={`${a.name} colour`}>
           {CARD_COLORS.map((c) => (
@@ -402,7 +422,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
               <div className="card pad">
                 {!accounts.some((a) => !isCard(a)) && <p className="mute">No bank accounts yet</p>}
                 {accounts.filter((a) => !isCard(a)).map((a) => (
-                  <AccountRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency} saved={!!savedIds[a.id]}
+                  <AccountRow key={a.id} a={a} base={s.baseCurrency} saved={!!savedIds[a.id]}
                     onSave={async (x) => { await upsert(store, "accounts", x); changed(); markSaved(a.id); }}
                     onRemove={() => askRemoveAccount(a)} />
                 ))}
@@ -413,7 +433,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
               <div className="card pad">
                 {!accounts.some(isCard) && <p className="mute">No cards yet</p>}
                 {accounts.filter(isCard).map((a) => (
-                  <CardRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency} color={cardColor(a, accounts)} saved={!!savedIds[a.id]}
+                  <CardRow key={a.id} a={a} base={s.baseCurrency} color={cardColor(a, accounts)} saved={!!savedIds[a.id]}
                     onSave={async (x) => { await upsert(store, "accounts", x); changed(); markSaved(a.id); }}
                     onRemove={() => askRemoveAccount(a)} />
                 ))}
