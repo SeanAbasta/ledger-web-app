@@ -257,7 +257,7 @@ export function Ledger({ initialDate, notice, onAdd }: { initialDate?: string; n
       {showCard && (
         <>
           <div className="grp">Next 30 days</div>
-          <div className="card">
+          <div className="card nextcard">
             {due.slice(0, NEXT_CARD_ROWS).map((o) => (
               <button key={o.ruleId + o.date} className="row" title="Edit" onClick={() => setOcc(o)}>
                 <span>{labelShort(o.date)} &nbsp;{o.note || o.category}<span className="tag">{o.type === "installment" ? `${o.index} of ${o.count}` : "recurring"}</span></span>
