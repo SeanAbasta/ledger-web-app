@@ -706,6 +706,15 @@ fieldset:disabled .grp button.link { opacity: 0.5; cursor: default; }
 .frow:last-child { border-bottom: 0; }
 .frow span:first-child { text-align: left; }
 .frow.head { color: var(--mute); font-size: var(--fs-sm); }
+.frow > span { min-width: 0; }
+/* Small phones: short months (the year only on the first row and on January), smaller figures, a wider
+   gap, so every cell stays inside the card. */
+@media (max-width: 480px) {
+  .frow { gap: 8px; font-size: var(--fs-sm); grid-template-columns: 4.2em repeat(3, minmax(0, 1fr)); }
+  .frow b { font-weight: 600; }
+  .frow .yr:not(.keep) { display: none; }
+}
+.big.pos .cents, .big.pos .cur { color: inherit; }
 .tag.warn { background: var(--warn-soft); color: var(--pend); margin: 0; }
 .grid.g2 + .grid.g2, .g2 + .small { margin-top: var(--sp-3); }
 

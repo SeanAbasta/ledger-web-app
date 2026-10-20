@@ -192,6 +192,29 @@ export function Forecast() {
           <div className="mute small">{f.basis ? `spending averaged over ${f.basis} ${f.basis === 1 ? "month" : "months"}` : "no spending history yet"}</div></div>
       </div>
 
+      <div className="grp">Projected balance</div>
+      <div className="card pad">
+        <div className="frange"><Segmented value={range} options={RANGES} labels={RANGE_LABEL} onChange={setRange} /></div>
+        {/* Keyed on the range so an open month closes when the range changes. */}
+        <BalanceChart key={range} start={start} months={f.months.slice(0, Number(range))} base={base} />
+      </div>
+      <div className="card ftable">
+        <div className="frow head"><span>Month</span><span>Income</span><span>Spend</span><span>Balance</span></div>
+        {f.months.map((m, i) => (
+          <div key={m.month} className="frow">
+            <span>{labelMonth(m.month).split(" ")[0]}<span className={i === 0 || m.month.slice(5, 7) === "01" ? "yr keep" : "yr"}> {labelMonth(m.month).split(" ")[1]}</span></span>
+            <span>
+              {m.noIncome ? <span className="tag warn">No income set</span> : formatMinor(m.income, base)}
+              {m.owed !== 0 && <span className="mute small owedline">{m.owed > 0 ? "+" : "-"} {formatMinor(Math.abs(m.owed), base)} {m.owed > 0 ? "owed to you" : "you owe"}</span>}
+            </span>
+            <span>{formatMinor(m.obligations + m.variable + m.cards, base)}{m.cards !== 0 && <span className="mute small owedline">{formatMinor(m.cards, base)} card bills</span>}</span>
+            <span><b>{formatMinor(m.end, base)}</b></span>
+          </div>
+        ))}
+      </div>
+      <p className="mute small">Assumes people settle what they owe you this month, and everyday spending repeats your recent average.</p>
+
+      {/* Salary months after the chart and the table (owner, Q3): the forecast is what this screen is opened for. */}
       <div className="grp">Salary</div>
       <div className="card pad">
         {Array.from({ length: 12 }, (_, i) => addMonths(monthStart(t), i)).map((m) => {
@@ -212,27 +235,6 @@ export function Forecast() {
         {error && <p className="err" role="alert">{error}</p>}
       </div>
 
-      <div className="grp">Projected balance</div>
-      <div className="card pad">
-        <div className="frange"><Segmented value={range} options={RANGES} labels={RANGE_LABEL} onChange={setRange} /></div>
-        {/* Keyed on the range so an open month closes when the range changes. */}
-        <BalanceChart key={range} start={start} months={f.months.slice(0, Number(range))} base={base} />
-      </div>
-      <div className="card ftable">
-        <div className="frow head"><span>Month</span><span>Income</span><span>Spend</span><span>Balance</span></div>
-        {f.months.map((m) => (
-          <div key={m.month} className="frow">
-            <span>{labelMonth(m.month)}</span>
-            <span>
-              {m.noIncome ? <span className="tag warn">No income set</span> : formatMinor(m.income, base)}
-              {m.owed !== 0 && <span className="mute small owedline">{m.owed > 0 ? "+" : "-"} {formatMinor(Math.abs(m.owed), base)} {m.owed > 0 ? "owed to you" : "you owe"}</span>}
-            </span>
-            <span>{formatMinor(m.obligations + m.variable + m.cards, base)}{m.cards !== 0 && <span className="mute small owedline">{formatMinor(m.cards, base)} card bills</span>}</span>
-            <span><b>{formatMinor(m.end, base)}</b></span>
-          </div>
-        ))}
-      </div>
-      <p className="mute small">Assumes people settle what they owe you this month, and everyday spending repeats your recent average.</p>
     </>
   );
 }

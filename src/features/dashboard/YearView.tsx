@@ -64,7 +64,7 @@ export function YearView() {
           <div className="statrow">
             <div className="card stat hero"><div className="mute">Spent</div><BigAmount minor={r.spent} currency={base} /><div className="mute small">{period}</div></div>
             <div className="card stat"><div className="mute">Income</div><BigAmount minor={r.income} currency={base} /><div className="mute small">salary and other income</div></div>
-            <div className="card stat"><div className="mute">Net</div><div className={r.net > 0 ? "big pos" : "big"}>{signed(r.net, base)}</div><div className="mute small">income minus spent</div></div>
+            <div className="card stat"><div className="mute">Net</div><BigAmount minor={Math.abs(r.net)} currency={base} sign={r.net < 0 ? "−" : r.net > 0 ? "+" : ""} className={r.net > 0 ? "pos" : undefined} /><div className="mute small">income minus spent</div></div>
           </div>
 
           <div ref={chartRef} className={pop.open ? "card pad catcard popopen" : "card pad catcard"}>
