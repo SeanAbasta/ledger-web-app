@@ -12,6 +12,7 @@ import { AddForm } from "../add/AddForm";
 import { IncomeForm } from "../add/IncomeForm";
 import { PlanSheet } from "./PlanSheet";
 import { shareLine } from "./rowShare";
+import { NEXT_CARD_ROWS, cardVisible, nextCardKeys, withoutCardRows } from "./nextCard";
 import { TransferForm } from "./TransferForm";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
@@ -102,11 +103,15 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
     [rules, t],
   );
 
+  // A payment shown in the visible "Next 30 days" card is not listed again above today (it shows on its day).
+  const showCard = cardVisible(listHasToday, due, filtered);
+  const listed = useMemo(() => withoutCardRows(items, nextCardKeys(due, showCard)), [items, due, showCard]);
+
   const groups = useMemo(() => {
     const g = new Map<string, LedgerItem[]>();
-    for (const it of items) g.set(it.date, [...(g.get(it.date) ?? []), it]);
+    for (const it of listed) g.set(it.date, [...(g.get(it.date) ?? []), it]);
     return [...g.entries()];
-  }, [items]);
+  }, [listed]);
 
   const accountName = (id?: string) => nameOf(id, accounts, "Removed account");
   const onCard = (e: Entry) => accounts.some((a) => a.id === e.accountId && !a.deleted && isCard(a));
@@ -171,11 +176,11 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
       {notice && <p className="mute small hint" role="status">{notice}</p>}
 
       <div key={`${shown.from}/${shown.to}`} className={shown.dir === 1 ? "period next" : shown.dir === -1 ? "period prev" : "period"}>
-      {listHasToday && due.length > 0 && !filtered && (
+      {showCard && (
         <>
           <div className="grp">Next 30 days</div>
           <div className="card">
-            {due.slice(0, 5).map((o) => (
+            {due.slice(0, NEXT_CARD_ROWS).map((o) => (
               <button key={o.ruleId + o.date} className="row" title="Edit" onClick={() => setOcc(o)}>
                 <span>{labelShort(o.date)} &nbsp;{o.note || o.category}<span className="tag">{o.type === "installment" ? `${o.index} of ${o.count}` : "recurring"}</span></span>
                 <span>{formatMinor(o.amount, o.currency)}</span>
