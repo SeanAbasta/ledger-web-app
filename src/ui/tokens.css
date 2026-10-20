@@ -855,3 +855,17 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
   .seg button::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 44px; max-height: calc(100% + 18px); transform: translateY(-50%); }
   .toggle::before { content: ""; position: absolute; inset: -10px; }
 }
+/* Phones: buttons and colour swatches grow their hit areas toward 44 px with an invisible ::before, but
+   never past half the gap to the nearest neighbour, so a tap between two controls lands on neither
+   rather than the wrong one. .btn is about 37 px tall (4 px each way); .btn.sm about 26 px (6 px up and
+   down, capped by the edit sheet's Refund row 12 px under Delete and Save; 3 px sideways, the gap
+   between small buttons is 6 to 8 px). Settings > Sync buttons wrap with a 6 px gap, so 3 px there.
+   Swatches sit 6 px apart (3 px sideways). The file picker (.filebtn) keeps its own overlay input. */
+@media (max-width: 700px) {
+  .btn:not(.filebtn), .swatch { position: relative; }
+  .btn:not(.filebtn)::before, .swatch::before { content: ""; position: absolute; }
+  .btn:not(.filebtn)::before { inset: -4px 0; }
+  .btn.sm:not(.filebtn)::before { inset: -6px -3px; }
+  .field .acts .btn.sm:not(.filebtn)::before { inset: -3px; }
+  .swatch::before { inset: -4px -3px -8px; }
+}
