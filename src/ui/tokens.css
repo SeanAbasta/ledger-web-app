@@ -746,3 +746,15 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
   outline: 2px solid rgba(10, 132, 255, 0.45); outline-offset: 2px;
 }
 .row:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); outline-offset: -2px; border-radius: 10px; }
+/* Phones: 44 px tap areas without moving anything. An invisible ::before grows the hit area of the
+   period arrows and Today (44 x 44), segment buttons (44 tall, at most 9 px above and below), switches
+   (62 x 44) and remove buttons (44 x 44). The arrows sit 14 px from the title so their areas stop short of it. */
+@media (max-width: 700px) {
+  .nav { gap: 14px; }
+  .nav button:not(.title), .seg button, .x { position: relative; }
+  .nav button:not(.title)::before, .x::before {
+    content: ""; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; min-width: 100%; min-height: 100%; transform: translate(-50%, -50%);
+  }
+  .seg button::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 44px; max-height: calc(100% + 18px); transform: translateY(-50%); }
+  .toggle::before { content: ""; position: absolute; inset: -10px; }
+}
