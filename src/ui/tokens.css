@@ -54,7 +54,8 @@
   --fill: #eceef1; /* tracks and fields */
   --fill-2: #e6e8ec; /* tags, chips, quiet buttons */
   --fill-3: #c9cdd3; /* switch off, grab handle */
-  --scrim: rgba(40, 46, 56, 0.32);
+  --scrim: rgba(40, 46, 56, 0.4); /* deepened so focus moves to the sheet; the page behind never transforms */
+  --sheet-shadow: inset 0 1px 0 #fff, 0 -10px 40px rgba(15, 20, 35, 0.22);
   --choice: #fbfbfc;
   --ok: #1a6e36;
   --off: #5a5f66;
@@ -122,6 +123,7 @@
   --bar-bg: var(--lens);
   --bar-h: 52px;
   --side-bg: linear-gradient(180deg, #1c1e23, #121317);
+  --side-edge: inset -1px 0 0 rgba(255, 255, 255, 0.06);
   --tab-bg: rgba(24, 26, 30, 0.95);
   --tab-edge: inset 0 1px 0 rgba(255, 255, 255, 0.16), inset 0 0 0 0.5px rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.5);
   --tab-shadow: 0 14px 34px rgba(5, 8, 16, 0.34), 0 2px 6px rgba(5, 8, 16, 0.2);
@@ -181,7 +183,8 @@
   --fill: #25282d;
   --fill-2: #2a2d33;
   --fill-3: #4a4e55;
-  --scrim: rgba(0, 0, 0, 0.5);
+  --scrim: rgba(0, 0, 0, 0.6);
+  --sheet-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), 0 -10px 40px rgba(0, 0, 0, 0.6);
   --choice: #222429;
   --ok: #4fd17a;
   --off: #a1a7af;
@@ -224,7 +227,7 @@ input, select, textarea { caret-color: var(--accent-ink); }
   align-self: start;
   height: 100vh;
   background: var(--side-bg);
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06);
+  box-shadow: var(--side-edge);
   color: var(--lens-mute);
   --focus: var(--lens-focus);
   padding: var(--sp-4) 10px;
@@ -246,7 +249,7 @@ input, select, textarea { caret-color: var(--accent-ink); }
 .side .icon { width: 18px; height: 18px; flex: none; }
 .side button:focus-visible { outline: 2px solid var(--focus); }
 .side button:hover { color: var(--lens-ink); }
-.side button.on { background: var(--lens-key); box-shadow: var(--lens-key-edge); color: #fff; font-weight: 500; }
+.side button.on { background: var(--lens-key); box-shadow: var(--lens-key-edge); color: var(--on-accent); font-weight: 500; }
 /* Big screens: the page content stays in a centred column (--col), the background fills the rest.
    The top bar and the banner span the width but line their contents up with that column. */
 main { --col: var(--content-max); }
@@ -327,7 +330,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .err { color: var(--err); margin: 8px 0 0; }
 /* Empty states: a soft icon and a short line. */
 .emptystate { text-align: center; margin: var(--sp-6) auto; color: var(--mute); }
-.emptyicon { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background: var(--fill-2); margin-bottom: var(--sp-3); }
+.emptyicon { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background: var(--fill); box-shadow: var(--input-edge); margin-bottom: var(--sp-3); }
 .emptyicon .icon { width: 26px; height: 26px; }
 .emptytitle { margin: 0 0 var(--sp-1); font-size: var(--fs-lg); font-weight: 600; color: var(--ink); }
 .emptystate .small { margin: 0; }
@@ -363,7 +366,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .btn.ghost { background: var(--fill-2); color: var(--ink); box-shadow: var(--ghost-edge); }
 .btn.danger { color: var(--err); }
 /* Delete, Skip and End series after the first tap: filled, asking for a second tap. */
-.btn.armed.danger { background: var(--err-fill); color: #fff; }
+.btn.armed.danger { background: var(--err-fill); color: var(--on-accent); }
 .seg { display: inline-flex; background: var(--seg-track); box-shadow: var(--seg-edge); border-radius: var(--r-ctl); padding: 2px; }
 .seg button { all: unset; padding: 4px 12px; border-radius: 8px; font-size: var(--fs-md); font-weight: 500; color: var(--mute); cursor: pointer; white-space: nowrap; }
 @media (max-width: 400px) { .seg button { padding: 4px 9px; } }
@@ -404,8 +407,8 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .ybar { all: unset; box-sizing: border-box; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; cursor: pointer; border-radius: 6px; }
 .ybar:focus-visible { outline: 2px solid var(--focus); }
 .ybar .yfill { flex: 1; display: flex; align-items: flex-end; justify-content: center; }
-.ybar .yfill i { display: block; width: 100%; max-width: 22px; border-radius: 4px 4px 2px 2px; background: var(--accent-data); opacity: 0.45; }
-.ybar.now .yfill i { opacity: 1; }
+.ybar .yfill i { display: block; width: 100%; max-width: 22px; border-radius: 4px 4px 2px 2px; background: var(--cell-3); box-shadow: inset 0 1px 0 var(--cell-hi); }
+.ybar.now .yfill i { background: var(--accent-data); }
 .ybar .ymark { height: 10px; display: flex; align-items: center; justify-content: center; }
 .yin { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--good-ink); }
 .yin.key { vertical-align: 1px; margin-right: 4px; }
@@ -449,7 +452,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 @keyframes slide-in { from { transform: translateY(100%); } }
 @media (max-width: 700px) {
   .drawer { align-items: flex-end; padding: 0; }
-  .drawer .sheet { width: 100%; max-height: 90dvh; border-radius: var(--radius-card) var(--radius-card) 0 0; padding: 0 18px calc(22px + env(safe-area-inset-bottom)); animation-name: slide-in; }
+  .drawer .sheet { box-shadow: var(--sheet-shadow); width: 100%; max-height: 90dvh; border-radius: var(--radius-card) var(--radius-card) 0 0; padding: 0 18px calc(22px + env(safe-area-inset-bottom)); animation-name: slide-in; }
   .drawer.closing .sheet { transform: translateY(100%); opacity: 1; }
   .grab { display: block; padding: 8px 0 14px; touch-action: none; cursor: grab; }
   .sheet .close { display: none; }
@@ -567,12 +570,12 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .lattice .l1 { background: var(--cell-1); color: var(--ink); }
 .lattice .l2 { background: var(--cell-2); color: var(--ink); }
 .lattice .l3 { background: var(--cell-3); color: var(--cell-3-ink); }
-.lattice .l4 { background: var(--cell-4); color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28); }
+.lattice .l4 { background: var(--cell-4); color: var(--on-accent); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28); }
 .lattice .l1, .lattice .l2, .lattice .l3 { box-shadow: inset 0 1px 0 var(--cell-hi); }
 .lattice .plan { box-shadow: inset 0 0 0 1px transparent; outline: 1px dashed var(--fill-3); outline-offset: -1px; }
 .lattice .later { color: var(--mute); }
 .lattice .now { box-shadow: inset 0 0 0 2px var(--ink), inset 0 3px 0 var(--cell-hi); color: var(--ink); font-weight: 700; }
-.lattice .l4.now { box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3px #fff; color: #fff; }
+.lattice .l4.now { box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3px #fff; color: var(--on-accent); }
 @media (min-width: 1000px) { .lattice .cell { aspect-ratio: 1.6; } }
 .dailystats { margin-top: var(--sp-3); }
 @media (max-width: 700px) { .g3, .g2 { grid-template-columns: 1fr; } }
@@ -831,17 +834,17 @@ fieldset:disabled .pick { cursor: default; }
   margin: 0 0 var(--sp-2);
   background: var(--face, var(--fill-2));
   box-shadow: var(--face-edge);
-  color: #fff;
+  color: var(--on-accent);
 }
 /* the metal chip, low on the right */
 .cardhead::after { content: ""; position: absolute; right: 16px; bottom: 16px; width: 34px; height: 24px; border-radius: var(--r-tag); background: var(--chip-metal); box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.3); opacity: 0.85; pointer-events: none; }
 .cardhead:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.cardhead .mute, .cardhead .chev { color: #fff; }
+.cardhead .mute, .cardhead .chev { color: var(--on-accent); }
 .cardhead > .mute:first-child { font-weight: 600; letter-spacing: 0.02em; }
 .cardhead .chev { float: right; display: inline-flex; }
 .cardhead .chev .icon { width: 16px; height: 16px; }
-.cardhead .big { font-size: var(--fs-3xl); color: #fff; }
-.cardhead .big .cur, .cardhead .big .cents { color: #fff; }
+.cardhead .big { font-size: var(--fs-3xl); color: var(--on-accent); }
+.cardhead .big .cur, .cardhead .big .cents { color: var(--on-accent); }
 .cardhead .big.word { font-weight: 400; }
 /* Credit used: a bar under Credit left, in place of that row's divider; orange from 90%. */
 .row.credit { border-bottom: 0; padding-bottom: var(--sp-1); }
