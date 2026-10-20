@@ -77,11 +77,13 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
         {rows.map((r) => {
           const net = nonZero(sumBy(r.lines));
           return (
-            <div key={r.person.id} className={`row static ${r.person.id === sel ? "sel" : ""}`}>
-              <button className="who" onClick={() => setSel(r.person.id)}>
+            <div key={r.person.id} className={`row static person ${r.person.id === sel ? "sel" : ""}`}>
+              <button className="who" aria-pressed={r.person.id === sel} onClick={() => setSel(r.person.id)}>
                 <b>{r.person.name}</b>
                 <span className="mute">{net.length ? net.map(([c, a]) => `${phrase(r.person.name, a).replace(r.person.name, "").trim()} ${formatMinor(Math.abs(a), c)}`).join(" · ") : "Settled"}</span>
               </button>
+              {/* The balance as a figure, the Ledger's way: owed to you green with a plus, what you owe plain. The line above says it in words. */}
+              {net.length > 0 && <span className="pfig" aria-hidden="true">{net.map(([c, a]) => <span key={c} className={a > 0 ? "pos" : ""}>{a > 0 ? "+" : ""}{formatMinor(Math.abs(a), c)}</span>)}</span>}
               <span className="acts">
                 <button className="btn ghost sm" onClick={() => void makeSnapshot(r)}>Snapshot</button>
                 <button className="btn sm" disabled={!net.length} onClick={() => setSettle(r)}>Settle</button>
@@ -96,13 +98,13 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
           <div className="grp">{current.person.name}</div>
           <div className="card">
             {nonZero(st.earlier).map(([c, a]) => (
-              <div key={c} className="row static"><span className="mute">Earlier balance</span><span className="mute">{formatMinor(a, c)}</span></div>
+              <div key={c} className="row static"><span className="mute">Earlier balance</span><span className="mute num">{a > 0 ? "+" : ""}{formatMinor(Math.abs(a), c)}</span></div>
             ))}
             {st.lines.length === 0 && !nonZero(st.earlier).length && <div className="row static"><span className="mute">Nothing since last settled</span></div>}
             {st.lines.map((l) => (
               <div key={l.id} className="row static">
                 <span>{labelShort(l.date)} &nbsp;{l.label}{l.total !== undefined && <span className="mute small"> of {formatMinor(l.total, l.currency)}</span>}{l.mode && <span className="tag">{modeLabel(l.mode)}</span>}</span>
-                <span className={l.amount < 0 ? "pos" : ""}>{formatMinor(l.amount, l.currency)}</span>
+                <span className={l.amount > 0 ? "num pos" : "num"}>{l.amount > 0 ? "+" : ""}{formatMinor(Math.abs(l.amount), l.currency)}</span>
               </div>
             ))}
           </div>
