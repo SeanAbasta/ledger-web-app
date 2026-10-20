@@ -5,10 +5,10 @@
    Every colour lives here, in both themes. Blue has three roles: --accent fills what you press,
    --accent-ink is blue text, --accent-data draws charts (never text). */
 :root {
-  /* The ground falls from light to a little deeper over the first screen, then holds (--bg), so the
-     pinned day headers, which sit on --bg, match it once the page has scrolled. */
+  /* The ground falls from light to a little deeper under the bar and the first controls, then holds
+     (--bg), so the pinned day headers, which sit on --bg, match it (a longer fall showed as a band). */
   --bg: #e2e5e9;
-  --ground: linear-gradient(180deg, #eceef1 0, #e2e5e9 720px);
+  --ground: linear-gradient(180deg, #eceef1 0, #e2e5e9 240px);
   --ink: #111316;
   --mute: #5a5f66; /* graphite: 6.2:1 on a plate, 5.1:1 on the ground */
   --line: rgba(17, 19, 22, 0.085);
@@ -132,7 +132,7 @@
    Space black: the ground falls to near black, plates one step lighter with a rim of light. */
 :root[data-theme="dark"] {
   --bg: #0b0c0e;
-  --ground: linear-gradient(180deg, #16171b 0, #0b0c0e 720px);
+  --ground: linear-gradient(180deg, #16171b 0, #0b0c0e 240px);
   --ink: #f2f3f5;
   --mute: #a1a7af; /* 7.0:1 on a plate */
   --line: rgba(255, 255, 255, 0.08);
@@ -565,9 +565,24 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 @media (min-width: 1000px) { .statrow .hero .big { font-size: 60px; } }
 .statrow .stat:not(.hero) .big { font-size: var(--fs-xl); }
 .big.word.nodata { color: var(--mute); }
-.spentbar { height: 6px; border-radius: 3px; background: var(--fill-2); margin: var(--sp-2) 0 var(--sp-1); overflow: hidden; }
-.spentbar i { display: block; height: 100%; border-radius: 3px; background: var(--accent-data); }
-.spentbar.over i { background: var(--warn); }
+/* The bezel around Spent (src/ui/Bezel.tsx): the ring stands at the left of the plate and the label,
+   figure and line sit beside it, as in the approved comp. Beside the ring the hero figure is 34 px on
+   small phones and 40 px to 700 px (so ₱9,999,999.99 still fits), 50 px wider and 60 px from 1000 px. */
+.hero.gauged { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "ring lab" "ring fig" "ring cap"; column-gap: var(--sp-4); align-content: center; }
+.hero.gauged > :first-child { grid-area: lab; align-self: end; }
+.hero.gauged > .big { grid-area: fig; }
+.hero.gauged > .small { grid-area: cap; align-self: start; }
+.hero.gauged > .bezel { grid-area: ring; width: 96px; height: 96px; align-self: center; }
+.statrow .hero.gauged .big { font-size: 34px; }
+@media (min-width: 401px) { .statrow .hero.gauged .big { font-size: 40px; } .hero.gauged > .bezel { width: 108px; height: 108px; } }
+@media (min-width: 701px) { .statrow .hero.gauged .big { font-size: 50px; } .hero.gauged > .bezel { width: 128px; height: 128px; } }
+@media (min-width: 1000px) { .statrow .hero.gauged .big { font-size: 60px; } }
+.bezel line.st { stroke: var(--mute); stroke-width: 1; opacity: 0.6; }
+.bezel line.lt { stroke: var(--ink); stroke-width: 1.6; }
+.bezel circle, .bezel path { fill: none; }
+.bezel .btrack { stroke: var(--fill); stroke-width: 7; }
+.bezel .barc { stroke: var(--accent-data); stroke-width: 7; stroke-linecap: round; }
+.bezel .bover { stroke: var(--warn); stroke-width: 3.5; stroke-dasharray: 2 1.5; }
 @media (max-width: 1000px) { .statrow { grid-template-columns: 1fr 1fr; } .statrow .hero { grid-column: 1 / -1; } }
 /* Small phones: ₱9,999,999.99 still fits a tile at 375 px, with a little to spare. */
 @media (max-width: 400px) { .statrow .stat:not(.hero) { padding-inline: 14px; } .statrow .stat:not(.hero) .big { font-size: 20px; } }

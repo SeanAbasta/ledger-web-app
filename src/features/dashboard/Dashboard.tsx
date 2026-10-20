@@ -17,6 +17,7 @@ import { accountsWhatIf, dailyStats, matchesAccount, NO_ACCOUNT, pctChange, plan
 import { orphans, type Orphans } from "../../data/usage";
 import { AccountOptions } from "../../ui/AccountOptions";
 import { BigAmount } from "../../ui/Amount";
+import { Bezel } from "../../ui/Bezel";
 import { cardColor } from "../../ui/cardColor";
 import { categoryTone } from "../../ui/categoryColor";
 import { Empty } from "../../ui/Empty";
@@ -245,11 +246,9 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
       <div key={from} className={v.dir === 1 ? "period next" : v.dir === -1 ? "period prev" : "period"}>
       {/* Spent leads; Still due and Last month sit side by side under it on phones, beside it on computers. */}
       <div className="statrow">
-        <div className="card stat hero"><div className="mute">{future ? "Planned" : "Spent"}{acctName && <span className="tag">{acctName}</span>}</div><BigAmount minor={future ? chart.total : cur.total} currency={base} />
-          {!future && prevTotal > 0 && (
-            // This month so far against last month's same days: full and orange once past it.
-            <div className={cur.total > prevTotal ? "spentbar over" : "spentbar"} aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(1, cur.total / prevTotal)) * 100}%` }} /></div>
-          )}
+        <div className={future ? "card stat hero" : "card stat hero gauged"}><div className="mute">{future ? "Planned" : "Spent"}{acctName && <span className="tag">{acctName}</span>}</div><BigAmount minor={future ? chart.total : cur.total} currency={base} />
+          {/* The bezel: this month so far against last month's same days, past 100% in amber. Empty with no earlier data; none for a later month. */}
+          {!future && <Bezel ratio={prevTotal > 0 ? cur.total / prevTotal : undefined} />}
           <div className="mute small">{future ? "Scheduled payments only" : change === null ? "No earlier data" : change === 0 ? "Same as last month" : `${Math.abs(change)}% ${change < 0 ? "less" : "more"} than last month`}</div></div>
         <div className="card stat"><div className="mute">Still due</div><BigAmount minor={stillDue} currency={base} />
           <div className="mute small">{isCurrent ? "rest of this month" : "current month only"}</div></div>
