@@ -31,6 +31,10 @@
   --glass-hi: #fff;
   --shadow: 0 10px 30px rgba(15, 20, 35, 0.16);
   --card-shadow: 0 1px 2px rgba(17, 19, 22, 0.05);
+  /* Machined plates: a two-stop face with a bright chamfer along the top edge and a soft offset shadow.
+     Elevation is declared once, in the shadow (the hairline is part of it, never a border). */
+  --plate: linear-gradient(180deg, #fdfdfe, #f7f8fa);
+  --plate-shadow: inset 0 1px 0 #fff, inset 0 0 0 0.5px rgba(17, 19, 22, 0.07), 0 1px 1px rgba(17, 19, 22, 0.05), 0 10px 24px -14px rgba(20, 30, 50, 0.28);
   --surface: #fbfbfc; /* a plate, solid */
   --seg-on: #fff;
   --fill: #eceef1; /* tracks and fields */
@@ -64,7 +68,13 @@
   --sp-4: 16px;
   --sp-5: 24px;
   --sp-6: 32px;
-  --radius-card: 18px;
+  /* One radius family: plates 14, card faces 12, controls 10, fields 9, tags 5. Pills only on small
+     controls (buttons, chips, the sync pill). */
+  --radius-card: 14px;
+  --r-face: 12px;
+  --r-ctl: 10px;
+  --r-input: 9px;
+  --r-tag: 5px;
   --gutter: 24px;
   /* Width of the content column on big screens; lists read better narrower. */
   --content-max: 1120px;
@@ -110,6 +120,8 @@
   --glass-hi: rgba(255, 255, 255, 0.09);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
   --card-shadow: none;
+  --plate: linear-gradient(180deg, #1d1f24, #17191d);
+  --plate-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 0 0 0.5px rgba(255, 255, 255, 0.05), 0 12px 28px -14px rgba(0, 0, 0, 0.8);
   --bar-bg: rgba(11, 12, 14, 0.92);
   --side-bg: rgba(26, 28, 32, 0.6);
   --tab-bg: rgba(28, 30, 34, 0.94);
@@ -235,7 +247,7 @@ main.reading { --col: var(--reading-max); }
 button { font: inherit; color: inherit; }
 input, select {
   font: inherit; color: inherit; background: var(--fill);
-  border: 0; border-radius: 8px; padding: 6px 10px; min-width: 0;
+  border: 0; border-radius: var(--r-input); padding: 6px 10px; min-width: 0;
 }
 input:focus, select:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
 /* Open lists: Chrome on Windows cannot draw the translucent --fill, so it falls back to white and the
@@ -259,10 +271,11 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
   background: var(--glass);
   backdrop-filter: blur(28px) saturate(1.5);
   -webkit-backdrop-filter: blur(28px) saturate(1.5);
-  border: 1px solid var(--glass-line);
-  border-radius: 20px;
-  box-shadow: var(--shadow), inset 0 1px 0 var(--glass-hi);
+  border-radius: var(--radius-card);
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--shadow);
 }
+/* The Add card is a plate, not glass: nothing scrolls under it. */
+.addcard.glasscard { background: var(--plate); box-shadow: var(--plate-shadow); -webkit-backdrop-filter: none; backdrop-filter: none; }
 .addcard { max-width: 460px; margin: 0 auto; padding: 22px; }
 .main, main { min-width: 0; }
 .field { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 1px solid var(--line); }
@@ -283,8 +296,8 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .btn.danger { color: var(--err); }
 /* Delete, Skip and End series after the first tap: filled, asking for a second tap. */
 .btn.armed.danger { background: var(--err-fill); color: #fff; }
-.seg { display: inline-flex; background: var(--fill-2); border-radius: 9px; padding: 2px; }
-.seg button { all: unset; padding: 4px 12px; border-radius: 7px; font-size: var(--fs-md); font-weight: 500; color: var(--mute); cursor: pointer; white-space: nowrap; }
+.seg { display: inline-flex; background: var(--fill-2); border-radius: var(--r-ctl); padding: 2px; }
+.seg button { all: unset; padding: 4px 12px; border-radius: 8px; font-size: var(--fs-md); font-weight: 500; color: var(--mute); cursor: pointer; white-space: nowrap; }
 @media (max-width: 400px) { .seg button { padding: 4px 9px; } }
 /* A segmented control too wide for its row (split Mode on small phones) moves to its own line, right aligned. */
 .field:has(> .seg) { flex-wrap: wrap; row-gap: 6px; }
@@ -331,12 +344,12 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .balnote { margin: var(--sp-4) 0 0; }
 .grp { font-size: var(--fs-md); font-weight: 600; color: var(--ink); margin: var(--sp-5) 0 var(--sp-2); display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); }
 .grp .r { color: var(--mute); font-weight: 500; }
-.card { background: var(--surface); border-radius: var(--radius-card); box-shadow: var(--card-shadow); padding: 2px var(--sp-4); }
+.card { background: var(--plate); border-radius: var(--radius-card); box-shadow: var(--plate-shadow); padding: 2px var(--sp-4); }
 .row { all: unset; box-sizing: border-box; width: 100%; display: flex; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) 0; border-bottom: 1px solid var(--line); cursor: pointer; }
 .row:last-child { border-bottom: 0; }
 /* The last setting in a card draws no divider, or it looks like a row is cut off below it. */
 .card > .field:last-child { border-bottom: 0; }
-.tag { font-size: var(--fs-xs); padding: 2px 7px; border-radius: 6px; background: var(--fill-2); color: var(--mute); margin-left: 6px; white-space: nowrap; display: inline-block; }
+.tag { font-size: var(--fs-xs); padding: 2px 7px; border-radius: var(--r-tag); background: var(--fill-2); color: var(--mute); margin-left: 6px; white-space: nowrap; display: inline-block; }
 .scrim { position: fixed; inset: 0; background: var(--scrim); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: var(--z-scrim); padding: 16px; }
 .sheet { width: 440px; max-width: 100%; max-height: 90vh; overflow: auto; padding: 22px; }
 .sheet h3 { margin: 0 0 var(--sp-2); font-size: var(--fs-lg); }
@@ -359,7 +372,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 @keyframes slide-in { from { transform: translateY(100%); } }
 @media (max-width: 700px) {
   .drawer { align-items: flex-end; padding: 0; }
-  .drawer .sheet { width: 100%; max-height: 90dvh; border-radius: 20px 20px 0 0; border-bottom: 0; padding: 0 18px calc(22px + env(safe-area-inset-bottom)); animation-name: slide-in; }
+  .drawer .sheet { width: 100%; max-height: 90dvh; border-radius: var(--radius-card) var(--radius-card) 0 0; padding: 0 18px calc(22px + env(safe-area-inset-bottom)); animation-name: slide-in; }
   .drawer.closing .sheet { transform: translateY(100%); opacity: 1; }
   .grab { display: block; padding: 8px 0 14px; touch-action: none; cursor: grab; }
   .sheet .close { display: none; }
@@ -508,14 +521,14 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .row.whatif { border-bottom: 0; padding: 2px 0; font-size: var(--fs-sm); color: var(--mute); }
 .row.whatif.first { padding-top: var(--sp-2); }
 .choices { display: flex; gap: 6px; margin: 4px 0 2px; }
-.choice { all: unset; box-sizing: border-box; flex: 1; min-width: 0; text-align: center; padding: 7px 8px; border-radius: 12px; background: var(--fill); border: 1px solid var(--line); cursor: pointer; font-size: var(--fs-md); font-weight: 500; }
+.choice { all: unset; box-sizing: border-box; flex: 1; min-width: 0; text-align: center; padding: 7px 8px; border-radius: var(--r-ctl); background: var(--fill); border: 1px solid var(--line); cursor: pointer; font-size: var(--fs-md); font-weight: 500; }
 .choice small { display: block; font-size: var(--fs-xs); font-weight: 400; color: var(--mute); overflow-wrap: anywhere; }
 .choice.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
 .choice.on small { color: var(--accent-ink); }
 .choice:focus-visible { outline: 2px solid var(--focus); }
 .btn:disabled { opacity: 0.4; cursor: default; }
 .pos { color: var(--good-ink); }
-.snap { width: 100%; border-radius: 12px; display: block; }
+.snap { width: 100%; border-radius: var(--r-ctl); display: block; }
 
 /* settings, forecast */
 .stack > .grp:first-child { margin-top: 0; }
@@ -595,9 +608,9 @@ fieldset.plain:disabled { opacity: 0.55; }
 .check { width: 44px; height: 44px; border-radius: 50%; background: var(--good-soft); color: var(--good); display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 10px; }
 .spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--accent-soft); border-top-color: var(--accent-data); margin: 0 auto 12px; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.choice { display: block; width: 100%; padding: 10px; border-radius: 12px; background: var(--choice); border: 1px solid var(--line); margin-bottom: 8px; font-weight: 500; cursor: pointer; }
+.choice { display: block; width: 100%; padding: 10px; border-radius: var(--r-ctl); background: var(--choice); border: 1px solid var(--line); margin-bottom: 8px; font-weight: 500; cursor: pointer; }
 .choice small { display: block; color: var(--mute); font-weight: 400; }
-.note { font-size: var(--fs-sm); color: var(--mute); text-align: left; background: var(--warn-soft); border-radius: 10px; padding: 8px 10px; margin: 12px 0; }
+.note { font-size: var(--fs-sm); color: var(--mute); text-align: left; background: var(--warn-soft); border-radius: var(--r-ctl); padding: 8px 10px; margin: 12px 0; }
 details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 .steps { margin: 6px 0 0; padding-left: 18px; }
 .steps li { margin: 3px 0; }
@@ -683,7 +696,7 @@ fieldset:disabled .pick { cursor: default; }
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: var(--r-face);
   padding: var(--sp-4);
   margin: 0 0 var(--sp-2);
   background: var(--face, var(--fill-2));
@@ -720,7 +733,7 @@ fieldset:disabled .swatch { cursor: default; }
 
 /* Reconcile results */
 .recon { margin-top: var(--sp-3); display: grid; gap: var(--sp-2); }
-.recon-item { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.recon-item { border: 1px solid var(--line); border-radius: var(--r-ctl); padding: 10px 12px; }
 .recon-item p { margin: 4px 0; }
 .recon-item .recon-head { margin: 0; }
 .recon-item.matches .recon-head { color: var(--ok); }
@@ -741,7 +754,7 @@ fieldset:disabled .swatch { cursor: default; }
 /* Tab change: the new screen fades in (150 ms). Already a fade, so Reduce Motion keeps it. */
 .tabfade { animation: fade-in 150ms ease-out; }
 /* Chart breakdown popover (src/ui/Popover.tsx): placed inside its card, never wider than it. */
-.pop { position: absolute; z-index: 1; width: 260px; max-width: calc(100% - 16px); box-sizing: border-box; padding: var(--sp-3); border-radius: 14px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow), 0 0 0 1px var(--line); font-size: var(--fs-md); animation: fade-in 120ms ease-out; }
+.pop { position: absolute; z-index: 1; width: 260px; max-width: calc(100% - 16px); box-sizing: border-box; padding: var(--sp-3); border-radius: var(--radius-card); background: var(--surface); color: var(--ink); box-shadow: 0 0 0 0.5px var(--line), var(--shadow); font-size: var(--fs-md); animation: fade-in 120ms ease-out; }
 .pop.measuring { visibility: hidden; left: 0; top: 0; }
 .pophead { display: flex; align-items: center; gap: var(--sp-2); }
 .pophead i { width: 9px; height: 9px; border-radius: 3px; flex: none; background: var(--tone, var(--t-gray)); }
