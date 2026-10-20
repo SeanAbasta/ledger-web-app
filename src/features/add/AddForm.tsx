@@ -13,6 +13,7 @@ import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { AccountOptions } from "../../ui/AccountOptions";
 import { MODE_LABEL } from "../../ui/splitLabels";
+import { CategoryChips } from "../../ui/CategoryChips";
 import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
@@ -193,8 +194,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
       {foreign && (
         <label className="field"><b>Rate</b><input placeholder={`${settings.baseCurrency} per 1 ${currency}`} inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} /></label>
       )}
-      <label className="field"><b>Category</b>
-        <select value={category} onChange={(e) => setCategory(e.target.value)}>{settings.categories.map((c) => <option key={c}>{c}</option>)}</select></label>
+      <div className="field stack"><b>Category</b><CategoryChips list={settings.categories} value={category} onChange={setCategory} /></div>
       <label className="field"><b>Note</b><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" /></label>
       <label className="field"><b>{kind === "one-off" ? "Date" : "Starts"}{card && validDate && cutoffFor(card, date) === date && <span className="tag">statement day</span>}</b><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
       {accounts.length > 0 && (
