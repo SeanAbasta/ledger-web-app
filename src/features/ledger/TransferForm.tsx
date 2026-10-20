@@ -22,7 +22,7 @@ const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[
  * Without `entry` (the Add tab): a new transfer between two of my bank accounts in the same currency. Cards
  * are not offered (paying a card is the Pay button on Dashboard).
  */
-export function TransferForm({ entry, accounts: given, onDone }: { entry?: Entry; accounts?: (Account & { deleted?: true })[]; onDone: (saved?: SavedNote) => void }) {
+export function TransferForm({ entry, accounts: given, onDone, onOpenSettings }: { entry?: Entry; accounts?: (Account & { deleted?: true })[]; onDone: (saved?: SavedNote) => void; onOpenSettings?: () => void }) {
   const { store, changed } = useLedger();
   const [loaded, setLoaded] = useState<(Account & { deleted?: true })[]>();
   const [from, setFrom] = useState(entry?.accountId ?? "");
@@ -89,7 +89,12 @@ export function TransferForm({ entry, accounts: given, onDone }: { entry?: Entry
   }
 
   if (creating && loaded && fromList.length === 0) {
-    return <p className="mute">Add another bank account in Settings. A transfer moves money between two bank accounts in the same currency.</p>;
+    return (
+      <div className="transferhint">
+        <p className="mute">Add another bank account in Settings. A transfer moves money between two bank accounts in the same currency.</p>
+        {onOpenSettings && <button type="button" className="btn ghost sm" onClick={onOpenSettings}>Open Settings</button>}
+      </div>
+    );
   }
 
   const toCards = toList.filter(isCard);

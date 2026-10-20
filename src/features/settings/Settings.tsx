@@ -108,13 +108,13 @@ function CardRow({ a, base, color, onSave, onRemove }: { a: Account; base: strin
   );
 }
 
-type Page = "accounts" | "people" | "general" | "sync";
+export type Page = "accounts" | "people" | "general" | "sync";
 /** Settings opens on a short list of pages, each a group of the old long page. */
 const PAGES: [Page, string][] = [["general", "General"], ["accounts", "Accounts"], ["people", "People and categories"], ["sync", "Sync and backup"]];
 const THEME_LABEL: Record<Theme, string> = { light: "Light", dark: "Dark", auto: "Auto" };
 
 /** `focusCard` (from Reconcile, "Set as Owed at start") opens Accounts and scrolls that card into view once loaded. */
-export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCard?: string }) {
+export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => void; focusCard?: string; initialPage?: Page }) {
   const { store, rev, changed } = useLedger();
   const { config, status, engine, disconnect, readOnly } = useSync();
   const [lastExported, setLastExported] = useState<string>();
@@ -136,7 +136,8 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
   const [cat, setCat] = useState("");
   // Category chips show their ✕ only in Edit mode, so a stray tap cannot remove one.
   const [editCats, setEditCats] = useState(false);
-  const [page, setPage] = useState<Page | undefined>(focusCard ? "accounts" : undefined);
+  // Read once on mount (the page resets per tab): Reconcile's card, or the Add tab's "Open Settings".
+  const [page, setPage] = useState<Page | undefined>(focusCard ? "accounts" : initialPage);
   const [person, setPerson] = useState("");
 
   useEffect(() => {

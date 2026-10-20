@@ -13,7 +13,7 @@ import { IncomeForm } from "../add/IncomeForm";
 import { PlanSheet } from "./PlanSheet";
 import { shareLine } from "./rowShare";
 import { NEXT_CARD_ROWS, cardVisible, nextCardKeys, withoutCardRows } from "./nextCard";
-import { allTimeRange, groupByDay, groupByMonth } from "./allTime";
+import { allTimeRange, emptyAction, groupByDay, groupByMonth } from "./allTime";
 import { TransferForm } from "./TransferForm";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
@@ -39,8 +39,11 @@ function title(view: View, anchor: string): string {
   return view === "Day" ? labelDay(a) : view === "Week" ? `${labelShort(a)} to ${labelShort(b)}` : labelMonth(a);
 }
 
-/** `initialDate` and `notice` come from the Add form: open where the new item is, and say it was saved. */
-export function Ledger({ initialDate, notice }: { initialDate?: string; notice?: string } = {}) {
+/**
+ * `initialDate` and `notice` come from the Add form: open where the new item is, and say it was saved.
+ * `onAdd` opens the Add tab (the empty state's button on the period that holds today).
+ */
+export function Ledger({ initialDate, notice, onAdd }: { initialDate?: string; notice?: string; onAdd?: () => void } = {}) {
   const { store, rev, changed } = useLedger();
   const [view, setView] = useState<View>("Month");
   const [anchor, setAnchor] = useState(initialDate ?? today());
@@ -266,8 +269,8 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
       )}
 
       {groups.length === 0 && (filtered
-        ? <Empty icon={<LedgerIcon />} title="No matches" note={`Nothing${cat ? ` in ${cat}` : ""} in ${title(view, shown.from)}${q.trim() ? ` has "${q.trim()}"` : ""}`} />
-        : <Empty icon={<LedgerIcon />} title="Nothing logged" note={title(view, shown.from)} />)}
+        ? <Empty icon={<LedgerIcon />} title="No matches" note={`Nothing${cat ? ` in ${cat}` : ""} in ${title(view, shown.from)}${q.trim() ? ` has "${q.trim()}"` : ""}`} action={{ label: "Search all months", onClick: () => setScope("all") }} />
+        : <Empty icon={<LedgerIcon />} title="Nothing logged" note={title(view, shown.from)} action={emptyAction([shown.from, shown.to], t, false) === "add" && onAdd ? { label: "Add expense", onClick: onAdd } : undefined} />)}
       {groups.map(([date, its]) => dayBlock(date, its))}
       </div>
       )}

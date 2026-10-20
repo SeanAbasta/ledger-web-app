@@ -1,4 +1,4 @@
-import { addDays } from "../../data/dates";
+import { addDays, contains } from "../../data/dates";
 import type { LedgerItem } from "../../data/rules";
 import type { Entry, Rule } from "../../data/schema";
 
@@ -26,4 +26,13 @@ export function groupByMonth(items: readonly LedgerItem[]): [string, [string, Le
   const g = new Map<string, LedgerItem[]>();
   for (const it of items) g.set(it.date.slice(0, 7), [...(g.get(it.date.slice(0, 7)) ?? []), it]);
   return [...g.entries()].map(([m, its]) => [m, groupByDay(its)]);
+}
+
+/**
+ * The button under an empty Ledger list: a filtered "No matches" offers Search all months; an empty
+ * period that holds today offers Add expense; past and future periods keep the plain empty state.
+ */
+export function emptyAction(period: [string, string], today: string, filtered: boolean): "search" | "add" | undefined {
+  if (filtered) return "search";
+  return contains(period, today) ? "add" : undefined;
 }

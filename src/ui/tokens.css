@@ -237,6 +237,9 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .emptyicon .icon { width: 26px; height: 26px; }
 .emptytitle { margin: 0 0 var(--sp-1); font-size: var(--fs-lg); font-weight: 600; color: var(--ink); }
 .emptystate .small { margin: 0; }
+.emptystate .emptyaction { margin-top: var(--sp-3); }
+/* Add > Transfer with fewer than two bank accounts in one currency: the hint and a way to Settings. */
+.transferhint .btn { margin-top: var(--sp-2); }
 .glasscard {
   background: var(--glass);
   backdrop-filter: blur(28px) saturate(1.5);

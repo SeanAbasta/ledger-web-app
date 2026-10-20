@@ -106,7 +106,7 @@ function Bars({ days, from, elapsed, todayIdx, base, label }: { days: number[]; 
   );
 }
 
-export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { onOpenPerson: (personId: string) => void; onOpenLedger: (date: string) => void; onOpenCardSettings: (cardId: string) => void }) {
+export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAdd }: { onOpenPerson: (personId: string) => void; onOpenLedger: (date: string) => void; onOpenCardSettings: (cardId: string) => void; onAdd?: () => void }) {
   const { store, rev } = useLedger();
   const [anchor, setAnchor] = useState(today());
   const [v, setV] = useState<View>();
@@ -260,7 +260,8 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings }: { 
       </div>
 
       {catTotal <= 0 ? (
-        <Empty icon={<DashboardIcon />} title={future ? "Nothing planned" : "Nothing spent yet"} note={acctName ? `${labelMonth(from)}, ${acctName}` : labelMonth(from)} />
+        <Empty icon={<DashboardIcon />} title={future ? "Nothing planned" : "Nothing spent yet"} note={acctName ? `${labelMonth(from)}, ${acctName}` : labelMonth(from)}
+          action={isCurrent && onAdd ? { label: "Add expense", onClick: onAdd } : undefined} />
       ) : (
         <div className="grid g2">
           <div ref={catRef} className={pop.open ? "card pad catcard popopen" : "card pad catcard"}>

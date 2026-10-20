@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { itemMatches } from "../src/data/ledgerFilter";
 import { ledgerItems } from "../src/data/rules";
 import type { Entry, Rule } from "../src/data/schema";
-import { allTimeRange, groupByDay, groupByMonth } from "../src/features/ledger/allTime";
+import { allTimeRange, emptyAction, groupByDay, groupByMonth } from "../src/features/ledger/allTime";
 
 const T = "2026-10-20";
 const U = "2026-10-01T00:00:00Z";
@@ -64,5 +64,20 @@ describe("searching all months", () => {
   });
   it("works with a category alone", () => {
     expect(all().filter((it) => itemMatches(it, "", "Food")).map((it) => it.date)).toEqual(["2026-10-20", "2026-10-19"]);
+  });
+});
+
+describe("emptyAction", () => {
+  it("offers Search all months when filtered, on any period", () => {
+    expect(emptyAction(["2026-10-01", "2026-10-31"], T, true)).toBe("search");
+    expect(emptyAction(["2026-08-01", "2026-08-31"], T, true)).toBe("search");
+  });
+  it("offers Add expense on an empty period that holds today", () => {
+    expect(emptyAction(["2026-10-01", "2026-10-31"], T, false)).toBe("add");
+    expect(emptyAction([T, T], T, false)).toBe("add");
+  });
+  it("offers nothing on past and future periods", () => {
+    expect(emptyAction(["2026-11-01", "2026-11-30"], T, false)).toBeUndefined();
+    expect(emptyAction(["2026-09-01", "2026-09-30"], T, false)).toBeUndefined();
   });
 });

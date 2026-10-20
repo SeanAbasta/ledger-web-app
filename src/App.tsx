@@ -5,7 +5,7 @@ import { TransferForm } from "./features/ledger/TransferForm";
 import { Dashboard } from "./features/dashboard/Dashboard";
 import { Forecast } from "./features/forecast/Forecast";
 import { Ledger } from "./features/ledger/Ledger";
-import { Settings } from "./features/settings/Settings";
+import { Settings, type Page as SettingsPage } from "./features/settings/Settings";
 import { Splits } from "./features/splits/Splits";
 import { Gate } from "./features/sync/Gate";
 import { SetupSheet } from "./features/sync/SetupSheet";
@@ -36,7 +36,7 @@ type AddKind = (typeof ADD_KINDS)[number];
  * After a save it stays here with a "Saved: ..." line and a View button, so several can be logged in a row;
  * only a plan that starts later opens the Ledger at once (`open`).
  */
-function AddTab({ onView }: { onView: (s: SavedNote) => void }) {
+function AddTab({ onView, onOpenSettings }: { onView: (s: SavedNote) => void; onOpenSettings: () => void }) {
   const [kind, setKind] = useState<AddKind>("Expense");
   const [saved, setSaved] = useState<SavedNote>();
   const done = (s?: SavedNote) => {
@@ -52,18 +52,18 @@ function AddTab({ onView }: { onView: (s: SavedNote) => void }) {
       {saved && (
         <p className="savedline" role="status">{saved.message}. <button type="button" className="link" onClick={() => onView(saved)}>View</button></p>
       )}
-      {kind === "Expense" ? <AddForm onDone={done} /> : kind === "Income" ? <IncomeForm onDone={done} /> : <TransferForm onDone={done} />}
+      {kind === "Expense" ? <AddForm onDone={done} /> : kind === "Income" ? <IncomeForm onDone={done} /> : <TransferForm onDone={done} onOpenSettings={onOpenSettings} />}
     </div>
   );
 }
 
-function Screen({ tab, go, setup, focusPerson, openPerson, saved, onSaved, focusCard, openCard }: { tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; focusCard?: string; openCard: (id: string) => void }) {
-  if (tab === "Add") return <AddTab onView={(s) => { onSaved(s); go("Ledger"); }} />;
-  if (tab === "Ledger") return <Ledger key={saved?.date ?? ""} initialDate={saved?.date} notice={saved?.message} />;
-  if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); go("Ledger"); }} onOpenCardSettings={openCard} />;
+function Screen({ tab, go, setup, focusPerson, openPerson, saved, onSaved, focusCard, openCard, settingsPage, openSettings }: { tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; focusCard?: string; openCard: (id: string) => void; settingsPage?: SettingsPage; openSettings: (p: SettingsPage) => void }) {
+  if (tab === "Add") return <AddTab onView={(s) => { onSaved(s); go("Ledger"); }} onOpenSettings={() => openSettings("accounts")} />;
+  if (tab === "Ledger") return <Ledger key={saved?.date ?? ""} initialDate={saved?.date} notice={saved?.message} onAdd={() => go("Add")} />;
+  if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); go("Ledger"); }} onOpenCardSettings={openCard} onAdd={() => go("Add")} />;
   if (tab === "Splits") return <Splits key={focusPerson ?? ""} initialPerson={focusPerson} />;
   if (tab === "Forecast") return <Forecast />;
-  return <Settings onSetup={setup} focusCard={focusCard} />;
+  return <Settings onSetup={setup} focusCard={focusCard} initialPage={settingsPage} />;
 }
 
 function Shell() {
@@ -75,6 +75,8 @@ function Shell() {
   const [saved, setSaved] = useState<SavedNote>();
   // Set when Reconcile opens a card's settings ("Set as Owed at start"), so Settings scrolls to it.
   const [focusCard, setFocusCard] = useState<string>();
+  // Set when another screen opens a Settings page directly (the Add tab's transfer hint).
+  const [settingsPage, setSettingsPage] = useState<SettingsPage>();
   const { status, readOnly, editOffline, engine } = useSync();
   const locked = readOnly && EDIT_TABS.includes(tab);
 
@@ -85,7 +87,7 @@ function Shell() {
         {NAV.map((n) => {
           const Icon = ICON[n];
           return (
-            <button key={n} className={n === tab ? "on" : ""} aria-current={n === tab ? "page" : undefined} onClick={() => { setFocusPerson(undefined); setSaved(undefined); setFocusCard(undefined); setTab(n); }}>
+            <button key={n} className={n === tab ? "on" : ""} aria-current={n === tab ? "page" : undefined} onClick={() => { setFocusPerson(undefined); setSaved(undefined); setFocusCard(undefined); setSettingsPage(undefined); setTab(n); }}>
               <Icon /><span>{n}</span>
             </button>
           );
@@ -107,7 +109,7 @@ function Shell() {
           <fieldset className="plain" disabled={locked}>
             {/* Keyed on the tab so the new screen fades in (screens already remount on a tab change). */}
             <div key={tab} className="tabfade">
-            <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("Splits"); }} saved={saved} onSaved={setSaved} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} />
+            <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("Splits"); }} saved={saved} onSaved={setSaved} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} settingsPage={settingsPage} openSettings={(p) => { setSettingsPage(p); setTab("Settings"); }} />
             </div>
           </fieldset>
         </section>
