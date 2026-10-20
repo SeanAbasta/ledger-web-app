@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { list, listAll, remove, restore, saveSettings, upsert } from "../../data/collections";
 import { moveAndRemove } from "../../data/accountMove";
 import { CURRENCIES } from "../../data/currencies";
-import { formatMinor, parseMinor } from "../../data/money";
+import { formatMinor } from "../../data/money";
 import type { Account, Defaults, Entry, Person, Rule, Settings as S } from "../../data/schema";
 import { DEFAULT_DUE_DAYS, DEFAULT_SETTINGS, isCard } from "../../data/schema";
 import { getSettings } from "../../data/collections";
@@ -25,21 +25,22 @@ import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { AccountOptions } from "../../ui/AccountOptions";
 import { applyTheme, loadTheme, saveTheme, THEMES, type Theme } from "../../ui/theme";
+import { accountEdit, cardEdit } from "./accountEdit";
 
 const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[^\d.-]/g, "");
 
-function AccountRow({ a, base, onSave, onRemove }: { a: Account; base: string; onSave: (a: Account) => void; onRemove: () => void }) {
+/** "Saved" for a moment next to a row's ✕ after a real change (the flag lives in Settings, so it survives the row reloading). */
+const SavedTick = ({ on }: { on?: boolean }) => (on ? <span className="savedtick" role="status">Saved</span> : null);
+
+function AccountRow({ a, base, saved, onSave, onRemove }: { a: Account; base: string; saved?: boolean; onSave: (a: Account) => void; onRemove: () => void }) {
   const [name, setName] = useState(a.name);
   const [currency, setCurrency] = useState(a.currency);
   const [opening, setOpening] = useState(plain(a.openingBalance, a.currency));
   const [rate, setRate] = useState(a.rate ?? "");
+  // Only a real change is saved (an unchanged blur writes nothing); an unreadable balance is ignored, as before.
   const commit = (over: Partial<{ name: string; currency: string; opening: string; rate: string }> = {}) => {
-    const cur = over.currency ?? currency;
-    const neg = (over.opening ?? opening).trim().startsWith("-");
-    const o = parseMinor((over.opening ?? opening).replace("-", ""), cur);
-    if (o === null) return;
-    const r = (over.rate ?? rate).trim();
-    onSave({ ...a, name: (over.name ?? name).trim() || "Account", currency: cur, openingBalance: neg ? -o : o, rate: cur !== base && /^\d+(\.\d+)?$/.test(r) ? r : undefined });
+    const r = accountEdit(a, { name, currency, opening, rate, ...over }, base);
+    if (r && "account" in r) onSave(r.account);
   };
   // Same shape as a card: name and ✕, then labelled fields. The opening balance is what the account
   // held before the first entry logged on it; today's bank balance would count earlier entries twice.
@@ -47,6 +48,7 @@ function AccountRow({ a, base, onSave, onRemove }: { a: Account; base: string; o
     <div className="cardacct">
       <div className="acct">
         <input aria-label="Account name" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => commit()} />
+        <SavedTick on={saved} />
         <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}>✕</button>
       </div>
       <label className="field"><b>Currency</b>
@@ -63,10 +65,8 @@ function AccountRow({ a, base, onSave, onRemove }: { a: Account; base: string; o
   );
 }
 
-const dayOk = (n: number, lo: number, hi: number) => Number.isInteger(n) && n >= lo && n <= hi;
-
 /** A credit card: cut-off day, due days, optional limit, what was owed when it was added and its colour. Always in the base currency. */
-function CardRow({ a, base, color, onSave, onRemove }: { a: Account; base: string; color: CardColor; onSave: (a: Account) => void; onRemove: () => void }) {
+function CardRow({ a, base, color, saved, onSave, onRemove }: { a: Account; base: string; color: CardColor; saved?: boolean; onSave: (a: Account) => void; onRemove: () => void }) {
   const [name, setName] = useState(a.name);
   const [day, setDay] = useState(String(a.statementDay ?? ""));
   const [dueDays, setDueDays] = useState(String(a.dueDays ?? DEFAULT_DUE_DAYS));
@@ -74,22 +74,18 @@ function CardRow({ a, base, color, onSave, onRemove }: { a: Account; base: strin
   const [owed, setOwed] = useState(a.openingBalance ? plain(-a.openingBalance, base) : "");
   const [error, setError] = useState("");
   // Saves from the fields as typed, so tapping a colour right after typing a name keeps the name.
+  // Only a real change is saved (an unchanged blur writes nothing).
   const commit = (extra: Partial<Account> = {}) => {
     setError("");
-    const d = Number(day);
-    const dd = Number(dueDays);
-    if (!dayOk(d, 1, 31)) return setError("Cut-off day is 1 to 31");
-    if (!dayOk(dd, 0, 60)) return setError("Due is 0 to 60 days after the cut-off");
-    const lim = limit.trim() ? parseMinor(limit, base) : undefined;
-    if (lim === null) return setError("Enter a valid limit");
-    const o = owed.trim() ? parseMinor(owed, base) : 0;
-    if (o === null) return setError("Enter a valid amount owed");
-    onSave({ ...a, name: name.trim() || "Card", currency: base, rate: undefined, statementDay: d, dueDays: dd, limit: lim, openingBalance: o ? -o : 0, ...extra });
+    const r = cardEdit(a, { name, day, dueDays, limit, owed }, base, extra);
+    if (r && "error" in r) return setError(r.error);
+    if (r) onSave(r.account);
   };
   return (
     <div className="cardacct" id={`card-${a.id}`}>
       <div className="acct">
         <input aria-label="Card name" value={name} onChange={(e) => setName(e.target.value)} onBlur={() => commit()} />
+        <SavedTick on={saved} />
         <button className="x" aria-label={`Remove ${a.name}`} onClick={onRemove}>✕</button>
       </div>
       <label className="field"><b>Cut-off day</b><input aria-label="Cut-off day" inputMode="numeric" placeholder="1 to 31" value={day} onChange={(e) => setDay(e.target.value)} onBlur={() => commit()} /></label>
@@ -160,6 +156,15 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
   }, [focusCard, accounts.length]);
 
   const save = async (patch: Partial<S>) => { await saveSettings(store, patch); changed(); };
+  // Rows (accounts, cards, people) that just saved a real change show "Saved" for 1.5 s.
+  const [savedIds, setSavedIds] = useState<Record<string, true>>({});
+  const tickTimers = useRef(new Map<string, number>());
+  useEffect(() => () => { for (const t of tickTimers.current.values()) window.clearTimeout(t); }, []);
+  const markSaved = (id: string) => {
+    setSavedIds((x) => ({ ...x, [id]: true }));
+    window.clearTimeout(tickTimers.current.get(id));
+    tickTimers.current.set(id, window.setTimeout(() => setSavedIds(({ [id]: _gone, ...rest }) => rest), 1500));
+  };
   const saveDefault = (patch: Defaults) => save({ defaults: { ...s.defaults, ...patch } });
   const banks = accounts.filter((a) => !isCard(a));
   // A default whose account or category was removed shows as unset; new items then start as if none was set.
@@ -397,8 +402,8 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
               <div className="card pad">
                 {!accounts.some((a) => !isCard(a)) && <p className="mute">No bank accounts yet</p>}
                 {accounts.filter((a) => !isCard(a)).map((a) => (
-                  <AccountRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency}
-                    onSave={async (x) => { await upsert(store, "accounts", x); changed(); }}
+                  <AccountRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency} saved={!!savedIds[a.id]}
+                    onSave={async (x) => { await upsert(store, "accounts", x); changed(); markSaved(a.id); }}
                     onRemove={() => askRemoveAccount(a)} />
                 ))}
                 <button className="btn ghost sm" onClick={async () => { await upsert(store, "accounts", { name: "New account", currency: s.baseCurrency, openingBalance: 0 }); changed(); }}>Add account</button>
@@ -408,8 +413,8 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
               <div className="card pad">
                 {!accounts.some(isCard) && <p className="mute">No cards yet</p>}
                 {accounts.filter(isCard).map((a) => (
-                  <CardRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency} color={cardColor(a, accounts)}
-                    onSave={async (x) => { await upsert(store, "accounts", x); changed(); }}
+                  <CardRow key={a.id + a.updatedAt} a={a} base={s.baseCurrency} color={cardColor(a, accounts)} saved={!!savedIds[a.id]}
+                    onSave={async (x) => { await upsert(store, "accounts", x); changed(); markSaved(a.id); }}
                     onRemove={() => askRemoveAccount(a)} />
                 ))}
                 <button className="btn ghost sm" onClick={async () => { await upsert(store, "accounts", { name: "New card", currency: s.baseCurrency, openingBalance: 0, type: "card", statementDay: 15, dueDays: DEFAULT_DUE_DAYS }); changed(); }}>Add card</button>
@@ -462,7 +467,8 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
               <div className="card pad">
                 {people.map((p) => (
                   <div key={p.id} className="acct">
-                    <input aria-label="Name" defaultValue={p.name} onBlur={async (e) => { const n = e.target.value.trim(); if (n && n !== p.name) { await upsert(store, "people", { ...p, name: n }); changed(); } }} />
+                    <input aria-label="Name" defaultValue={p.name} onBlur={async (e) => { const n = e.target.value.trim(); if (n && n !== p.name) { await upsert(store, "people", { ...p, name: n }); changed(); markSaved(p.id); } }} />
+                    <SavedTick on={!!savedIds[p.id]} />
                     <button className="x" aria-label={`Remove ${p.name}`} onClick={() => askRemovePerson(p)}>✕</button>
                   </div>
                 ))}
