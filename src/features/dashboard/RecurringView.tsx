@@ -69,11 +69,11 @@ export function RecurringView() {
           <p className="mute">A month, your share</p>
           <BigAmount minor={l.perMonth} currency={base} />
           {l.unconverted > 0 && <p className="mute small">{l.unconverted} foreign {l.unconverted === 1 ? "plan has" : "plans have"} no rate and {l.unconverted === 1 ? "is" : "are"} left out.</p>}
-          {l.recurring.length > 0 && <><div className="grp">Recurring</div><div className="card">{l.recurring.map(row)}</div></>}
-          {l.installments.length > 0 && <><div className="grp">Installments</div><div className="card">{l.installments.map(row)}</div></>}
+          {l.recurring.length > 0 && <><div className="grp" role="heading" aria-level={2}>Recurring</div><div className="card">{l.recurring.map(row)}</div></>}
+          {l.installments.length > 0 && <><div className="grp" role="heading" aria-level={2}>Installments</div><div className="card">{l.installments.map(row)}</div></>}
           {l.ended.length > 0 && (
             <>
-              <div className="grp">Ended<button className="link" aria-expanded={showEnded} onClick={() => setShowEnded(!showEnded)}>{showEnded ? "Hide" : `Show ${l.ended.length}`}</button></div>
+              <div className="grp" role="heading" aria-level={2}>Ended<button className="link" aria-expanded={showEnded} onClick={() => setShowEnded(!showEnded)}>{showEnded ? "Hide" : `Show ${l.ended.length}`}</button></div>
               {showEnded && <div className="card">{l.ended.map(row)}</div>}
             </>
           )}

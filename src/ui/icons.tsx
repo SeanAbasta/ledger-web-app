@@ -38,3 +38,5 @@ export const SettingsIcon = () => (
 export const PrevIcon = () => <Icon cls="icon glyph"><path d="M14.5 6l-6 6 6 6" /></Icon>;
 export const NextIcon = () => <Icon cls="icon glyph"><path d="M9.5 6l6 6-6 6" /></Icon>;
 export const CloseIcon = () => <Icon cls="icon glyph"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" /></Icon>;
+export const CheckIcon = () => <Icon cls="icon glyph"><path d="M5.5 12.5l4.2 4.2 8.8-9.4" /></Icon>;
+export const AlertIcon = () => <Icon cls="icon glyph"><path d="M12 7.5v5.5" /><path d="M12 16.5v.01" /><circle cx="12" cy="12" r="9" /></Icon>;

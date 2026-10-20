@@ -95,7 +95,7 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
 
       {current && st && (
         <>
-          <div className="grp">{current.person.name}</div>
+          <div className="grp" role="heading" aria-level={2}>{current.person.name}</div>
           <div className="card">
             {nonZero(st.earlier).map(([c, a]) => (
               <div key={c} className="row static"><span className="mute">Earlier balance</span><span className="mute num">{a > 0 ? "+" : ""}{formatMinor(Math.abs(a), c)}</span></div>

@@ -66,7 +66,7 @@ export function CardView({ card, st, bd, banks, items, accounts, onOpenLedger, o
           {st.statement === 0 && bd.statement.length > 0 && <p className="mute small">The card was in credit at the cut-off, so there is nothing to pay. The credit goes toward the next bill.</p>}
           {bd.paidSince.length > 0 && (
             <>
-              <div className="grp">Paid since {labelShort(st.cutoff)}</div>
+              <div className="grp" role="heading" aria-level={2}>Paid since {labelShort(st.cutoff)}</div>
               <div className="card">
                 {bd.paidSince.map(line)}
                 <div className="row static"><b>Left to pay</b><b>{st.remaining ? fmt(st.remaining) : "Paid"}</b></div>

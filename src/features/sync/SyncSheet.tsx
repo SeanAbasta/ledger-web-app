@@ -2,6 +2,7 @@ import { useState } from "react";
 import { pillOf } from "../../ui/Pill";
 import { Sheet } from "../../ui/Sheet";
 import { useSync } from "../../ui/Sync";
+import { CheckIcon } from "../../ui/icons";
 
 const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "never");
 
@@ -34,7 +35,7 @@ export function SyncSheet({ onClose, onSetup }: { onClose: () => void; onSetup: 
     <Sheet onClose={onClose}>
       {result === "safe" && status.state === "synced" ? (
         <div className="center">
-          <div className="check">✓</div>
+          <div className="check"><CheckIcon /></div>
           <h3>Synced. Safe to close.</h3>
           <p className="mute">GitHub and this device match.</p>
         </div>

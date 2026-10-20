@@ -192,7 +192,7 @@ export function Forecast() {
           <div className="mute small">{f.basis ? `spending averaged over ${f.basis} ${f.basis === 1 ? "month" : "months"}` : "no spending history yet"}</div></div>
       </div>
 
-      <div className="grp">Projected balance</div>
+      <div className="grp" role="heading" aria-level={2}>Projected balance</div>
       <div className="card pad">
         <div className="frange"><Segmented value={range} options={RANGES} labels={RANGE_LABEL} onChange={setRange} /></div>
         {/* Keyed on the range so an open month closes when the range changes. */}
@@ -215,7 +215,7 @@ export function Forecast() {
       <p className="mute small">Assumes people settle what they owe you this month, and everyday spending repeats your recent average.</p>
 
       {/* Salary months after the chart and the table (owner, Q3): the forecast is what this screen is opened for. */}
-      <div className="grp">Salary</div>
+      <div className="grp" role="heading" aria-level={2}>Salary</div>
       <div className="card pad">
         {Array.from({ length: 12 }, (_, i) => addMonths(monthStart(t), i)).map((m) => {
           const s = salaryFor(m, w.entries, w.rules);

@@ -179,7 +179,7 @@ export function Ledger({ initialDate, notice, onAdd }: { initialDate?: string; n
   const dayBlock = (date: string, its: LedgerItem[]) => (
     <div key={date}>
       {/* The day stays pinned under the top bar while its rows scroll. */}
-      <div className="grp day">{labelDay(date)}<span className="r">{dayTotal(total(its))}</span></div>
+      <div className="grp day" role="heading" aria-level={3}>{labelDay(date)}<span className="r">{dayTotal(total(its))}</span></div>
       <div className="card">
         {its.map((it) => {
           const x = it.type === "entry" ? it.entry : it.occ;
@@ -248,7 +248,7 @@ export function Ledger({ initialDate, notice, onAdd }: { initialDate?: string; n
           ? <Empty icon={<LedgerIcon />} title="No matches" note={`Nothing${cat ? ` in ${cat}` : ""} in any month${q.trim() ? ` has "${q.trim()}"` : ""}`} />
           : months.map(([m, days]) => (
             <div key={m}>
-              <div className="grp month">{labelMonth(`${m}-01`)}</div>
+              <div className="grp month" role="heading" aria-level={2}>{labelMonth(`${m}-01`)}</div>
               {days.map(([date, its]) => dayBlock(date, its))}
             </div>
           )))
@@ -256,7 +256,7 @@ export function Ledger({ initialDate, notice, onAdd }: { initialDate?: string; n
       <div key={`${shown.from}/${shown.to}`} className={shown.dir === 1 ? "period next" : shown.dir === -1 ? "period prev" : "period"}>
       {showCard && (
         <>
-          <div className="grp">Next 30 days</div>
+          <div className="grp" role="heading" aria-level={2}>Next 30 days</div>
           <div className="card nextcard">
             {due.slice(0, NEXT_CARD_ROWS).map((o) => (
               <button key={o.ruleId + o.date} className="row" title="Edit" onClick={() => setOcc(o)}>

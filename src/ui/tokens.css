@@ -1,5 +1,3 @@
-/* Apple's grouped look: a plain grey (light) or true black (dark) background, cards one step lighter,
-   a very faint blue glow at the top only. Glass is for bars that content scrolls under. */
 /* Anodized: Ledger as a machined object. Bead-blasted silver by day, space black by night; cards are
    machined plates; the chrome is smoked glass; one anodized blue, only on what can be pressed.
    Every colour lives here, in both themes. Blue has three roles: --accent fills what you press,
@@ -65,11 +63,11 @@
   --err-fill: #b3261e; /* the armed Delete (white 6.3:1) */
   --track: #e6e8ec;
   /* Day lattice steps: opaque mixes of the data blue into the plate, then the accent fill. */
-  --cell-1: color-mix(in srgb, var(--accent-data) 16%, #fbfbfc);
+  --cell-1: color-mix(in srgb, var(--accent-data) 24%, #fbfbfc);
   --cell-2: color-mix(in srgb, var(--accent-data) 32%, #fbfbfc);
   --cell-3: color-mix(in srgb, var(--accent-data) 52%, #fbfbfc);
   --cell-3-ink: #111316;
-  --cell-4: var(--accent);
+  --cell-4: color-mix(in srgb, var(--accent-data) 75%, #0a1c40); /* deep data blue: never the press blue */
   --cell-hi: rgba(255, 255, 255, 0.5);
   --face-edge: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 -1px 0 rgba(0, 0, 0, 0.25), 0 6px 16px -8px rgba(5, 8, 16, 0.5);
   --chip-metal: linear-gradient(135deg, #f3f4f6, #b9bec6);
@@ -193,11 +191,11 @@
   --err: #ff7a70; /* 6.7:1 */
   --err-fill: #c0362c; /* white 5.5:1 */
   --track: #25282d;
-  --cell-1: color-mix(in srgb, var(--accent-data) 18%, #1a1c20);
+  --cell-1: color-mix(in srgb, var(--accent-data) 26%, #1a1c20);
   --cell-2: color-mix(in srgb, var(--accent-data) 32%, #1a1c20);
   --cell-3: color-mix(in srgb, var(--accent-data) 48%, #1a1c20);
   --cell-3-ink: #fff;
-  --cell-4: var(--accent);
+  --cell-4: color-mix(in srgb, var(--accent-data) 70%, #0a1c40);
   --cell-hi: rgba(255, 255, 255, 0.08);
   color-scheme: dark;
 }
@@ -218,6 +216,8 @@ body {
 html { scrollbar-color: var(--fill-3) transparent; }
 ::selection { background: var(--accent-soft); color: var(--ink); }
 input, select, textarea { caret-color: var(--accent-ink); }
+/* Autofill keeps the field's own colours instead of the browser's yellow or blue. */
+input:-webkit-autofill { -webkit-box-shadow: inset 0 0 0 40px var(--fill); -webkit-text-fill-color: var(--ink); }
 .win { display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 100vh; }
 /* Computer: the sidebar stays in view while the page scrolls. Nothing scrolls under it, so it needs no
    blur. Phones: a floating tab bar at the bottom (below). Both show the same icons and labels. */
@@ -319,6 +319,9 @@ input, select {
 /* Select boxes draw their own chevron (the system arrow differs on every platform). */
 select { -webkit-appearance: none; appearance: none; padding-right: 28px; background: var(--select-chev) right 8px center / 14px no-repeat, var(--fill); }
 .amt input { box-shadow: none; }
+/* The Add amount is focused on open, so a full ring would box it in permanently: it gets a readout
+   underline in the focus colour instead (still 3:1 or more against the plate). */
+.amt input:focus { outline: none; box-shadow: inset 0 -2px 0 var(--focus); border-radius: var(--r-input) var(--r-input) 0 0; }
 input:focus, select:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
 /* Open lists: Chrome on Windows cannot draw the translucent --fill, so it falls back to white and the
    light text disappears. Opaque theme colours keep the list readable in light and dark. The closed
@@ -545,6 +548,8 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .donut { display: flex; justify-content: center; margin: var(--sp-2) 0; }
 .donut .track { stroke: var(--track); }
 .donut .seg { stroke: var(--tone, var(--t-gray)); }
+/* A thinner ring than the bezel, so the Dashboard has one gauge and one chart. */
+.donut circle { stroke-width: 12px; }
 .catcard { container-type: inline-size; position: relative; }
 /* The open breakdown must sit over the cards next to and under this one. */
 .catcard.popopen { z-index: 1; }
@@ -564,15 +569,15 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .dailyhead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
 .lattice { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: var(--sp-3); }
 .lattice .wk { font-size: var(--fs-xs); font-weight: 600; color: var(--mute); text-align: center; padding-bottom: 2px; }
-.lattice .cell { aspect-ratio: 1.35; border-radius: 6px; display: flex; align-items: flex-start; justify-content: flex-start; padding: 3px 5px; font-size: var(--fs-xs); font-weight: 500; line-height: 1.2; color: var(--mute); box-sizing: border-box; min-width: 0; }
+.lattice .cell { aspect-ratio: 1.35; border-radius: var(--r-tag); display: flex; align-items: flex-start; justify-content: flex-start; padding: 3px 5px; font-size: var(--fs-xs); font-weight: 500; line-height: 1.2; color: var(--mute); box-sizing: border-box; min-width: 0; }
 .lattice .blank { visibility: hidden; }
-.lattice .quiet { background: var(--fill); box-shadow: var(--input-edge); }
+.lattice .quiet { background: transparent; box-shadow: inset 0 0 0 1px var(--fill-3); }
 .lattice .l1 { background: var(--cell-1); color: var(--ink); }
 .lattice .l2 { background: var(--cell-2); color: var(--ink); }
 .lattice .l3 { background: var(--cell-3); color: var(--cell-3-ink); }
-.lattice .l4 { background: var(--cell-4); color: var(--on-accent); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28); }
+.lattice .l4 { background: var(--cell-4); color: var(--on-accent); }
 .lattice .l1, .lattice .l2, .lattice .l3 { box-shadow: inset 0 1px 0 var(--cell-hi); }
-.lattice .plan { box-shadow: inset 0 0 0 1px transparent; outline: 1px dashed var(--fill-3); outline-offset: -1px; }
+.lattice .plan { outline: 1px dashed var(--mute); outline-offset: -1px; }
 .lattice .later { color: var(--mute); }
 .lattice .now { box-shadow: inset 0 0 0 2px var(--ink), inset 0 3px 0 var(--cell-hi); color: var(--ink); font-weight: 700; }
 .lattice .l4.now { box-shadow: inset 0 0 0 2px var(--ink), inset 0 0 0 3px #fff; color: var(--on-accent); }
@@ -598,12 +603,12 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 @media (min-width: 401px) { .statrow .hero.gauged .big { font-size: 40px; } .hero.gauged > .bezel { width: 108px; height: 108px; } }
 @media (min-width: 701px) { .statrow .hero.gauged .big { font-size: 50px; } .hero.gauged > .bezel { width: 128px; height: 128px; } }
 @media (min-width: 1000px) { .statrow .hero.gauged .big { font-size: 60px; } }
-.bezel line.st { stroke: var(--mute); stroke-width: 1; opacity: 0.6; }
+.bezel line.st { stroke: var(--mute); stroke-width: 1; }
 .bezel line.lt { stroke: var(--ink); stroke-width: 1.6; }
 .bezel circle, .bezel path { fill: none; }
 .bezel .btrack { stroke: var(--fill); stroke-width: 7; }
 .bezel .barc { stroke: var(--accent-data); stroke-width: 7; stroke-linecap: round; }
-.bezel .bover { stroke: var(--warn); stroke-width: 3.5; stroke-dasharray: 2 1.5; }
+.bezel .bover { stroke: var(--warn); stroke-width: 4; stroke-linecap: round; }
 @media (max-width: 1000px) { .statrow { grid-template-columns: 1fr 1fr; } .statrow .hero { grid-column: 1 / -1; } }
 /* Small phones: ₱9,999,999.99 still fits a tile at 375 px, with a little to spare. */
 @media (max-width: 400px) { .statrow .stat:not(.hero) { padding-inline: 14px; } .statrow .stat:not(.hero) .big { font-size: 20px; } }
@@ -727,7 +732,9 @@ fieldset.plain { border: 0; margin: 0; padding: 0; min-width: 0; }
 fieldset.plain:disabled { opacity: 0.55; }
 .banner { display: flex; gap: var(--sp-2); align-items: center; flex-wrap: wrap; padding: var(--sp-2) max(var(--gutter), calc((100% - var(--col)) / 2)); background: var(--warn-soft); color: var(--banner); font-size: var(--fs-md); }
 .center { text-align: center; }
-.check { width: 44px; height: 44px; border-radius: 50%; background: var(--good-soft); color: var(--good); display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 10px; }
+.check { width: 44px; height: 44px; border-radius: 50%; background: var(--good-soft); color: var(--good); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+.check .icon { width: 22px; height: 22px; }
+.recon-head .icon { width: 15px; height: 15px; vertical-align: -2px; }
 .spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--accent-soft); border-top-color: var(--accent-data); margin: 0 auto 12px; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 /* The Gate's conflict choices: full-width plates, one per line (scoped, so the Pay sheet keeps its own). */

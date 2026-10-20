@@ -367,7 +367,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
       {page === "sync" && (
         <>
           <fieldset className="plain" disabled={readOnly}>
-            <div className="grp">Sync</div>
+            <div className="grp" role="heading" aria-level={3}>Sync</div>
             <div className="card">
               <div className="field"><b>Status</b><span className="mute">{pillOf(status).label}</span></div>
               {config ? (
@@ -386,7 +386,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
               )}
             </div>
           </fieldset>
-          <div className="grp">Backup</div>
+          <div className="grp" role="heading" aria-level={3}>Backup</div>
           <div className="card">
             <div className="field"><b>Export</b>
               <span className="acts">
@@ -419,7 +419,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
           )}
           {page === "accounts" && (
             <>
-              <div className="grp">Bank accounts</div>
+              <div className="grp" role="heading" aria-level={3}>Bank accounts</div>
               <div className="card pad">
                 {!accounts.some((a) => !isCard(a)) && <p className="mute">No bank accounts yet</p>}
                 {accounts.filter((a) => !isCard(a)).map((a) => (
@@ -430,7 +430,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
                 <button className="btn ghost sm" onClick={async () => { await upsert(store, "accounts", { name: "New account", currency: s.baseCurrency, openingBalance: 0 }); changed(); }}>Add account</button>
               </div>
 
-              <div className="grp">Credit cards</div>
+              <div className="grp" role="heading" aria-level={3}>Credit cards</div>
               <div className="card pad">
                 {!accounts.some(isCard) && <p className="mute">No cards yet</p>}
                 {accounts.filter(isCard).map((a) => (
@@ -443,7 +443,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
 
               {removed.length > 0 && (
                 <>
-                  <div className="grp">Removed</div>
+                  <div className="grp" role="heading" aria-level={3}>Removed</div>
                   <div className="card">
                     {removed.map((a) => (
                       <div key={a.id} className="field"><b>{a.name}<span className="mute small sub">{isCard(a) ? "Card" : `Bank account, ${a.currency}`}</span></b>
@@ -453,7 +453,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
                 </>
               )}
 
-              <div className="grp">Defaults</div>
+              <div className="grp" role="heading" aria-level={3}>Defaults</div>
               <div className="card">
                 {accounts.length > 0 && (
                   <label className="field"><b>Expenses</b>
@@ -484,7 +484,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
           )}
           {page === "people" && (
             <>
-              <div className="grp">People</div>
+              <div className="grp" role="heading" aria-level={3}>People</div>
               <div className="card pad">
                 {people.map((p) => (
                   <div key={p.id} className="acct">
@@ -499,7 +499,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
                 </form>
               </div>
 
-              <div className="grp">Categories<button type="button" className="r link" aria-pressed={editCats} onClick={() => setEditCats(!editCats)}>{editCats ? "Done" : "Edit"}</button></div>
+              <div className="grp" role="heading" aria-level={3}>Categories<button type="button" className="r link" aria-pressed={editCats} onClick={() => setEditCats(!editCats)}>{editCats ? "Done" : "Edit"}</button></div>
               <div className="card pad">
                 <div className={`chips${editCats ? " editing" : ""}`}>
                   {s.categories.map((c) => (

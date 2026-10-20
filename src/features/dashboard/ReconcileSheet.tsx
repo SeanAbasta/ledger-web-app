@@ -10,6 +10,7 @@ import { useLedger } from "../../ui/Ledger";
 import { useSync } from "../../ui/Sync";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Sheet } from "../../ui/Sheet";
+import { AlertIcon, CheckIcon } from "../../ui/icons";
 
 const LABEL: Record<BankField, string> = { statement: "Last statement", outstanding: "Outstanding balance", available: "Available credit" };
 
@@ -121,7 +122,7 @@ export function ReconcileSheet({ card, st, bd, items, accounts, onClose, onOpenL
         <div className="recon" ref={results}>
           {checks.map((c) => (
             <div key={c.field} className={c.diff ? "recon-item gap" : "recon-item matches"}>
-              <p className="recon-head">{c.diff ? "!" : "✓"} <b>{LABEL[c.field]}</b>{!c.diff ? " matches" : c.field === "available" ? `: Ledger shows ${fmt(c.diff)} ${c.diff > 0 ? "less" : "more"} credit` : `: Ledger ${fmt(c.diff)} ${c.diff > 0 ? "higher" : "lower"}`}</p>
+              <p className="recon-head">{c.diff ? <AlertIcon /> : <CheckIcon />} <b>{LABEL[c.field]}</b>{!c.diff ? " matches" : c.field === "available" ? `: Ledger shows ${fmt(c.diff)} ${c.diff > 0 ? "less" : "more"} credit` : `: Ledger ${fmt(c.diff)} ${c.diff > 0 ? "higher" : "lower"}`}</p>
               {c.diff !== 0 && <p className="mute small">Bank {fmt(c.bank)}, Ledger {fmt(c.ledger)}</p>}
               {c.causes.map((x, i) => cause(c.field, x, c.diff > 0, c.diff, i))}
             </div>

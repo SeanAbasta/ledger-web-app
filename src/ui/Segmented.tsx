@@ -21,9 +21,12 @@ export function Segmented<T extends string>({ value, options, onChange, labels }
     const place = (slide: boolean) => {
       const on = el.querySelector<HTMLElement>("button.on");
       if (!on || !on.offsetWidth) return;
+      // Measured against the control's own box (offsetLeft would depend on which ancestor is positioned).
+      const box = el.getBoundingClientRect();
+      const key = on.getBoundingClientRect();
       el.classList.toggle("still", !slide);
-      el.style.setProperty("--thumb-x", `${on.offsetLeft}px`);
-      el.style.setProperty("--thumb-w", `${on.offsetWidth}px`);
+      el.style.setProperty("--thumb-x", `${key.left - box.left - el.clientLeft}px`);
+      el.style.setProperty("--thumb-w", `${key.width}px`);
       el.classList.add("thumbed");
       placed.current = true;
     };
