@@ -96,7 +96,7 @@ export function TransferForm({ entry, accounts: given, onDone }: { entry?: Entry
     <form className="form" onSubmit={(e) => { e.preventDefault(); void save(); }}>
       {creating ? (
         <div className="amt">
-          <MoneyInput aria-label="Amount" placeholder="0.00" value={amount} onChange={setAmount} currency={currency} autoFocus />
+          <MoneyInput aria-label="Amount" placeholder="0.00" value={amount} onChange={setAmount} currency={currency} autoFocus={!entry} />
           <span className="cur mute">{currency}</span>
         </div>
       ) : (

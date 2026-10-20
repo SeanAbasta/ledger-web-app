@@ -330,6 +330,12 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 /* animation: none so a sheet dismissed while still opening slides away instead of finishing the opening first */
 .drawer.closing .sheet { transform: translateY(12px); opacity: 0; animation: none; }
 .grab { display: none; }
+/* The sheet box takes focus on open (no ring: it is not a control). Wider screens get a ✕ at the top right. */
+.sheet { position: relative; }
+.sheet:focus { outline: none; }
+.sheet .close { all: unset; position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; color: var(--mute); background: var(--fill-2); cursor: pointer; }
+.sheet .close:hover { color: var(--ink); }
+.sheet > fieldset > h3:first-child { padding-right: 32px; }
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(12px); } }
 @keyframes slide-in { from { transform: translateY(100%); } }
@@ -338,6 +344,8 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
   .drawer .sheet { width: 100%; max-height: 90dvh; border-radius: 20px 20px 0 0; border-bottom: 0; padding: 0 18px calc(22px + env(safe-area-inset-bottom)); animation-name: slide-in; }
   .drawer.closing .sheet { transform: translateY(100%); opacity: 1; }
   .grab { display: block; padding: 8px 0 14px; touch-action: none; cursor: grab; }
+  .sheet .close { display: none; }
+  .sheet > fieldset > h3:first-child { padding-right: 0; }
   .grab i { display: block; width: 36px; height: 5px; border-radius: 3px; background: var(--fill-3); margin: 0 auto; }
 }
 @media (prefers-reduced-motion: reduce) {
