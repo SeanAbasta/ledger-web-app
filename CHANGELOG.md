@@ -2,6 +2,20 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V1.4.1 (2026-10-20)
+
+A new look for Ledger, called Anodized. Same features, same numbers, and nothing about your data changes. Update both computers so they look the same.
+
+- Silver by day, space black by night. Cards are machined plates, the top bar and the phone tab bar are smoked glass in both themes, and blue is used only on things you can press.
+- Figures are set light, with the currency sign and centavos small and raised. Section labels are small capitals.
+- Dashboard: Spent sits in a ring that measures this month so far against last month's same days. Anything over last month shows as an amber arc.
+- Dashboard: the Daily chart is now a calendar of days, lit by how much you spent. Today is ringed and planned days are outlined.
+- Card tiles are deeper in their own colour, and the credit bar is marked every 10% with "N% used".
+- Splits: a person's list reads like the Ledger. What they owe you is green with a plus, what you owe is plain. Each person shows their balance as a figure. The snapshot image is unchanged.
+- Forecast opens on the chart and the month table, with the salary months below. The table fits small phones.
+- Drawn icons instead of text symbols, a clearer focus ring, larger tap areas on phones, and switches that slide.
+- The app's colour in the phone's status bar changed, so the offline copy of the app refreshes once after the update.
+
 ## V1.4.0 (2026-10-20)
 
 Faster everyday logging, mostly on the phone. Log several expenses in a row without leaving Add, pick the category with one tap, see who owes what before you save a split, and find an entry from any month. Deleting now asks for a second tap.

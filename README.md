@@ -5,7 +5,7 @@
 **A quiet, local-first expense tracker.**
 Log it, split it, see where the month and the year went.
 
-![Version](https://img.shields.io/badge/version-1.4.0-0A84FF?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.4.1-1F5FCF?style=flat-square)
 ![Status](https://img.shields.io/badge/status-in%20use-10B981?style=flat-square)
 ![React](https://img.shields.io/badge/React-TypeScript-3B82F6?style=flat-square)
 ![Local first](https://img.shields.io/badge/data-local--first-10B981?style=flat-square)
@@ -32,7 +32,7 @@ It runs in the browser, keeps your data on your own device first, and syncs betw
 
 ## What it does
 
-Ledger has six screens. Everything below is in the current release, V1.4.0.
+Ledger has six screens. Everything below is in the current release, V1.4.1.
 
 ### Add
 
@@ -59,7 +59,7 @@ Your history, newest first.
 The month at a glance, with three deeper views.
 
 - **Spent** this month (your share of splits) against the same days last month, **Still due**, and **Last month**.
-- A category chart and daily bars. Tap a slice or a legend row for its largest items. For the current month the chart also counts what is still scheduled, marked "incl. upcoming", with days still to come in grey. A later month shows what is **Planned**.
+- A category chart and a calendar of days lit by how much you spent. Tap a slice or a legend row for its largest items. For the current month the chart also counts what is still scheduled, marked "incl. upcoming", with scheduled days still to come outlined. A later month shows what is **Planned**.
 - Filter the spending figures to one bank account or card.
 - **Credit cards:** each card shows its statement, due date, unbilled charges, credit left and installment holds (for example "Laptop hold"). Pay the statement, pay everything, or pay ahead from a bank account in one tap.
 - **Accounts** with your total, what it would be if everyone paid you back, and after your card bills. **Owed to you**, person by person. The forecast for the end of next month.
@@ -235,11 +235,12 @@ Back up now and then with Settings, **Backup file**. The data repo's history is 
 
 ## Status
 
-Ledger is deployed and in daily use. Sync between a Mac and a Windows PC has been confirmed against a real GitHub repo. The latest release is **V1.4.0**. It is still a personal project, so keep a backup.
+Ledger is deployed and in daily use. Sync between a Mac and a Windows PC has been confirmed against a real GitHub repo. The latest release is **V1.4.1**. It is still a personal project, so keep a backup.
 
 | Version | Highlights |
 |---|---|
-| **V1.4.0** | Faster logging: stay on Add, category buttons, split preview, search all months, your share on split rows, a second tap to delete |
+| **V1.4.1** | A new look, Anodized: silver and space black, a ring gauge around Spent, a calendar of days, drawn icons |
+| V1.4.0 | Faster logging: stay on Add, category buttons, split preview, search all months, your share on split rows, a second tap to delete |
 | V1.3.1 | One-off income, transfers between bank accounts, Recurring list, planned spending in the chart, Year report, full prices on split statements |
 | V1.3.0 | Tap to pick people in splits, Ledger category filter, Dashboard account filter, tap the chart for a breakdown, Forecast chart for 3, 6 or 12 months |
 | V1.2.4 | Safer removing of accounts and cards (move, restore, fix), edit card payments, salary "Paid into" |
