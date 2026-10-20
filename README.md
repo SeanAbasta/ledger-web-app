@@ -69,7 +69,7 @@ The month at a glance, with three deeper views.
 ### Splits
 
 - Balances per person, in each currency.
-- Split modes: they owe it all, you owe it all, 50/50, or custom amounts for 3 or more people.
+- Split modes: they owe it all, you owe it all, even (everyone pays the same), or custom amounts for 3 or more people.
 - **Snapshot:** turn a person's balance into a clean statement image (Date, Item, Total, Your share) to copy or save and send. It shows what each item cost in full next to their share.
 - **Settle up** records the payment and brings the balance to zero.
 
@@ -209,7 +209,7 @@ No. Your copy is your own repo on your own account, so its site size, bandwidth 
 | What you see | What it means | What to do |
 |---|---|---|
 | **Token expired** | The token reached its expiry date, or was revoked. | Create a new token (step 2), then Settings, **Replace token**, on each computer. Your data is safe on the device meanwhile. |
-| **Two versions** | Both computers changed since they last synced. | Pick Keep this device, Keep remote, or Merge. The version you do not keep is saved to your Downloads first. |
+| **Two versions** | Both computers changed since they last synced. | Pick Keep this device, Keep GitHub's version, or Merge. The version you do not keep is saved to your Downloads first. |
 | **Offline, read-only** | No connection. Ledger holds back edits so your other computer's data stays safe. | Reconnect and press Retry, or choose Edit offline if you are sure. |
 | **Needs sync** that does not clear | A push failed (rate limit, network). | Click the pill, then Sync now. It retries by itself too. |
 | **No access to the data repo** | The token cannot reach that repo. | Check the repo name, and that the token is limited to that repo with Contents read and write. |

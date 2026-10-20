@@ -166,7 +166,6 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
       </div>
 
       {notice && <p className="mute small hint" role="status">{notice}</p>}
-      {groups.length > 0 && !notice && <p className="mute small hint">Tap an entry to edit it</p>}
 
       <div key={`${shown.from}/${shown.to}`} className={shown.dir === 1 ? "period next" : shown.dir === -1 ? "period prev" : "period"}>
       {listHasToday && due.length > 0 && !filtered && (

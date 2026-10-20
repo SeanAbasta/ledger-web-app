@@ -303,7 +303,7 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
 
       {confirm && (
         <Sheet onClose={() => setConfirm(undefined)}>
-          <h3>{confirm === "pull" ? "Re-pull from GitHub" : "Remove token"}</h3>
+          <h3>{confirm === "pull" ? "Download again from GitHub" : "Remove token"}</h3>
           <p className="mute">
             {confirm === "pull"
               ? "Replaces this device with what is on GitHub. Anything not yet synced is saved to Downloads first."
@@ -312,7 +312,7 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
           <div className="actions">
             <button className="btn ghost" onClick={() => setConfirm(undefined)}>Cancel</button>
             <button className="btn" onClick={() => { if (confirm === "pull") void engine.resolve("remote"); else disconnect(); setConfirm(undefined); }}>
-              {confirm === "pull" ? "Re-pull" : "Remove"}
+              {confirm === "pull" ? "Download again" : "Remove"}
             </button>
           </div>
         </Sheet>
@@ -350,7 +350,7 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
                   <div className="field"><b>Connection</b>
                     <span className="acts">
                       <button className="btn ghost sm" onClick={onSetup}>Replace token</button>
-                      <button className="btn ghost sm" onClick={() => setConfirm("pull")}>Re-pull</button>
+                      <button className="btn ghost sm" onClick={() => setConfirm("pull")}>Download again</button>
                       <button className="btn ghost sm danger" onClick={() => setConfirm("remove")}>Remove</button>
                     </span></div>
                 </>

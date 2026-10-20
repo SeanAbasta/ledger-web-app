@@ -471,7 +471,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .who { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .acts { display: flex; gap: 6px; }
 .btn.sm { padding: 5px 12px; font-size: var(--fs-sm); white-space: nowrap; }
-/* A setting's buttons wrap as a group on small phones instead of breaking words ("Re-pull"). */
+/* A setting's buttons wrap as a group on small phones instead of breaking words ("Download again"). */
 .field .acts { flex-wrap: wrap; justify-content: flex-end; }
 /* card tile: installment holds, and the Pay sheet's amount choices */
 .row.hold { color: var(--mute); font-size: var(--fs-md); }

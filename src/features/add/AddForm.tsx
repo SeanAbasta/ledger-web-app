@@ -12,6 +12,7 @@ import { addName, hasName, keptKey, namesOf, payerAfter, payerForMode, resolveNa
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { AccountOptions } from "../../ui/AccountOptions";
+import { MODE_LABEL } from "../../ui/splitLabels";
 import { useLedger } from "../../ui/Ledger";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 
@@ -19,7 +20,6 @@ type Kind = "one-off" | "recurring" | "installment";
 const KINDS = ["one-off", "recurring", "installment"] as const;
 const KIND_LABEL = { "one-off": "One-off", recurring: "Recurring", installment: "Installment" } as const;
 const MODES = ["they-owe", "i-owe", "half", "custom"] as const;
-const MODE_LABEL = { "they-owe": "They owe", "i-owe": "I owe", half: "50/50", custom: "Custom" } as const;
 const FREQ = ["weekly", "monthly", "yearly"] as const;
 const FREQ_LABEL = { weekly: "Weekly", monthly: "Monthly", yearly: "Yearly" } as const;
 
