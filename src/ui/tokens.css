@@ -64,8 +64,11 @@
   --err-fill: #b3261e; /* the armed Delete (white 6.3:1) */
   --track: #e6e8ec;
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
-  /* Big figures: SF Pro Rounded where the system has it (Safari), else the normal font. */
-  --rounded: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  /* Figures: set like an engraved readout, light display weight with the sign and centavos raised. */
+  --fig: -apple-system, "SF Pro Display", BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  /* Section and card labels: engraved, small, tracked capitals (case is styling; the words are unchanged). */
+  --label: 600 11px/1.3 var(--font);
+  --label-track: 0.09em;
   /* Type scale. Use these, not one-off sizes. */
   --fs-xs: 11px;
   --fs-sm: 12px;
@@ -332,12 +335,13 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .field > b .sub { display: block; font-weight: 400; }
 .field input, .field select { text-align: right; max-width: 60%; }
 .amt { display: flex; justify-content: center; gap: 8px; align-items: center; margin-bottom: 8px; }
-.amt input { font-size: var(--fs-2xl); font-weight: 600; flex: 1; min-width: 0; max-width: 300px; text-align: center; background: none; }
+.amt input { font: 300 40px/1.15 var(--fig); letter-spacing: -0.02em; flex: 1; min-width: 0; max-width: 300px; text-align: center; background: none; }
 .amt select { flex: none; }
 .amt .cur { flex: none; font-weight: 500; }
 /* Add tab: Expense | Income | Transfer above the form. */
 .addkind { display: flex; justify-content: center; margin-bottom: var(--sp-4); }
-@media (max-width: 480px) { .amt input { font-size: var(--fs-xl); } }
+@media (max-width: 480px) { .amt input { font-size: 34px; } }
+@media (max-width: 400px) { .amt input { font-size: 30px; } }
 .actions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-3); }
 .actions.wrap { flex-wrap: wrap; }
 .btn { background: var(--accent); color: var(--on-accent); border: 0; font-weight: 500; padding: 8px 18px; border-radius: 999px; cursor: pointer; box-shadow: var(--btn-edge); }
@@ -359,7 +363,8 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .toolrow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
 .nav { display: inline-flex; align-items: center; gap: 10px; color: var(--mute); }
 .nav button { all: unset; cursor: pointer; font-size: 18px; padding: 0 6px; display: inline-flex; align-items: center; }
-.nav button.title { font-size: inherit; padding: 0; }
+.nav button.title { font-size: var(--fs-lg); font-weight: 600; color: var(--ink); padding: 0; }
+.nav button.title.back { font-size: var(--fs-base); font-weight: 500; color: var(--accent-ink); }
 /* Drawn glyphs (src/ui/icons.tsx): the period arrows, back links, close and remove. */
 .icon.glyph { width: 18px; height: 18px; flex: none; }
 .nav button.back { gap: 2px; color: var(--accent-ink); font-weight: 500; }
@@ -395,8 +400,12 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .ybar.now .ylab { color: var(--accent-ink); font-weight: 600; }
 .ybar.later .ylab { opacity: 0.5; }
 .balnote { margin: var(--sp-4) 0 0; }
-.grp { font-size: var(--fs-md); font-weight: 600; color: var(--ink); margin: var(--sp-5) 0 var(--sp-2); display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); }
-.grp .r { color: var(--mute); font-weight: 500; }
+.grp { font: var(--label); letter-spacing: var(--label-track); text-transform: uppercase; color: var(--mute); margin: var(--sp-5) 0 var(--sp-2); display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); }
+.grp .r { color: var(--mute); font-size: var(--fs-md); font-weight: 500; letter-spacing: 0; text-transform: none; }
+/* Card headings in the same engraved voice: the first line of a figure tile or a chart card. */
+.stat > div.mute:first-child, .card.pad > div.mute:first-child, .dailyhead > span.mute:first-child { font: var(--label); letter-spacing: var(--label-track); text-transform: uppercase; }
+.stat > div.mute:first-child .tag, .card.pad > div.mute:first-child .tag, .dailyhead > span.mute:first-child .tag, .grp .tag { text-transform: none; letter-spacing: 0; vertical-align: 1px; }
+.grp button.link, .grp .r * { text-transform: none; letter-spacing: 0; }
 .card { background: var(--plate); border-radius: var(--radius-card); box-shadow: var(--plate-shadow); padding: 2px var(--sp-4); }
 .row { all: unset; box-sizing: border-box; width: 100%; display: flex; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-3) 0; border-bottom: 1px solid var(--line); cursor: pointer; }
 .row:last-child { border-bottom: 0; }
@@ -507,9 +516,12 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .g2 { grid-template-columns: 1fr 1fr; }
 .stat, .pad { padding: var(--sp-4); }
 /* Big figures: rounded digits, the currency sign and the cents smaller and lighter (BigAmount). */
-.big { font-family: var(--rounded); font-size: var(--fs-2xl); font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; margin: 2px 0; white-space: nowrap; }
-.big .cur { font-size: 0.62em; font-weight: 600; color: var(--mute); margin-right: 1px; }
-.big .cents { font-size: 0.6em; font-weight: 600; color: var(--mute); }
+.big { font-family: var(--fig); font-size: var(--fs-2xl); font-weight: 300; letter-spacing: -0.03em; line-height: 1.15; margin: 2px 0; white-space: nowrap; }
+/* The sign and centavos sit small, at the cap line, like a price on an engraved plate. */
+.big .cur, .big .cents { font-size: 0.46em; font-weight: 500; letter-spacing: 0; color: var(--mute); vertical-align: 0.82em; }
+.big .cur { margin-right: 2px; }
+.big .cents { margin-left: 1px; }
+.big.word { font-weight: 400; letter-spacing: -0.01em; }
 /* Category chart: each segment and legend dot has its category's fixed colour (.tone-*), the same as
    the Ledger's row dots. The legend goes to two columns when its card is wide enough. */
 .donut { display: flex; justify-content: center; margin: var(--sp-2) 0; }
@@ -549,7 +561,8 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 /* Dashboard top row: Spent as the hero, Still due and Last month as two smaller tiles. One row on
    computers; on phones and narrow windows the hero takes the full width and the tiles share a row. */
 .statrow { display: grid; gap: var(--sp-3); margin-top: var(--sp-3); grid-template-columns: 2fr 1fr 1fr; }
-.statrow .hero .big { font-size: var(--fs-3xl); }
+.statrow .hero .big { font-size: 50px; }
+@media (min-width: 1000px) { .statrow .hero .big { font-size: 60px; } }
 .statrow .stat:not(.hero) .big { font-size: var(--fs-xl); }
 .big.word.nodata { color: var(--mute); }
 .spentbar { height: 6px; border-radius: 3px; background: var(--fill-2); margin: var(--sp-2) 0 var(--sp-1); overflow: hidden; }
@@ -682,7 +695,7 @@ details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 .row.edit::after { content: "Change"; width: auto; height: auto; background: none; -webkit-mask: none; mask: none; color: var(--accent-ink); opacity: 1; font-size: var(--fs-md); font-weight: 500; line-height: inherit; }
 .hint { margin: 10px 0 0; }
 /* Ledger "Search all months": month headings above the usual day headers. */
-.grp.month { font-size: var(--fs-lg); margin-top: var(--sp-6); }
+.grp.month { font-size: var(--fs-md); color: var(--ink); margin-top: var(--sp-6); }
 /* Split preview under Mode: one line per person, worked out live; a problem shows in its place. */
 .splitpreview { padding: var(--sp-2) 0; border-bottom: 1px solid var(--line); font-size: var(--fs-md); }
 .splitpreview p { margin: 2px 0; }
