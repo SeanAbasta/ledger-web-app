@@ -125,6 +125,9 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
   // Spending filter: "" is all accounts, an account id, or NO_ACCOUNT. Balances are never filtered.
   const [acct, setAcct] = useState("");
   const pop = usePopover<string>();
+  // The bezel sweeps in once per visit: on the first numbers, not on every month change or return from a sub-view.
+  const swept = useRef(false);
+  useEffect(() => { if (v) swept.current = true; }, [v]);
   const catRef = useRef<HTMLDivElement>(null);
   const { close } = pop;
   // New numbers (another month, filter or a sync) close an open breakdown.
@@ -254,7 +257,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
       <div className="statrow">
         <div className={future ? "card stat hero" : "card stat hero gauged"}><div className="mute">{future ? "Planned" : "Spent"}{acctName && <span className="tag">{acctName}</span>}</div><BigAmount minor={future ? chart.total : cur.total} currency={base} />
           {/* The bezel: this month so far against last month's same days, past 100% in amber. Empty with no earlier data; none for a later month. */}
-          {!future && <Bezel ratio={prevTotal > 0 ? cur.total / prevTotal : undefined} />}
+          {!future && <Bezel ratio={prevTotal > 0 ? cur.total / prevTotal : undefined} sweep={!swept.current} />}
           <div className="mute small">{future ? "Scheduled payments only" : change === null ? "No earlier data" : change === 0 ? "Same as last month" : `${Math.abs(change)}% ${change < 0 ? "less" : "more"} than last month`}</div></div>
         <div className="card stat"><div className="mute">Still due</div><BigAmount minor={stillDue} currency={base} />
           <div className="mute small">{isCurrent ? "rest of this month" : "current month only"}</div></div>

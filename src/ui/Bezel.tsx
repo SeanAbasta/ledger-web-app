@@ -1,3 +1,5 @@
+import { useState, type CSSProperties } from "react";
+
 // The bezel: a machined ring gauge around Spent. It draws a ratio and nothing else: this month so far
 // against last month's same days, the same number the old Spent bar used. 20 graduations of 5%, a long
 // mark at the top for 100%, the arc at its true length, and anything past 100% as a dashed amber arc
@@ -30,15 +32,18 @@ const TICKS = Array.from({ length: 20 }, (_, i) => {
   return <line key={i} className={i === 0 ? "lt" : "st"} x1={x1} y1={y1} x2={x2} y2={y2} />;
 });
 
-export function Bezel({ ratio }: { ratio?: number }) {
+/** `sweep`: draw the arc in once (the Dashboard's first numbers only; CSS skips it under Reduce Motion). */
+export function Bezel({ ratio, sweep }: { ratio?: number; sweep?: boolean }) {
+  // Decided when the ring mounts, so a re-render a moment later (a popover closing) never cuts the sweep short.
+  const [sweeping] = useState(!!sweep);
   const r = ratio === undefined ? 0 : Math.max(0, ratio);
   const main = Math.min(1, r) * LEN;
   const over = Math.min(1, r - 1);
   return (
-    <svg className="bezel" viewBox="0 0 140 140" aria-hidden="true" focusable="false">
+    <svg className={sweeping ? "bezel sweep" : "bezel"} viewBox="0 0 140 140" aria-hidden="true" focusable="false">
       {TICKS}
       <circle className="btrack" cx={C} cy={C} r={R} />
-      {main > 0 && <circle className="barc" cx={C} cy={C} r={R} strokeDasharray={`${main} ${LEN}`} transform={`rotate(-90 ${C} ${C})`} />}
+      {main > 0 && <circle className="barc" cx={C} cy={C} r={R} strokeDasharray={`${main} ${LEN}`} transform={`rotate(-90 ${C} ${C})`} style={{ "--arc": `${main}` } as CSSProperties} />}
       {over > 0 && <path className="bover" d={arc(RO, over)} />}
     </svg>
   );

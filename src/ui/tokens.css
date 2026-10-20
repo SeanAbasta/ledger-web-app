@@ -375,7 +375,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .field > .seg { margin-left: auto; }
 .seg button.on { background: var(--seg-on); color: var(--ink); box-shadow: var(--seg-on-edge); }
 .toggle { all: unset; width: 42px; height: 24px; border-radius: 999px; background: var(--toggle-off); box-shadow: var(--toggle-edge); position: relative; cursor: pointer; }
-.toggle i { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--knob); box-shadow: var(--knob-shadow); transition: transform 0.15s; }
+.toggle i { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--knob); box-shadow: var(--knob-shadow); }
 .toggle.on { background: var(--accent); }
 .toggle.on i { transform: translateX(18px); }
 .toolrow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; }
@@ -907,20 +907,35 @@ fieldset:disabled .swatch { cursor: default; }
 .poplist li > span:last-child { white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .pop { animation: none; } }
 
-/* Press feedback: held buttons shrink to 97% and dim; tappable rows only dim (a full-width row that
-   shrinks looks like it jumps). Reduce Motion: dim only. Our own feedback replaces the grey tap flash. */
+/* Press feedback, pressed plates: a held control dims and its chamfer highlight fades (150 ms) instead of
+   shrinking; tappable rows only dim. Our own feedback replaces the grey tap flash. */
 .btn, .choice, .pill, .seg button, .side button, .nav button, .toggle, .chip button, .x, button.row, .cardhead, .swatch, .pick, .legend button {
-  transition: transform 150ms ease-out, opacity 150ms ease-out;
+  transition: opacity 150ms ease-out, box-shadow 150ms ease-out;
   -webkit-tap-highlight-color: transparent;
 }
 .btn:active:not(:disabled), .choice:active:not(:disabled), .pill:active, .seg button:active:not(:disabled),
 .side button:active, .nav button:active, .toggle:active:not(:disabled), .chip button:active:not(:disabled), .x:active:not(:disabled), .swatch:active:not(:disabled), .pick:active:not(:disabled) {
-  transform: scale(0.97);
   opacity: 0.7;
 }
+.btn:active:not(:disabled), .pick:active:not(:disabled), .chip button:active:not(:disabled) { box-shadow: none; }
 button.row:active:not(:disabled), .cardhead:active, .legend button:active { opacity: 0.55; }
+/* Detents: the switch knob clicks over with a hair of overshoot and no visible bounce (220 ms), like a
+   watch crown. The segmented control's key slides the same way (src/ui/Segmented.tsx measures it).
+   Reduce Motion: no overshoot, no slide. */
+.toggle i { transition: transform 220ms cubic-bezier(0.3, 1.25, 0.5, 1); }
+.seg.thumbed { position: relative; isolation: isolate; }
+.seg.thumbed::before { content: ""; position: absolute; z-index: -1; top: 2px; bottom: 2px; left: 0; width: var(--thumb-w, 0); transform: translateX(var(--thumb-x, 0)); border-radius: 8px; background: var(--seg-on); box-shadow: var(--seg-on-edge); transition: transform 220ms cubic-bezier(0.3, 1.25, 0.5, 1), width 220ms cubic-bezier(0.3, 1.25, 0.5, 1); }
+.seg.thumbed.still::before { transition: none; }
+.seg.thumbed button.on { background: none; box-shadow: none; }
+/* The one authored moment: the bezel's arc sweeps once from the top mark when the Dashboard opens,
+   after its numbers have loaded (600 ms, decelerating); the overage follows. The figure never moves. */
+.bezel.sweep .barc { animation: bezel-sweep 600ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.bezel.sweep .bover { animation: fade-in 300ms ease-out 450ms both; }
+@keyframes bezel-sweep { from { stroke-dashoffset: var(--arc); } }
 @media (prefers-reduced-motion: reduce) {
-  .btn:active, .choice:active, .pill:active, .seg button:active, .side button:active, .nav button:active, .toggle:active, .chip button:active, .x:active, .swatch:active, .pick:active { transform: none; }
+  .toggle i { transition-timing-function: ease-out; transition-duration: 150ms; }
+  .seg.thumbed::before { transition: none; }
+  .bezel.sweep .barc, .bezel.sweep .bover { animation: none; }
 }
 /* Keyboard focus: the same soft blue ring on every control that unsets its own look (shown for the
    keyboard only, never on a tap or click). Rows draw it inside, since they fill their card. */
