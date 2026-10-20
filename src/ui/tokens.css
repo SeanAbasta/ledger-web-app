@@ -739,3 +739,10 @@ button.row:active:not(:disabled), .cardhead:active, .legend button:active { opac
 @media (prefers-reduced-motion: reduce) {
   .btn:active, .choice:active, .pill:active, .seg button:active, .side button:active, .nav button:active, .toggle:active, .chip button:active, .x:active, .swatch:active, .pick:active { transform: none; }
 }
+/* Keyboard focus: the same soft blue ring on every control that unsets its own look (shown for the
+   keyboard only, never on a tap or click). Rows draw it inside, since they fill their card. */
+.seg button:focus-visible, .toggle:focus-visible, .x:focus-visible, .who:focus-visible, .btn:focus-visible,
+button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visible {
+  outline: 2px solid rgba(10, 132, 255, 0.45); outline-offset: 2px;
+}
+.row:focus-visible { outline: 2px solid rgba(10, 132, 255, 0.45); outline-offset: -2px; border-radius: 10px; }

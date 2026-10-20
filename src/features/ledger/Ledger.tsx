@@ -159,7 +159,7 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
           <button className={hasToday ? "today off" : "today"} onClick={goToday}>Today</button>
         </span>
         <span className="filters">
-          <input className="search" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="search" aria-label="Search" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
           <select className="catpick" aria-label="Category" value={cat} onChange={(e) => setCat(e.target.value)}>
             <option value="">All categories</option>
             {choices.map((c) => <option key={c} value={c}>{c}</option>)}

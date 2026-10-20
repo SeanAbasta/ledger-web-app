@@ -466,7 +466,7 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
                   </div>
                 ))}
                 <form className="acct" onSubmit={async (e) => { e.preventDefault(); if (!person.trim()) return; await upsert(store, "people", { name: person.trim() }); setPerson(""); changed(); }}>
-                  <input placeholder="Add person" value={person} onChange={(e) => setPerson(e.target.value)} />
+                  <input aria-label="Add person" placeholder="Add person" value={person} onChange={(e) => setPerson(e.target.value)} />
                   <button className="btn ghost sm" type="submit">Add</button>
                 </form>
               </div>
@@ -479,7 +479,7 @@ export function Settings({ onSetup, focusCard }: { onSetup: () => void; focusCar
                   ))}
                 </div>
                 <form className="acct" onSubmit={async (e) => { e.preventDefault(); const n = cat.trim(); if (!n || s.categories.includes(n)) return; await save({ categories: [...s.categories, n] }); setCat(""); }}>
-                  <input placeholder="Add category" value={cat} onChange={(e) => setCat(e.target.value)} />
+                  <input aria-label="Add category" placeholder="Add category" value={cat} onChange={(e) => setCat(e.target.value)} />
                   <button className="btn ghost sm" type="submit">Add</button>
                 </form>
               </div>
