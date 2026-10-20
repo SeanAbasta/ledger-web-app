@@ -11,6 +11,7 @@ import { isCard, type Account, type Entry, type Person, type Rule } from "../../
 import { AddForm } from "../add/AddForm";
 import { IncomeForm } from "../add/IncomeForm";
 import { PlanSheet } from "./PlanSheet";
+import { shareLine } from "./rowShare";
 import { TransferForm } from "./TransferForm";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
@@ -197,6 +198,7 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
               const b = toBase(x, base);
               const transfer = it.type === "entry" && it.entry.kind === "transfer";
               const later = upcoming(it);
+              const share = shareLine(it); // split rows: what it cost me (day totals stay the full amount)
               return (
                 <button key={it.type === "entry" ? it.entry.id : it.occ.ruleId + it.date} className="row item" title="Edit" onClick={() => (it.type === "entry" ? (it.entry.kind === "settlement" || it.entry.kind === "transfer" ? setPaid(it.entry) : setEditing(it.entry)) : setOcc(it.occ))}>
                   {/* What it was first; then its colour, category (or the two accounts of a transfer) and tags. */}
@@ -215,6 +217,7 @@ export function Ledger({ initialDate, notice }: { initialDate?: string; notice?:
                   <span className={later ? "money later" : moneyIn(x) ? "money in" : "money"}>
                     <span>{moneyIn(x) ? "+" : ""}{formatMinor(x.amount, x.currency)}</span>
                     {x.currency !== base && b !== undefined && <span className="approx">≈ {formatMinor(b, base)}</span>}
+                    {share && <span className="share">{share}</span>}
                   </span>
                 </button>
               );

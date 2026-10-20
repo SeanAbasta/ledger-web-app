@@ -615,7 +615,7 @@ details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 .row.item .l2 { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: var(--fs-sm); color: var(--mute); }
 .row.item .l2 .tag { margin-left: 0; }
 .money { display: flex; flex-direction: column; align-items: flex-end; white-space: nowrap; font-weight: 500; }
-.money .approx { font-size: var(--fs-xs); font-weight: 400; color: var(--mute); }
+.money .approx, .money .share { font-size: var(--fs-xs); font-weight: 400; color: var(--mute); }
 .money.in, .grp .in { color: var(--good-ink); }
 .money.later { color: var(--mute); }
 /* Ledger day headers stay pinned under the top bar while their rows scroll, on the page colour and
