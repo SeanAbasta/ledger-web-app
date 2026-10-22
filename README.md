@@ -32,58 +32,58 @@ It runs in the browser, keeps your data on your own device first, and syncs betw
 
 ## What it does
 
-Ledger has six screens. Everything below is in the current release, V1.4.1.
+Ledger has five rooms, each named for the question it answers, plus Settings behind the gear at the top right. The V2 changes below are on the `v2-build` branch and not released yet.
 
-### Add
+### Add: what did I just spend?
 
 One small card with a switch at the top: **Expense**, **Income** or **Transfer**.
 
-- **Expense:** amount, currency, category (one tap), note, date and account. Make it one-off, recurring (weekly, monthly, yearly) or an installment plan ("3 of 12"). Turn on **Split** to tap the people in it and who paid, and see who owes what before you save.
-- After Save you stay on Add, ready for the next one, with a link to see it in the Ledger.
-- **Income:** money from other sources (Gift, Interest, Sale, Side Job, Spare Change, Other) into one of your bank accounts, in that account's currency. Salary lives on Forecast.
+- **Expense:** amount, then **Again** (your most repeated notes of the last 30 days; a tap fills the note, category and split, never the amount), note, category (four chips and More), account and date, **Split** (tap the people and who paid, and see who owes what before you save), then **Repeats** (no, recurring weekly, monthly or yearly, or in installments, "3 of 12"). Save stays in view on a phone.
+- After Save you stay on Add, ready for the next one. A short message names what was saved, with **Undo** for 8 seconds (or until you close it, if you choose that in Settings).
+- **Income:** money from other sources (Gift, Interest, Sale, Side Job, Spare Change, Other) into one of your bank accounts, in that account's currency. Salary is set in Coming up.
 - **Transfer:** move money between two of your bank accounts in the same currency. Your total stays the same.
-- Default accounts and a default category, or start with the last ones you used on this device.
+- Default accounts and a default category, or start with the last ones you used on this device. A first run shows a short checklist: name an account, set up sync, add a salary.
 
-### Ledger
+### Ledger: what happened?
 
 Your history, newest first.
 
 - Day, Week and Month views, Search, a category filter, and a Today button (or press T on a computer). Search one period or all months.
-- Every row shows what it was, its category colour and tags (split, refund, recurring, "7 of 12", upcoming). Money in is green with a plus; money out is plain. Split rows also show your share.
-- Upcoming plan payments show on their own dates, and the period that holds today has a short "Next 30 days" list.
-- Tap anything to edit it: expenses, income, refunds, transfers and card payments. For a recurring payment, change one payment or this and every later one, skip one, or end the series.
-- Refund a card expense from its edit sheet.
+- Every day shows the full amount paid and, under it, your share. Every row shows what it was, its category colour and tags (split, refund, recurring, "7 of 12", upcoming). Money in is green with a plus; money out is plain. Split rows also show your share.
+- One line at the top points to Coming up with how many payments are due in the next 30 days.
+- Tap anything to edit it: expenses, income, refunds, transfers and card payments. For a plan, change one payment or this and every later one, skip one, end the series, or **Edit plan** (start date, how often, payments and total, end date) with a preview of what changes before you save.
+- Delete asks for a second tap, and Undo brings it back. Refund a card expense from its edit sheet.
 
-### Dashboard
+### Dashboard: how is the month?
 
-The month at a glance, with three deeper views.
+A **Month** and **Year** switch at the top.
 
-- **Spent** this month (your share of splits) against the same days last month, **Still due**, and **Last month**.
-- A category chart and a calendar of days lit by how much you spent. Tap a slice or a legend row for its largest items. For the current month the chart also counts what is still scheduled, marked "incl. upcoming", with scheduled days still to come outlined. A later month shows what is **Planned**.
+- **Spent** this month (your share of splits) with a thin line against the same days last month, **Still due** (yours, rest of the month), and **Last month**.
+- Categories as one strip with a legend. Tap a part or a legend row for its largest items. A calendar of days lit by how much you spent; tap a day to open it in the Ledger. For the current month the charts also count what is still scheduled, marked "incl. upcoming". A later month shows what is **Planned**.
 - Filter the spending figures to one bank account or card.
-- **Credit cards:** each card shows its statement, due date, unbilled charges, credit left and installment holds (for example "Laptop hold"). Pay the statement, pay everything, or pay ahead from a bank account in one tap.
+- **Credit cards:** each card shows its statement, due date, unbilled charges, credit left and installment holds. Pay the statement, pay everything, or pay ahead from a bank account in one tap.
 - **Accounts** with your total, what it would be if everyone paid you back, and after your card bills. **Owed to you**, person by person. The forecast for the end of next month.
-- **Card view:** tap a card for its statement line by line, what is unbilled, and its plans, plus **Reconcile** to compare with your bank app. Ledger names the likely cause of a gap, such as charges posted a day late.
-- **Recurring:** every recurring payment and installment plan in one list, with the next date, account and payments left, and what they cost you a month.
+- **Card view:** tap a card for its statement line by line, what is unbilled, and its plans, plus **Reconcile** to compare with your bank app.
 - **Year:** spent, income and net for the year so far or a past year, a month by month chart, your top categories, the average, highest and lowest month, and the same dates last year.
 
-### Splits
+### People: who owes whom?
 
-- Balances per person, in each currency.
+- Balances per person, in each currency, with each statement line's running balance.
 - Split modes: they owe it all, you owe it all, even (everyone pays the same), or custom amounts for 3 or more people.
-- **Snapshot:** turn a person's balance into a clean statement image (Date, Item, Total, Your share) to copy or save and send. It shows what each item cost in full next to their share.
-- **Settle up** records the payment and brings the balance to zero.
+- **Settle up:** all of it, or part of it (the most you can record is the balance), with Undo. After a part payment the unpaid lines stay in view.
+- **Snapshot:** turn a person's balance into a clean statement image (Date, Item, Total, Your share) to copy or save and send.
 
-### Forecast
+### Coming up: what is next, and can I cover it?
 
-- Your salary per month, or repeat it every month, and the bank it is paid into.
-- Your balance projected 3, 6 or 12 months ahead from income, recurring costs, installments, your average spending, card bills on their due dates, and money people owe you.
-- Tap a month for its details. The lowest point and any months that end below zero are called out.
+- **Soon:** what leaves your bank in the next 30 days. Card bills on their due dates (an estimate until the statement closes), payments straight from a bank, charges scheduled on cards and the bill each lands on, and what people owe you.
+- **12 months:** your balance projected 3, 6 or 12 months ahead, with what it assumes said in words, the month table, and your salary per month (repeat it every month and pick the bank it is paid into).
+- **Plans:** every recurring payment and installment plan, with the next date, account and payments left, and what they cost you a month.
 
-### Settings
+### Settings (the gear)
 
-- **General:** currency and appearance (Light, Dark, or Auto to follow your device).
-- **Accounts:** bank accounts and credit cards, card colours, defaults. Removing an account that is in use offers to move its entries and plans first, and removed accounts can be restored.
+- A **Data health** card on top says whether your data is safe on GitHub or backed up, and when your token needs renewing. The gear shows a small dot when something there needs you.
+- **General:** currency, appearance (Light, Dark, or Auto), and keeping Undo until dismissed.
+- **Accounts:** bank accounts and credit cards (named before they are created), card colours, defaults. Removing an account that is in use offers to move its entries and plans first, and removed accounts can be restored.
 - **People and categories.**
 - **Sync and backup:** connect GitHub, export everything as one file or a spreadsheet, and import a backup (nothing is deleted on import).
 

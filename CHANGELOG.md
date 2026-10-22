@@ -2,6 +2,46 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## Unreleased: V2, Phases 1 and 2 (branch `v2-build`)
+
+Five rooms named for the question they answer, and the controls that were missing: Undo, settling part of a balance, repeat chips and editing a whole plan. Same look as V1.4.1. No new kinds of data are stored, so an older copy keeps working with everything here; update both computers to get the new screens.
+
+Rooms:
+
+- Splits is now **People** and Forecast is now **Coming up**, in the same places in the tab bar. Settings moved behind a gear at the top right, so the phone tab bar has five tabs.
+- **Coming up, Soon** lists what leaves your bank in the next 30 days: card bills on their due dates (an estimate until the statement closes, Paid until the due date passes), payments straight from a bank, card charges still to come with the bill each lands on, and what people owe you. Its figures are the forecast's own. **12 months** is the old Forecast, with the salary months at the foot. **Plans** is the old Recurring list.
+
+Add:
+
+- New order: amount, Again, note, category (four chips and More), account and date on one row, split, then Repeats. Save stays in view above the tab bar on a phone.
+- **Again** chips: your most repeated notes of the last 30 days (three uses or more). A tap fills the note, category and split, never the amount.
+- After Save a short message names what was saved, with your share and who owes, and **Undo**. Undo puts the values back in the form. On the Add tab, Return in Note closes the keyboard instead of saving.
+
+Ledger:
+
+- Each day shows the full amount and, under it, your share (the same figure the Dashboard shows for that day).
+- The Next 30 days card is now one line that opens Coming up.
+- **Edit plan** changes a plan's start, how often, payments and total, or end, with a preview of what changes before you save.
+- Delete now has **Undo**.
+
+Dashboard:
+
+- A **Month** and **Year** switch. Categories are one strip, and the ring around Spent is now a thin line against last month's same days, left out when there is no earlier month. Small categories fold into "Everything else".
+- Tap a day on the calendar to open it in the Ledger.
+- Still due says "yours" and links to Coming up.
+
+People:
+
+- **Settle up** takes all of it or part of it. After a part payment the unpaid lines stay in view and the payment shows as "Paid". Each line shows the balance after it. Settling has **Undo**.
+
+Settings:
+
+- A **Data health** card on top, and a small dot on the gear when the token needs renewing or nothing has been backed up for 14 days.
+- New accounts and cards are named before they are created. A first run shows a short checklist on Add.
+- **Keep Undo until dismissed** (General).
+
+Also: the conflict screen says first that nothing is lost and marks Merge as recommended; the forecast's headline and note say what it assumes; larger tap areas and named controls for screen readers.
+
 ## V1.4.1 (2026-10-20)
 
 A new look for Ledger, called Anodized. Same features, same numbers, and nothing about your data changes. Update both computers so they look the same.
