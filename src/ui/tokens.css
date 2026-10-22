@@ -645,7 +645,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 /* splits */
 .row.static { cursor: default; align-items: center; }
 .row.sel .who b { color: var(--accent-ink); }
-/* Splits people: name and words on the left, the balance as a light figure on the right, Snapshot and
+/* People: name and words on the left, the balance as a light figure on the right, Snapshot and
    Settle under them on phones (beside them on wider screens). The picked person sits on a soft blue plate. */
 .row.person { flex-wrap: wrap; row-gap: var(--sp-2); align-items: flex-start; }
 .row.person .who { min-width: 0; }
@@ -706,7 +706,7 @@ fieldset:disabled .grp button.link { opacity: 0.5; cursor: default; }
 .row button.link:focus-visible { outline: 2px solid var(--focus); border-radius: 6px; }
 .fixlist { max-height: 40vh; overflow-y: auto; margin: var(--sp-3) 0; }
 .line { stroke: var(--accent-data); }
-/* Forecast projected balance: SVG line, HTML dots, labels and tap targets placed in percent. */
+/* Coming up, 12 months, projected balance: SVG line, HTML dots, labels and tap targets placed in percent. */
 .frange { display: flex; justify-content: flex-end; margin: var(--sp-2) 0 var(--sp-3); }
 .fchart { position: relative; }
 .fchart.popopen { z-index: 1; }

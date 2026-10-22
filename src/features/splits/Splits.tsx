@@ -7,7 +7,7 @@ import { formatMinor } from "../../data/money";
 import { ledgerItems } from "../../data/rules";
 import { isCard, type Account, type Person, type Rule } from "../../data/schema";
 import { Empty } from "../../ui/Empty";
-import { SplitsIcon } from "../../ui/icons";
+import { PeopleIcon } from "../../ui/icons";
 import { Sheet } from "../../ui/Sheet";
 import { useLedger } from "../../ui/Ledger";
 import { modeLabel } from "../../ui/splitLabels";
@@ -69,7 +69,7 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
     changed();
   }
 
-  if (!rows.length) return <Empty icon={<SplitsIcon />} title="No splits yet" note="Turn on Split when you add an expense" />;
+  if (!rows.length) return <Empty icon={<PeopleIcon />} title="No one owes anyone yet" note="Turn on Split when you add an expense and balances appear here." />;
 
   return (
     <>

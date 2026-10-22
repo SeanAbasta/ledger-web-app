@@ -15,7 +15,7 @@ const EVERY = { weekly: "a week", monthly: "a month", yearly: "a year" } as cons
 
 /**
  * Every live recurring and installment plan, with what they cost a month (my share, base currency).
- * Tapping an active plan opens its next payment in the same sheet the Ledger uses. Salary is on Forecast.
+ * Tapping an active plan opens its next payment in the same sheet the Ledger uses. Salary is in Coming up.
  */
 export function RecurringView() {
   const { store, rev } = useLedger();
@@ -77,7 +77,7 @@ export function RecurringView() {
               {showEnded && <div className="card">{l.ended.map(row)}</div>}
             </>
           )}
-          <p className="mute small">Tap a plan to edit, skip or end its next payment. Salary is on Forecast.</p>
+          <p className="mute small">Tap a plan to edit, skip or end its next payment. Salary is in Coming up, 12 months.</p>
         </>
       )}
       {occ && <PlanSheet occ={occ} rule={rules.find((r) => r.id === occ.ruleId)} people={people} onClose={() => setOcc(undefined)} />}

@@ -358,7 +358,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
               {owed.owedToMe && owed.iOwe ? `${formatMinor(owed.owedToMe, base)} owed to you, ${formatMinor(owed.iOwe, base)} you owe` : "net"}
             </div>
             {owed.people.map((p) => (
-              <button key={p.person.id} className="row" title={`Open ${p.person.name} in Splits`} onClick={() => onOpenPerson(p.person.id)}>
+              <button key={p.person.id} className="row" title={`Open ${p.person.name} in People`} onClick={() => onOpenPerson(p.person.id)}>
                 <span>
                   {p.person.name} <span className="mute">{p.base >= 0 ? "owes you" : "you owe"}</span>
                   {p.foreign && Object.keys(p.byCurrency).filter((c) => c !== base).map((c) => <span key={c} className="tag">{c}</span>)}

@@ -21,11 +21,13 @@ export const DashboardIcon = () => (
   <Icon><rect x="3" y="12" width="4" height="8" rx="1" /><rect x="10" y="7" width="4" height="13" rx="1" /><rect x="17" y="3" width="4" height="17" rx="1" /></Icon>
 );
 
-export const SplitsIcon = () => (
+export const PeopleIcon = () => (
   <Icon><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.5" /><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 14.5c3 0 6 1.8 6 5.5" /></Icon>
 );
 
-export const ForecastIcon = () => <Icon><path d="M3 17l5-5 4 3 8-8" /><path d="M15 7h5v5" /></Icon>;
+export const CalendarIcon = () => (
+  <Icon><rect x="4" y="5.5" width="16" height="14" rx="2.5" /><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" /><circle cx="9" cy="14" r=".7" /><circle cx="12" cy="14" r=".7" /><circle cx="15" cy="14" r=".7" /></Icon>
+);
 
 export const SettingsIcon = () => (
   <Icon>

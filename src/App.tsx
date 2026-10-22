@@ -11,22 +11,23 @@ import { Gate } from "./features/sync/Gate";
 import { SetupSheet } from "./features/sync/SetupSheet";
 import { SyncSheet } from "./features/sync/SyncSheet";
 import { LedgerProvider } from "./ui/Ledger";
-import { AddIcon, DashboardIcon, ForecastIcon, LedgerIcon, SettingsIcon, SplitsIcon } from "./ui/icons";
+import { AddIcon, CalendarIcon, DashboardIcon, LedgerIcon, PeopleIcon, SettingsIcon } from "./ui/icons";
 import { Pill } from "./ui/Pill";
 import { Segmented } from "./ui/Segmented";
 import { SyncProvider, useSync } from "./ui/Sync";
 
-const NAV = ["Add", "Ledger", "Dashboard", "Splits", "Forecast", "Settings"] as const;
+// Rooms are named for the question they answer. People (was Splits) and Coming up (was Forecast) keep their slots.
+const NAV = ["Add", "Ledger", "Dashboard", "People", "Coming up", "Settings"] as const;
 export type Tab = (typeof NAV)[number];
 
 /** One icon per tab: the phone tab bar and the sidebar show the same ones. */
-const ICON: Record<Tab, () => ReactElement> = { Add: AddIcon, Ledger: LedgerIcon, Dashboard: DashboardIcon, Splits: SplitsIcon, Forecast: ForecastIcon, Settings: SettingsIcon };
+const ICON: Record<Tab, () => ReactElement> = { Add: AddIcon, Ledger: LedgerIcon, Dashboard: DashboardIcon, People: PeopleIcon, "Coming up": CalendarIcon, Settings: SettingsIcon };
 
 /** The screens that are all about editing are locked as a whole while offline and read-only. */
-const EDIT_TABS: Tab[] = ["Add", "Forecast"]; // Settings locks its own edit controls so Export still works offline
+const EDIT_TABS: Tab[] = ["Add", "Coming up"]; // Settings locks its own edit controls so Export still works offline
 
-/** Lists read better in a narrower column on big screens; Dashboard and Forecast use the full one. */
-const READING_TABS: Tab[] = ["Add", "Ledger", "Splits", "Settings"];
+/** Lists read better in a narrower column on big screens; Dashboard and Coming up use the full one. */
+const READING_TABS: Tab[] = ["Add", "Ledger", "People", "Settings"];
 
 const ADD_KINDS = ["Expense", "Income", "Transfer"] as const;
 type AddKind = (typeof ADD_KINDS)[number];
@@ -61,15 +62,15 @@ function Screen({ tab, go, setup, focusPerson, openPerson, saved, onSaved, focus
   if (tab === "Add") return <AddTab onView={(s) => { onSaved(s); go("Ledger"); }} onOpenSettings={() => openSettings("accounts")} />;
   if (tab === "Ledger") return <Ledger key={saved?.date ?? ""} initialDate={saved?.date} notice={saved?.message} onAdd={() => go("Add")} />;
   if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); go("Ledger"); }} onOpenCardSettings={openCard} onAdd={() => go("Add")} />;
-  if (tab === "Splits") return <Splits key={focusPerson ?? ""} initialPerson={focusPerson} />;
-  if (tab === "Forecast") return <Forecast />;
+  if (tab === "People") return <Splits key={focusPerson ?? ""} initialPerson={focusPerson} />;
+  if (tab === "Coming up") return <Forecast />;
   return <Settings onSetup={setup} focusCard={focusCard} initialPage={settingsPage} />;
 }
 
 function Shell() {
   const [tab, setTab] = useState<Tab>("Add");
   const [sheet, setSheet] = useState<"sync" | "setup">();
-  // Set when the Dashboard opens a person, so Splits starts on them.
+  // Set when the Dashboard opens a person, so People starts on them.
   const [focusPerson, setFocusPerson] = useState<string>();
   // Set when the Add form saves, so the Ledger opens where the new item is and says it was saved.
   const [saved, setSaved] = useState<SavedNote>();
@@ -109,7 +110,7 @@ function Shell() {
           <fieldset className="plain" disabled={locked}>
             {/* Keyed on the tab so the new screen fades in (screens already remount on a tab change). */}
             <div key={tab} className="tabfade">
-            <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("Splits"); }} saved={saved} onSaved={setSaved} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} settingsPage={settingsPage} openSettings={(p) => { setSettingsPage(p); setTab("Settings"); }} />
+            <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("People"); }} saved={saved} onSaved={setSaved} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} settingsPage={settingsPage} openSettings={(p) => { setSettingsPage(p); setTab("Settings"); }} />
             </div>
           </fieldset>
         </section>

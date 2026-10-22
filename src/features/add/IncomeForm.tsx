@@ -19,7 +19,7 @@ const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[
 
 /**
  * New one-off income from another source (a gift, interest, a sale), or edit one (pass `entry`). Paid into
- * a bank account, in that account's currency. Salary is set on Forecast, never here.
+ * a bank account, in that account's currency. Salary is set in Coming up, never here.
  */
 export function IncomeForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: SavedNote) => void }) {
   const { store, changed } = useLedger();
@@ -100,7 +100,7 @@ export function IncomeForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?:
             {banks.map((a) => <option key={a.id} value={a.id}>{a.name}{a.currency !== base ? ` (${a.currency})` : ""}</option>)}
           </select></label>
       )}
-      <p className="mute small">Money from other sources. Salary is set on Forecast.</p>
+      <p className="mute small">Money from other sources. Salary is set in Coming up, 12 months.</p>
       {error && <p className="err" role="alert">{error}</p>}
       <div className="actions">
         {entry && <ConfirmButton danger label="Delete" ask={confirmLabel("delete", entry)} onConfirm={() => void remove()} />}

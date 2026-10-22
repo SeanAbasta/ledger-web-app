@@ -222,7 +222,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
     const on = usageText(u);
     setDrop({ kind: "people", id: p.id, name: p.name, lines: [
       [on && `${p.name} is on ${on}.`, theyOwe.length ? `${p.name} owes you ${amts(theyOwe)}.` : "", iOwe.length ? `You owe ${p.name} ${amts(iOwe)}.` : "", !owed.length ? "Settled up." : ""].filter(Boolean).join(" "),
-      `The entries stay in the Ledger and keep the split, but ${p.name} leaves Splits${owed.length ? ", Owed to you and the forecast" : ""}. Adding ${p.name} again makes a new person; it does not bring these back.`,
+      `The entries stay in the Ledger and keep the split, but ${p.name} leaves People${owed.length ? ", Owed to you and the forecast" : ""}. Adding ${p.name} again makes a new person; it does not bring these back.`,
     ] });
   }
   function askRemoveAccount(a: Account) {
