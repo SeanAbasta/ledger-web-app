@@ -81,6 +81,26 @@ export async function deleteEntry(store: LedgerStore, month: MonthKey, id: strin
   });
 }
 
+/**
+ * Undo of Delete: bring a tombstoned entry back as it was. Its edit time moves forward (strictly past the
+ * tombstone's, even within the same millisecond), so a merge with the other side keeps the restored copy
+ * (newest edit wins), and the month is marked dirty, so it is pushed like any edit.
+ */
+export async function restoreEntry(store: LedgerStore, month: MonthKey, id: string): Promise<Entry> {
+  let result: Entry | undefined;
+  await store.transact([monthPath(month)], (docs) => {
+    const src = entriesOf(docs.get(monthPath(month)));
+    const cur = src.find((e) => e.id === id);
+    if (!cur?.deleted) throw new Error(`Entry ${id} is not deleted in ${month}`);
+    const t = now();
+    const { deleted: _gone, ...rest } = cur;
+    const next: Entry = { ...rest, updatedAt: t > cur.updatedAt ? t : new Date(Date.parse(cur.updatedAt) + 1).toISOString() };
+    result = next;
+    docs.set(monthPath(month), file(month, src.map((e) => (e.id === id ? next : e))));
+  });
+  return result!;
+}
+
 /** Live entries for a month, newest first (same order as the Ledger: date, then createdAt, then id). */
 export async function listMonth(store: LedgerStore, month: MonthKey): Promise<Entry[]> {
   const d = await store.get(monthPath(month));

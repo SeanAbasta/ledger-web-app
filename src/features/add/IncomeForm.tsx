@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getSettings, listAll, nameOf } from "../../data/collections";
 import { startAccount } from "../../data/defaults";
 import { today } from "../../data/dates";
-import { addEntry, deleteEntry, updateEntry } from "../../data/months";
+import { addEntry, deleteEntry, restoreEntry, updateEntry } from "../../data/months";
 import { formatMinor, parseMinor } from "../../data/money";
 import { incomeAccounts, newIncome, SIDE_INCOME } from "../../data/sideIncome";
 import { monthOf, type Account, type Entry } from "../../data/schema";
@@ -11,6 +11,8 @@ import { CategoryChips } from "../../ui/CategoryChips";
 import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
+import { useToast } from "../../ui/Toast";
+import type { IncomeDraft } from "./draft";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 import type { SavedNote } from "./AddForm";
 import { afterSave, savedLine } from "./afterSave";
@@ -21,15 +23,17 @@ const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[
  * New one-off income from another source (a gift, interest, a sale), or edit one (pass `entry`). Paid into
  * a bank account, in that account's currency. Salary is set in Coming up, never here.
  */
-export function IncomeForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: SavedNote) => void }) {
+export function IncomeForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (saved?: SavedNote) => void; draft?: IncomeDraft }) {
+  const { show } = useToast();
+  const d = entry ? undefined : draft;
   const { store, changed } = useLedger();
   const [base, setBase] = useState("PHP");
   const [all, setAll] = useState<(Account & { deleted?: true })[]>([]);
-  const [amount, setAmount] = useState(entry ? plain(entry.amount, entry.currency) : "");
-  const [category, setCategory] = useState(entry?.category ?? SIDE_INCOME[0]);
-  const [note, setNote] = useState(entry?.note ?? "");
-  const [date, setDate] = useState(entry?.date ?? today());
-  const [accountId, setAccountId] = useState(entry?.accountId ?? "");
+  const [amount, setAmount] = useState(entry ? plain(entry.amount, entry.currency) : d?.amount ?? "");
+  const [category, setCategory] = useState(entry?.category ?? d?.category ?? SIDE_INCOME[0]);
+  const [note, setNote] = useState(entry?.note ?? d?.note ?? "");
+  const [date, setDate] = useState(entry?.date ?? d?.date ?? today());
+  const [accountId, setAccountId] = useState(entry?.accountId ?? d?.accountId ?? "");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -61,16 +65,16 @@ export function IncomeForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?:
       if (entry) {
         // A removed account keeps its entry's currency and rate as stored.
         await updateEntry(store, monthOf(entry.date), entry.id, account ? input : { ...input, currency: entry.currency, rate: entry.rate, accountId: entry.accountId });
-      } else {
-        await addEntry(store, input);
+        changed();
+        return onDone?.();
       }
+      const made = await addEntry(store, input);
       changed();
-      if (entry) return onDone?.();
       rememberUsed({ income: accountId });
       const t = today();
       const r = afterSave({ form: "income", amount, note, date, accountId, category }, t);
       setAmount(r.amount); setNote(r.note); setDate(r.date);
-      onDone?.({ date, message: savedLine({ note, category, amount: minor, currency, date, today: t }) });
+      onDone?.({ date, message: savedLine({ note, category, amount: minor, currency, date, today: t }), undo: () => deleteEntry(store, monthOf(made.date), made.id), draft: { kind: "Income", fields: { amount, note, date, accountId, category } } });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save");
     }
@@ -81,6 +85,7 @@ export function IncomeForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?:
     await deleteEntry(store, monthOf(entry.date), entry.id);
     changed();
     onDone?.();
+    show({ message: `Deleted: ${entry.note || entry.category || "Income"} ${formatMinor(entry.amount, entry.currency)}`, undo: async () => { await restoreEntry(store, monthOf(entry.date), entry.id); } });
   }
 
   return (

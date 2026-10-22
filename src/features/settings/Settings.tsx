@@ -25,6 +25,7 @@ import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { AccountOptions } from "../../ui/AccountOptions";
 import { applyTheme, loadTheme, saveTheme, THEMES, type Theme } from "../../ui/theme";
+import { loadKeepUndo, saveKeepUndo } from "../../ui/undoPref";
 import { accountEdit, accountFieldsOf, cardEdit, cardFieldsOf, freshFields, plain, type AccountFields, type CardFields } from "./accountEdit";
 import { CloseIcon, PrevIcon } from "../../ui/icons";
 import { healthOf, sinceWords, syncedWords, type Health } from "./health";
@@ -171,6 +172,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
   const [incoming, setIncoming] = useState<Bundle>();
   const [backupMsg, setBackupMsg] = useState("");
   const [theme, setThemeState] = useState<Theme>(loadTheme);
+  const [keepUndo, setKeepUndo] = useState(loadKeepUndo);
   const [confirm, setConfirm] = useState<"pull" | "remove">();
   // A person or account that is in use: removing it asks first and says what it affects.
   // An account in use can first move its entries, plans and defaults to `targets` (same kind; banks in the same currency).
@@ -453,6 +455,8 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
                 <div className="field"><b>Base currency</b><span className="mute">{s.baseCurrency}</span></div>
                 <div className="field"><b>Appearance</b>
                   <Segmented label="Appearance" value={theme} options={THEMES} labels={THEME_LABEL} onChange={(t) => { setThemeState(t); saveTheme(t); applyTheme(t); }} /></div>
+                <div className="field"><b>Keep Undo until dismissed<span className="mute small sub">On this device. Otherwise Undo lasts 8 seconds</span></b>
+                  <button type="button" className={`toggle ${keepUndo ? "on" : ""}`} aria-pressed={keepUndo} aria-label="Keep Undo until dismissed" onClick={() => { setKeepUndo(!keepUndo); saveKeepUndo(!keepUndo); }}><i /></button></div>
               </div>
             </>
           )}

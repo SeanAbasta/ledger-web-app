@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { listAll, nameOf } from "../../data/collections";
 import { today } from "../../data/dates";
-import { addEntry, deleteEntry, updateEntry } from "../../data/months";
+import { addEntry, deleteEntry, restoreEntry, updateEntry } from "../../data/months";
 import { formatMinor, parseMinor } from "../../data/money";
 import { isCard, type Account, type Entry } from "../../data/schema";
 import { newTransfer, transferSources, transferTargets } from "../../data/transfers";
@@ -11,6 +11,8 @@ import { MoneyInput } from "../../ui/MoneyInput";
 import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
+import { useToast } from "../../ui/Toast";
+import type { TransferDraft } from "../add/draft";
 
 const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[^\d.]/g, "");
 
@@ -22,14 +24,16 @@ const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[
  * Without `entry` (the Add tab): a new transfer between two of my bank accounts in the same currency. Cards
  * are not offered (paying a card is the Pay button on Dashboard).
  */
-export function TransferForm({ entry, accounts: given, onDone, onOpenSettings }: { entry?: Entry; accounts?: (Account & { deleted?: true })[]; onDone: (saved?: SavedNote) => void; onOpenSettings?: () => void }) {
+export function TransferForm({ entry, accounts: given, onDone, onOpenSettings, draft }: { entry?: Entry; accounts?: (Account & { deleted?: true })[]; onDone: (saved?: SavedNote) => void; onOpenSettings?: () => void; draft?: TransferDraft }) {
+  const { show } = useToast();
+  const d = entry ? undefined : draft;
   const { store, changed } = useLedger();
   const [loaded, setLoaded] = useState<(Account & { deleted?: true })[]>();
-  const [from, setFrom] = useState(entry?.accountId ?? "");
-  const [to, setTo] = useState(entry?.toAccountId ?? "");
-  const [amount, setAmount] = useState(entry ? plain(entry.amount, entry.currency) : "");
-  const [date, setDate] = useState(entry?.date ?? today());
-  const [note, setNote] = useState(entry?.note ?? "");
+  const [from, setFrom] = useState(entry?.accountId ?? d?.from ?? "");
+  const [to, setTo] = useState(entry?.toAccountId ?? d?.to ?? "");
+  const [amount, setAmount] = useState(entry ? plain(entry.amount, entry.currency) : d?.amount ?? "");
+  const [date, setDate] = useState(entry?.date ?? d?.date ?? today());
+  const [note, setNote] = useState(entry?.note ?? d?.note ?? "");
   const [error, setError] = useState("");
 
   // The Add tab passes no accounts, so the form loads them (removed ones too, for names).
@@ -70,12 +74,12 @@ export function TransferForm({ entry, accounts: given, onDone, onOpenSettings }:
         changed();
         return onDone();
       }
-      await addEntry(store, newTransfer({ amount: minor, from: accounts.find((a) => a.id === from), to: accounts.find((a) => a.id === to), date, note }));
+      const made = await addEntry(store, newTransfer({ amount: minor, from: accounts.find((a) => a.id === from), to: accounts.find((a) => a.id === to), date, note }));
       changed();
       const t = today();
       const r = afterSave({ form: "transfer", amount, note, date, from, to }, t);
       setAmount(r.amount); setNote(r.note); setDate(r.date);
-      onDone({ date, message: savedLine({ note, category: "Transfer", amount: minor, currency, date, today: t }) });
+      onDone({ date, message: savedLine({ note, category: "Transfer", amount: minor, currency, date, today: t }), undo: () => deleteEntry(store, made.date.slice(0, 7), made.id), draft: { kind: "Transfer", fields: { amount, note, date, from, to } } });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save");
     }
@@ -86,6 +90,7 @@ export function TransferForm({ entry, accounts: given, onDone, onOpenSettings }:
     await deleteEntry(store, entry.date.slice(0, 7), entry.id);
     changed();
     onDone();
+    show({ message: `Deleted: ${entry.note || entry.category || "Transfer"} ${formatMinor(entry.amount, entry.currency)}`, undo: async () => { await restoreEntry(store, entry.date.slice(0, 7), entry.id); } });
   }
 
   if (creating && loaded && fromList.length === 0) {

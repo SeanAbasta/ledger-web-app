@@ -130,6 +130,7 @@
   --z-day: 2;
   --z-bar: 3;
   --z-tabs: 4;
+  --z-toast: 5;
   --z-scrim: 10;
   /* Category colours, anodized shades. src/ui/categoryColor.ts picks one per category. */
   --t-red: #d0453b; --t-orange: #d9822b; --t-yellow: #c9a227; --t-green: #3a9a5b; --t-mint: #2aa58f; --t-teal: #2a9d9f; --t-cyan: #2b93c4;
@@ -1102,3 +1103,22 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
 .num.stmt { display: flex; flex-direction: column; align-items: flex-end; }
 .num.stmt .run { font-size: var(--fs-xs); color: var(--mute); }
 .settlehow { display: flex; margin: var(--sp-2) 0 var(--sp-1); }
+/* The Undo toast (V13): ink with paper text (it inverts in dark), above the tab bar, and above the Save
+   bar on the Add tab (--toast-lift). A 3 px line runs down over 8 seconds and stops while held. */
+.toastzone { position: fixed; z-index: var(--z-toast); left: 0; bottom: 0; width: 0; height: 0; }
+.toast { position: fixed; left: max(14px, env(safe-area-inset-left)); right: max(14px, env(safe-area-inset-right)); bottom: calc(var(--tabbar-h) + max(16px, env(safe-area-inset-bottom)) + 14px + var(--toast-lift, 0px)); display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-pop); background: var(--toast-bg); color: var(--toast-ink); box-shadow: var(--elev-toast); overflow: hidden; animation: toast-in 220ms ease-out; --focus: var(--toast-link); }
+@media (max-width: 700px) { .win.on-add { --toast-lift: 76px; } }
+@media (min-width: 701px) { .toast { left: calc(180px + var(--gutter)); right: auto; width: 420px; max-width: calc(100vw - 180px - 2 * var(--gutter)); bottom: var(--gutter); } }
+.toast-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.toast-text b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toast-sub { font-size: var(--fs-md); color: var(--toast-sub); }
+.toast-undo, .toast-close { all: unset; flex: none; box-sizing: border-box; min-width: var(--hit); min-height: var(--hit); display: grid; place-items: center; cursor: pointer; color: var(--toast-link); -webkit-tap-highlight-color: transparent; }
+.toast-undo { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.toast-close .icon { width: 16px; height: 16px; }
+.toast-undo:focus-visible, .toast-close:focus-visible { outline: var(--ring); outline-offset: -2px; border-radius: var(--r-ctl); }
+.toast-line { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--toast-line); transform-origin: left; animation: toast-timer 8s linear forwards; }
+.toast.paused .toast-line { animation-play-state: paused; }
+@keyframes toast-timer { to { transform: scaleX(0); } }
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px); } }
+/* Reduce Motion: the toast fades in and its line is a full, still bar (the toast still times out). */
+@media (prefers-reduced-motion: reduce) { .toast { animation: fade-in 120ms ease-out; } .toast-line { animation: none; } }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { list } from "../../data/collections";
 import { nonZero, personLines, statementOf, sumBy, type Line } from "../../data/balances";
 import { labelShort, today } from "../../data/dates";
-import { addEntry, loadAllEntries } from "../../data/months";
+import { addEntry, deleteEntry, loadAllEntries } from "../../data/months";
 import { formatMinor, parseMinor } from "../../data/money";
 import { ledgerItems } from "../../data/rules";
 import { isCard, type Account, type Person, type Rule } from "../../data/schema";
@@ -12,6 +12,7 @@ import { Sheet } from "../../ui/Sheet";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { useLedger } from "../../ui/Ledger";
+import { useToast } from "../../ui/Toast";
 import { modeLabel } from "../../ui/splitLabels";
 import { copyImage, downloadImage, renderStatement } from "./snapshot";
 import { partCheck } from "./settle";
@@ -25,6 +26,7 @@ const phrase = (name: string, amt: number) => (amt > 0 ? `${name} owes you` : `Y
 
 export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
   const { store, rev, changed } = useLedger();
+  const { show } = useToast();
   const [rows, setRows] = useState<Row[]>([]);
   // Nothing is shown until the first load, so the empty state never flashes over a list that is coming.
   const [loaded, setLoaded] = useState(false);
@@ -69,8 +71,13 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
 
   // All of it: one settlement per currency, bringing each to zero. Part of it (one currency open): the typed amount.
   async function record(r: Row, partMinor?: number) {
+    const made: { month: string; id: string }[] = [];
+    const said: string[] = [];
+    let theyPaid = true;
     for (const [cur, amt] of nonZero(sumBy(r.lines))) {
-      await addEntry(store, {
+      theyPaid = amt > 0;
+      said.push(formatMinor(partMinor ?? Math.abs(amt), cur));
+      const e = await addEntry(store, {
         kind: "settlement",
         date: today(),
         amount: partMinor ?? Math.abs(amt),
@@ -81,9 +88,12 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
         direction: amt > 0 ? "in" : "out",
         accountId: acct || accounts[0]?.id,
       });
+      made.push({ month: e.date.slice(0, 7), id: e.id });
     }
     setSettle(undefined);
     changed();
+    // Undo takes the settlement entries back out (the same tombstone as Delete).
+    show({ message: `Recorded: ${theyPaid ? `${r.person.name} paid` : `You paid ${r.person.name}`} ${said.join(" and ")}`, undo: async () => { for (const m of made) await deleteEntry(store, m.month, m.id); } });
   }
 
   if (!loaded) return null;

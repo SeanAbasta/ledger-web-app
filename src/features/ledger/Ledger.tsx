@@ -3,7 +3,7 @@ import { getSettings, list, listAll, nameOf } from "../../data/collections";
 import { toBase } from "../../data/base";
 import { addDays, addMonths, contains, labelDay, labelMonth, labelShort, monthStart, periodOf, today } from "../../data/dates";
 import { categoryChoices, itemMatches } from "../../data/ledgerFilter";
-import { addRefund, deleteEntry, loadAllEntries, loadEntries, refundable } from "../../data/months";
+import { addRefund, deleteEntry, loadAllEntries, loadEntries, refundable, restoreEntry } from "../../data/months";
 import { formatMinor, parseMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem, type Occurrence } from "../../data/rules";
 import { incomeEditor } from "../../data/sideIncome";
@@ -24,6 +24,7 @@ import { categoryTone } from "../../ui/categoryColor";
 import { Empty } from "../../ui/Empty";
 import { LedgerIcon, NextIcon, PrevIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
+import { useToast } from "../../ui/Toast";
 import { useTodayKey } from "../../ui/useTodayKey";
 
 const VIEWS = ["Day", "Week", "Month"] as const;
@@ -46,6 +47,7 @@ function title(view: View, anchor: string): string {
  */
 export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: { initialDate?: string; initialView?: View; notice?: string; onAdd?: () => void; onComingUp?: () => void } = {}) {
   const { store, rev, changed } = useLedger();
+  const { show } = useToast();
   const [view, setView] = useState<View>(initialView ?? "Month");
   const [anchor, setAnchor] = useState(initialDate ?? today());
   const [q, setQ] = useState("");
@@ -299,7 +301,13 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
             {labelDay(paid.date)} · {formatMinor(paid.amount, paid.currency)}
           </p>
           <div className="actions">
-            <ConfirmButton danger label="Delete" ask={confirmLabel("delete", paid)} onConfirm={async () => { await deleteEntry(store, paid.date.slice(0, 7), paid.id); setPaid(undefined); changed(); }} />
+            <ConfirmButton danger label="Delete" ask={confirmLabel("delete", paid)} onConfirm={async () => {
+              const gone = paid;
+              await deleteEntry(store, gone.date.slice(0, 7), gone.id);
+              setPaid(undefined);
+              changed();
+              show({ message: `Deleted: ${gone.note || gone.category || "Settlement"} ${formatMinor(gone.amount, gone.currency)}`, undo: async () => { await restoreEntry(store, gone.date.slice(0, 7), gone.id); } });
+            }} />
           </div>
         </Sheet>
       )}

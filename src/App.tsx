@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactElement } from "react";
 import { AddForm, type SavedNote } from "./features/add/AddForm";
+import type { Draft } from "./features/add/draft";
 import { IncomeForm } from "./features/add/IncomeForm";
 import { TransferForm } from "./features/ledger/TransferForm";
 import { Dashboard } from "./features/dashboard/Dashboard";
@@ -17,6 +18,7 @@ import { AddIcon, CalendarIcon, DashboardIcon, LedgerIcon, PeopleIcon, SettingsI
 import { Pill } from "./ui/Pill";
 import { Segmented } from "./ui/Segmented";
 import { SyncProvider, useSync } from "./ui/Sync";
+import { ToastProvider, useToast } from "./ui/Toast";
 
 // Rooms are named for the question they answer. People (was Splits) and Coming up (was Forecast) keep their slots.
 const NAV = ["Add", "Ledger", "Dashboard", "People", "Coming up", "Settings"] as const;
@@ -40,32 +42,34 @@ type AddKind = (typeof ADD_KINDS)[number];
 
 /**
  * The Add tab: one form at a time, picked at the top. Each is its own form (AddForm is the expense form).
- * After a save it stays here with a "Saved: ..." line and a View button, so several can be logged in a row;
- * only a plan that starts later opens the Ledger at once (`open`).
+ * After a save it stays here and the Undo toast names what was saved, so several can be logged in a row;
+ * only a plan that starts later opens the Ledger at once (`open`). Undo takes the item back out and
+ * returns its values to the form (`refill`, also after a tab change).
  */
-function AddTab({ onView, onOpenSettings }: { onView: (s: SavedNote) => void; onOpenSettings: () => void }) {
-  const [kind, setKind] = useState<AddKind>("Expense");
-  const [saved, setSaved] = useState<SavedNote>();
+function AddTab({ onView, onOpenSettings, refill, onRefill }: { onView: (s: SavedNote) => void; onOpenSettings: () => void; refill?: { draft: Draft; n: number }; onRefill: (d: Draft) => void }) {
+  const [kind, setKind] = useState<AddKind>(refill?.draft.kind ?? "Expense");
+  const { show } = useToast();
   const done = (s?: SavedNote) => {
     if (!s) return;
     // Nothing stays focused after a save (Return in a field would keep the phone keyboard up).
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     if (s.open) onView(s);
-    else setSaved(s);
+    const { undo, draft } = s;
+    show({ message: s.toast ?? s.message, sub: s.sub, undo: undo && draft ? async () => { await undo(); onRefill(draft); } : undefined });
   };
+  const draft = refill?.draft.kind === kind ? refill.draft : undefined;
   return (
     <div className="glasscard addcard">
-      <div className="addkind"><Segmented label="Kind of entry" value={kind} options={ADD_KINDS} onChange={(k) => { setSaved(undefined); setKind(k); }} /></div>
-      {saved && (
-        <p className="savedline" role="status">{saved.message}. <button type="button" className="link" onClick={() => onView(saved)}>View</button></p>
-      )}
-      {kind === "Expense" ? <AddForm onDone={done} /> : kind === "Income" ? <IncomeForm onDone={done} /> : <TransferForm onDone={done} onOpenSettings={onOpenSettings} />}
+      <div className="addkind"><Segmented label="Kind of entry" value={kind} options={ADD_KINDS} onChange={setKind} /></div>
+      {kind === "Expense" ? <AddForm key={`e${refill?.n ?? 0}`} onDone={done} draft={draft?.kind === "Expense" ? draft.fields : undefined} />
+        : kind === "Income" ? <IncomeForm key={`i${refill?.n ?? 0}`} onDone={done} draft={draft?.kind === "Income" ? draft.fields : undefined} />
+        : <TransferForm key={`t${refill?.n ?? 0}`} onDone={done} onOpenSettings={onOpenSettings} draft={draft?.kind === "Transfer" ? draft.fields : undefined} />}
     </div>
   );
 }
 
-function Screen({ tab, go, setup, focusPerson, openPerson, saved, onSaved, ledgerView, setLedgerView, focusCard, openCard, focusTile, openTile, settingsPage, openSettings }: { tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; ledgerView?: LedgerView; setLedgerView: (v?: LedgerView) => void; focusCard?: string; openCard: (id: string) => void; focusTile?: string; openTile: (id: string) => void; settingsPage?: SettingsPage; openSettings: (p: SettingsPage) => void }) {
-  if (tab === "Add") return <AddTab onView={(s) => { onSaved(s); go("Ledger"); }} onOpenSettings={() => openSettings("accounts")} />;
+function Screen({ refill, onRefill, tab, go, setup, focusPerson, openPerson, saved, onSaved, ledgerView, setLedgerView, focusCard, openCard, focusTile, openTile, settingsPage, openSettings }: { refill?: { draft: Draft; n: number }; onRefill: (d: Draft) => void; tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; ledgerView?: LedgerView; setLedgerView: (v?: LedgerView) => void; focusCard?: string; openCard: (id: string) => void; focusTile?: string; openTile: (id: string) => void; settingsPage?: SettingsPage; openSettings: (p: SettingsPage) => void }) {
+  if (tab === "Add") return <AddTab key={refill?.n ?? 0} refill={refill} onRefill={onRefill} onView={(s) => { onSaved(s); go("Ledger"); }} onOpenSettings={() => openSettings("accounts")} />;
   if (tab === "Ledger") return <Ledger key={`${saved?.date ?? ""}/${ledgerView ?? ""}`} initialDate={saved?.date} initialView={ledgerView} notice={saved?.message} onAdd={() => go("Add")} onComingUp={() => go("Coming up")} />;
   if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); setLedgerView(undefined); go("Ledger"); }} onOpenDay={(date) => { onSaved({ date, message: "" }); setLedgerView("Day"); go("Ledger"); }} onOpenCardSettings={openCard} onAdd={() => go("Add")} onComingUp={() => go("Coming up")} focusTile={focusTile} />;
   if (tab === "People") return <Splits key={focusPerson ?? ""} initialPerson={focusPerson} />;
@@ -80,6 +84,8 @@ function Shell() {
   const [focusPerson, setFocusPerson] = useState<string>();
   // Set when the Add form saves, so the Ledger opens where the new item is and says it was saved.
   const [saved, setSaved] = useState<SavedNote>();
+  // Undo of a save: the values go back into the Add form (the toast can outlive the Add tab).
+  const [refill, setRefill] = useState<{ draft: Draft; n: number }>();
   // Set when the Dashboard calendar opens one day, so the Ledger starts in Day view.
   const [ledgerView, setLedgerView] = useState<LedgerView>();
   // Set when a Coming up bill opens its card, so the Dashboard scrolls to that card's tile (where Pay is).
@@ -103,7 +109,7 @@ function Shell() {
   const open = (n: Tab) => { setFocusPerson(undefined); setSaved(undefined); setLedgerView(undefined); setFocusTile(undefined); setFocusCard(undefined); setSettingsPage(undefined); setTab(n); };
 
   return (
-    <div className="win">
+    <div className={tab === "Add" ? "win on-add" : "win"}>
       <nav className="side">
         <div className="brand">Ledger</div>
         {ROOMS.map((n) => {
@@ -134,7 +140,7 @@ function Shell() {
           <fieldset className="plain" disabled={locked}>
             {/* Keyed on the tab so the new screen fades in (screens already remount on a tab change). */}
             <div key={tab} className="tabfade">
-            <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("People"); }} saved={saved} onSaved={setSaved} ledgerView={ledgerView} setLedgerView={setLedgerView} focusTile={focusTile} openTile={(id) => { setFocusTile(id); setTab("Dashboard"); }} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} settingsPage={settingsPage} openSettings={(p) => { setSettingsPage(p); setTab("Settings"); }} />
+            <Screen refill={refill} onRefill={(draft) => { setRefill((r) => ({ draft, n: (r?.n ?? 0) + 1 })); setTab("Add"); }} tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("People"); }} saved={saved} onSaved={setSaved} ledgerView={ledgerView} setLedgerView={setLedgerView} focusTile={focusTile} openTile={(id) => { setFocusTile(id); setTab("Dashboard"); }} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} settingsPage={settingsPage} openSettings={(p) => { setSettingsPage(p); setTab("Settings"); }} />
             </div>
           </fieldset>
         </section>
@@ -150,7 +156,9 @@ export function App() {
   return (
     <LedgerProvider>
       <SyncProvider>
-        <Shell />
+        <ToastProvider>
+          <Shell />
+        </ToastProvider>
       </SyncProvider>
     </LedgerProvider>
   );

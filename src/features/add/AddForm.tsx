@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { getSettings, list, listAll, upsert } from "../../data/collections";
+import { getSettings, list, listAll, remove as removeItem, upsert } from "../../data/collections";
 import { canBillNext, cutoffFor, dueFor, nextCutoff } from "../../data/cards";
 import { CURRENCIES } from "../../data/currencies";
 import { startAccount, startCategory } from "../../data/defaults";
-import { addEntry, deleteEntry, updateEntry } from "../../data/months";
+import { addEntry, deleteEntry, restoreEntry, updateEntry } from "../../data/months";
 import { formatMinor, parseMinor, splitEvenly } from "../../data/money";
 import { labelShort, today } from "../../data/dates";
 import type { Account, Entry, Frequency, Person, Settings, SplitMode } from "../../data/schema";
@@ -20,6 +20,9 @@ import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
 import { useKeyboardInset } from "../../ui/useKeyboardInset";
+import { useToast } from "../../ui/Toast";
+import { myShare } from "../../data/splits";
+import type { Draft, ExpenseDraft } from "./draft";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 
 type Kind = "one-off" | "recurring" | "installment";
@@ -33,39 +36,51 @@ const FREQ_LABEL = { weekly: "Weekly", monthly: "Monthly", yearly: "Yearly" } as
  * What was just added: a short line to show, and the date to open the Ledger at. `open` is set when the
  * Add tab should go straight to the Ledger (a plan that starts later); otherwise it stays on Add.
  */
-export interface SavedNote { message: string; date: string; open?: boolean }
+export interface SavedNote {
+  message: string;
+  date: string;
+  open?: boolean;
+  /** The Undo toast: its first line (else `message`), a second line (my share and who owes), and the way back. */
+  toast?: string;
+  sub?: string;
+  undo?: () => Promise<void>;
+  /** The form's values when saved, for Undo to put back. */
+  draft?: Draft;
+}
 
-/** New expense, or edit an existing one (pass `entry`). */
-export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: SavedNote) => void }) {
+/** New expense, or edit an existing one (pass `entry`). `draft` starts a new one from values put back by Undo. */
+export function AddForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (saved?: SavedNote) => void; draft?: ExpenseDraft }) {
   const { store, changed } = useLedger();
+  const { show } = useToast();
+  const d = entry ? undefined : draft;
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [people, setPeople] = useState<Person[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
 
-  const [amount, setAmount] = useState(entry ? formatMinor(entry.amount, entry.currency).replace(/[^\d.]/g, "") : "");
-  const [currency, setCurrency] = useState(entry?.currency ?? "");
-  const [rate, setRate] = useState(entry?.rate ?? "");
-  const [category, setCategory] = useState(entry?.category ?? "");
-  const [note, setNote] = useState(entry?.note ?? "");
-  const [date, setDate] = useState(entry?.date ?? today());
-  const [accountId, setAccountId] = useState(entry?.accountId ?? "");
+  const [amount, setAmount] = useState(entry ? formatMinor(entry.amount, entry.currency).replace(/[^\d.]/g, "") : d?.amount ?? "");
+  const [currency, setCurrency] = useState(entry?.currency ?? d?.currency ?? "");
+  const [rate, setRate] = useState(entry?.rate ?? d?.rate ?? "");
+  const [category, setCategory] = useState(entry?.category ?? d?.category ?? "");
+  const [note, setNote] = useState(entry?.note ?? d?.note ?? "");
+  const [date, setDate] = useState(entry?.date ?? d?.date ?? today());
+  const [accountId, setAccountId] = useState(entry?.accountId ?? d?.accountId ?? "");
   // The account and category a new item started with, so the form can say they came from a default.
   const [startAcct, setStartAcct] = useState({ id: "", from: "" });
   const [startCat, setStartCat] = useState({ name: "", from: "" });
-  const [kind, setKind] = useState<Kind>("one-off");
-  const [freq, setFreq] = useState<Frequency>("monthly");
-  const [count, setCount] = useState("12");
-  const [end, setEnd] = useState("");
+  const [kind, setKind] = useState<Kind>(d?.type ?? "one-off");
+  const [freq, setFreq] = useState<Frequency>(d?.freq ?? "monthly");
+  const [count, setCount] = useState(d?.count ?? "12");
+  const [end, setEnd] = useState(d?.end ?? "");
 
-  const [nextBill, setNextBill] = useState(!!entry?.nextBill);
-  const [split, setSplit] = useState(!!entry?.split);
-  const [paidBy, setPaidBy] = useState(entry?.split?.paidBy ?? "me");
-  const [mode, setMode] = useState<SplitMode>(entry?.split?.mode ?? "half");
-  const [names, setNames] = useState("");
-  const [newName, setNewName] = useState("");
-  const [custom, setCustom] = useState<Record<string, string>>({});
+  const [nextBill, setNextBill] = useState(!!entry?.nextBill || !!d?.nextBill);
+  const [split, setSplit] = useState(!!entry?.split || !!d?.split);
+  const [paidBy, setPaidBy] = useState(entry?.split?.paidBy ?? d?.paidBy ?? "me");
+  const [mode, setMode] = useState<SplitMode>(entry?.split?.mode ?? d?.mode ?? "half");
+  const [names, setNames] = useState(d?.names ?? "");
+  const [newName, setNewName] = useState(d?.newName ?? "");
+  const [custom, setCustom] = useState<Record<string, string>>(d?.custom ?? {});
   // People in this split who were removed in Settings since. They stay in it unless the split is changed.
-  const [kept, setKept] = useState<SplitFormState["kept"]>([]);
+  const [kept, setKept] = useState<SplitFormState["kept"]>(d?.kept ?? []);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -144,13 +159,16 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
         nextBill: billable && nextBill ? (true as const) : undefined, // undefined clears it on an edit
       };
 
+      // What Undo of Save takes back out: the new entry, or the new plan.
+      let takeBack: (() => Promise<void>) | undefined;
       if (entry) {
         await updateEntry(store, monthOf(entry.date), entry.id, { ...base, date });
       } else if (kind === "one-off") {
-        await addEntry(store, { ...base, date });
+        const made = await addEntry(store, { ...base, date });
+        takeBack = () => deleteEntry(store, monthOf(made.date), made.id);
       } else {
         const { rate: _r, ...ruleBase } = base;
-        await upsert(store, "rules", {
+        const made = await upsert(store, "rules", {
           ...ruleBase,
           type: kind,
           frequency: freq,
@@ -159,9 +177,14 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
           count: kind === "installment" ? n : undefined,
           total: kind === "installment" ? minor : undefined,
         });
+        takeBack = () => removeItem(store, "rules", made.id);
       }
       changed();
       if (entry) return onDone?.();
+      // The toast's second line: my share and who owes whom, the same words as the preview.
+      const owes = preview && !("error" in preview) ? preview.lines : [];
+      const sub = splitVal ? [`yours ${formatMinor(myShare(perPayment, splitVal), currency)}`, ...owes].join(", ") : undefined;
+      const draftNow: ExpenseDraft = { amount, note, date, accountId, category, type: kind, freq, count, end, nextBill, split, names, newName, mode, paidBy, custom, kept, currency, rate };
       rememberUsed({ expense: someoneElsePaid ? undefined : accountId, category });
       // Stay on Add for the next one: clear what belongs to this item, keep account and category.
       const t = today();
@@ -170,9 +193,11 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
       setKind(r.type); setFreq(r.freq); setCount(r.count); setEnd(r.end); setNextBill(r.nextBill);
       setSplit(r.split); setNames(r.names); setNewName(r.newName); setMode(r.mode); setPaidBy(r.paidBy); setCustom(r.custom); setKept(r.kept);
       // A plan that starts later is easy to lose, so it still opens the Ledger at its first payment.
+      const line = savedLine({ note, category, amount: minor, currency, date, today: t });
+      const undoable = { toast: line, sub, undo: takeBack, draft: { kind: "Expense" as const, fields: draftNow } };
       onDone?.(opensLedger(kind, date, t)
-        ? { date, open: true, message: `Saved. First payment ${labelShort(date)}${kind === "installment" ? `, ${n} payments` : ""}` }
-        : { date, message: savedLine({ note, category, amount: minor, currency, date, today: t }) });
+        ? { date, open: true, message: `Saved. First payment ${labelShort(date)}${kind === "installment" ? `, ${n} payments` : ""}`, ...undoable }
+        : { date, message: line, ...undoable });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save");
     }
@@ -183,6 +208,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
     await deleteEntry(store, monthOf(entry.date), entry.id);
     changed();
     onDone?.();
+    show({ message: `Deleted: ${entry.note || entry.category || "Expense"} ${formatMinor(entry.amount, entry.currency)}`, undo: async () => { await restoreEntry(store, monthOf(entry.date), entry.id); } });
   }
 
   // Picked names as [key, shown name], spelled as the live person when there is one.
