@@ -12,7 +12,7 @@
   --line: rgba(17, 19, 22, 0.085);
   --accent: #1f5fcf; /* fill: buttons, picked chips, switch on (white 5.8:1) */
   --accent-ink: #1f5fcf; /* text: links, Change, View, today (5.7:1 on a plate) */
-  --accent-data: #2f74ea; /* charts, the bezel arc, lit day cells; never text */
+  --accent-data: #2f74ea; /* charts, the compare line, lit day cells; never text */
   --accent-soft: rgba(31, 95, 207, 0.1); /* tinted backgrounds behind accent text */
   --on-accent: #fff;
   --good: #1a6e36;
@@ -582,11 +582,12 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .big.word { font-weight: 400; letter-spacing: -0.01em; }
 /* Category chart: each segment and legend dot has its category's fixed colour (.tone-*), the same as
    the Ledger's row dots. The legend goes to two columns when its card is wide enough. */
-.donut { display: flex; justify-content: center; margin: var(--sp-2) 0; }
-.donut .track { stroke: var(--track); }
-.donut .seg { stroke: var(--tone, var(--t-gray)); }
-/* A thinner ring than the bezel, so the Dashboard has one gauge and one chart. */
-.donut circle { stroke-width: 12px; }
+/* Categories as one strip: each part as long as its share, 3 px apart, in its category colour. */
+.strip { display: flex; gap: 3px; height: 28px; margin: var(--sp-3) 0 var(--sp-2); }
+.strip .part { flex: 0 1 0; min-width: 4px; border-radius: var(--r-tag); background: var(--tone, var(--t-gray)); cursor: pointer; }
+@media (max-width: 700px) { .strip { height: 22px; } }
+/* Dashboard: Month | Year above the month stepper. */
+.dashswitch { display: flex; margin-bottom: var(--sp-3); }
 .catcard { container-type: inline-size; position: relative; }
 /* The open breakdown must sit over the cards next to and under this one. */
 .catcard.popopen { z-index: 1; }
@@ -597,8 +598,8 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .legend button { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: var(--sp-2); width: 100%; padding: 3px 0; min-width: 0; cursor: pointer; border-radius: 6px; }
 .legend button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 @media (max-width: 700px) { .legend button { min-height: 44px; } }
-.donut .seg { cursor: pointer; }
-.legend .r { margin-left: auto; color: var(--mute); }
+.legend .lname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.legend .r { margin-left: auto; white-space: nowrap; }
 .legend i { width: 9px; height: 9px; border-radius: 3px; flex: none; background: var(--tone, var(--t-gray)); }
 /* The Daily card: a lattice of machined day cells (Dashboard.tsx Lattice), lit by spend in four opaque
    anodized-blue steps. Day numbers are ink on steps 1 to 3 and white on step 4 (4.5:1 or more on each).
@@ -624,28 +625,16 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 /* Dashboard top row: Spent as the hero, Still due and Last month as two smaller tiles. One row on
    computers; on phones and narrow windows the hero takes the full width and the tiles share a row. */
 .statrow { display: grid; gap: var(--sp-3); margin-top: var(--sp-3); grid-template-columns: 2fr 1fr 1fr; }
-.statrow .hero .big { font-size: 50px; }
+.statrow .hero .big { font-size: var(--fig-hero); }
 @media (min-width: 1000px) { .statrow .hero .big { font-size: 60px; } }
 .statrow .stat:not(.hero) .big { font-size: var(--fs-xl); }
 .big.word.nodata { color: var(--mute); }
-/* The bezel around Spent (src/ui/Bezel.tsx): the ring stands at the left of the plate and the label,
-   figure and line sit beside it, as in the approved comp. Beside the ring the hero figure is 34 px on
-   small phones and 40 px to 700 px (so ₱9,999,999.99 still fits), 50 px wider and 60 px from 1000 px. */
-.hero.gauged { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "ring lab" "ring fig" "ring cap"; column-gap: var(--sp-4); align-content: center; }
-.hero.gauged > :first-child { grid-area: lab; align-self: end; }
-.hero.gauged > .big { grid-area: fig; }
-.hero.gauged > .small { grid-area: cap; align-self: start; }
-.hero.gauged > .bezel { grid-area: ring; width: 96px; height: 96px; align-self: center; }
-.statrow .hero.gauged .big { font-size: 34px; }
-@media (min-width: 401px) { .statrow .hero.gauged .big { font-size: 40px; } .hero.gauged > .bezel { width: 108px; height: 108px; } }
-@media (min-width: 701px) { .statrow .hero.gauged .big { font-size: 50px; } .hero.gauged > .bezel { width: 128px; height: 128px; } }
-@media (min-width: 1000px) { .statrow .hero.gauged .big { font-size: 60px; } }
-.bezel line.st { stroke: var(--mute); stroke-width: 1; }
-.bezel line.lt { stroke: var(--ink); stroke-width: 1.6; }
-.bezel circle, .bezel path { fill: none; }
-.bezel .btrack { stroke: var(--fill); stroke-width: 7; }
-.bezel .barc { stroke: var(--accent-data); stroke-width: 7; stroke-linecap: round; }
-.bezel .bover { stroke: var(--warn); stroke-width: 4; stroke-linecap: round; }
+/* Under Spent: this month against last month's same days as a thin line, ink to the share, past 100% in
+   amber (Dashboard.tsx Compare). Left out with no earlier month. */
+.compare { display: flex; height: 3px; margin: var(--sp-2) 0 var(--sp-1); border-radius: 2px; background: var(--fill-2); overflow: hidden; }
+.compare i { display: block; height: 100%; background: var(--ink); }
+.compare i.over { background: var(--warn); }
+@media (max-width: 400px) { .statrow .hero .big { font-size: 40px; } }
 @media (max-width: 1000px) { .statrow { grid-template-columns: 1fr 1fr; } .statrow .hero { grid-column: 1 / -1; } }
 /* Small phones: ₱9,999,999.99 still fits a tile at 375 px, with a little to spare. */
 @media (max-width: 400px) { .statrow .stat:not(.hero) { padding-inline: 14px; } .statrow .stat:not(.hero) .big { font-size: 20px; } }
@@ -976,15 +965,9 @@ button.row:active:not(:disabled), .cardhead:active, .legend button:active { opac
 .seg.thumbed::before { content: ""; position: absolute; z-index: -1; top: 2px; bottom: 2px; left: 0; width: var(--thumb-w, 0); transform: translateX(var(--thumb-x, 0)); border-radius: 8px; background: var(--seg-on); box-shadow: var(--seg-on-edge); transition: transform 220ms cubic-bezier(0.3, 1.25, 0.5, 1), width 220ms cubic-bezier(0.3, 1.25, 0.5, 1); }
 .seg.thumbed.still::before { transition: none; }
 .seg.thumbed button.on { background: none; box-shadow: none; }
-/* The one authored moment: the bezel's arc sweeps once from the top mark when the Dashboard opens,
-   after its numbers have loaded (600 ms, decelerating); the overage follows. The figure never moves. */
-.bezel.sweep .barc { animation: bezel-sweep 600ms cubic-bezier(0.16, 1, 0.3, 1) both; }
-.bezel.sweep .bover { animation: fade-in 300ms ease-out 450ms both; }
-@keyframes bezel-sweep { from { stroke-dashoffset: var(--arc); } }
 @media (prefers-reduced-motion: reduce) {
   .toggle i { transition-timing-function: ease-out; transition-duration: 150ms; }
   .seg.thumbed::before { transition: none; }
-  .bezel.sweep .barc, .bezel.sweep .bover { animation: none; }
 }
 /* Keyboard focus: the same soft blue ring on every control that unsets its own look (shown for the
    keyboard only, never on a tap or click). Rows draw it inside, since they fill their card. */

@@ -17,11 +17,11 @@ import { accountsWhatIf, dailyStats, matchesAccount, NO_ACCOUNT, pctChange, plan
 import { orphans, type Orphans } from "../../data/usage";
 import { AccountOptions } from "../../ui/AccountOptions";
 import { BigAmount } from "../../ui/Amount";
-import { Bezel } from "../../ui/Bezel";
 import { cardColor } from "../../ui/cardColor";
 import { categoryTone } from "../../ui/categoryColor";
 import { Empty } from "../../ui/Empty";
 import { Popover, usePopover } from "../../ui/Popover";
+import { Segmented } from "../../ui/Segmented";
 import { DashboardIcon, NextIcon, PrevIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
 import { useTodayKey } from "../../ui/useTodayKey";
@@ -64,23 +64,27 @@ interface View {
   acct: string;
 }
 
-const C = 2 * Math.PI * 40;
+const VIEWS = ["Month", "Year"] as const;
 
-function Donut({ cats, total, base, trigger }: { cats: Summary["byCategory"]; total: number; base: string; trigger: ReturnType<typeof usePopover<string>>["trigger"] }) {
-  let acc = 0;
+/** Categories as one strip, each part as long as its share (Everything else in grey). Hover or tap a part
+ *  for its breakdown; keyboard users get the same from the legend buttons under it. */
+function Strip({ cats, total, base, trigger }: { cats: Summary["byCategory"]; total: number; base: string; trigger: ReturnType<typeof usePopover<string>>["trigger"] }) {
   return (
-    <svg viewBox="0 0 120 120" width="150" height="150" role="img" aria-label={`Spending by category, total ${formatMinor(total, base)}`}>
-      <g fill="none" strokeWidth="18" transform="rotate(-90 60 60)">
-        <circle cx="60" cy="60" r="40" className="track" />
-        {cats.map((c) => {
-          const len = (c.amount / total) * C;
-          // Hover or tap a segment for its breakdown; keyboard users get the same from the legend buttons.
-          const el = <circle key={c.category} cx="60" cy="60" r="40" className={`seg tone-${categoryTone(c.category)}`} strokeDasharray={`${Math.max(len - 1, 0)} ${C - Math.max(len - 1, 0)}`} strokeDashoffset={-acc} {...trigger(c.category)} />;
-          acc += len;
-          return el;
-        })}
-      </g>
-    </svg>
+    <div className="strip" role="img" aria-label={`Spending by category, total ${formatMinor(total, base)}`}>
+      {cats.map((c) => <span key={c.category} className={`part tone-${categoryTone(c.category)}`} style={{ flexGrow: c.amount }} {...trigger(c.category)} />)}
+    </div>
+  );
+}
+
+/** This month so far against last month's same days: a thin line, ink up to the share, the part past
+ *  100% in amber. Left out when there is no earlier month. The caption under it says it in words. */
+function Compare({ ratio }: { ratio: number }) {
+  const scale = Math.max(ratio, 1);
+  return (
+    <div className="compare" aria-hidden="true">
+      <i style={{ width: `${(Math.min(ratio, 1) / scale) * 100}%` }} />
+      {ratio > 1 && <i className="over" style={{ width: `${((ratio - 1) / scale) * 100}%` }} />}
+    </div>
   );
 }
 
@@ -120,14 +124,13 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
   // A card opened from its tile: the per-card statement view replaces the Dashboard until Back.
   const [openCard, setOpenCard] = useState<string>();
   const [fixing, setFixing] = useState(false);
-  // A Dashboard sub-view (like the card view): the Recurring list or the Year report.
-  const [sub, setSub] = useState<"recurring" | "year">();
+  // Month or Year, one switch. The Year report is the old Year view, whole.
+  const [view, setView] = useState<(typeof VIEWS)[number]>("Month");
+  // A Dashboard sub-view (like the card view): the Recurring list.
+  const [sub, setSub] = useState<"recurring">();
   // Spending filter: "" is all accounts, an account id, or NO_ACCOUNT. Balances are never filtered.
   const [acct, setAcct] = useState("");
   const pop = usePopover<string>();
-  // The bezel sweeps in once per visit: on the first numbers, not on every month change or return from a sub-view.
-  const swept = useRef(false);
-  useEffect(() => { if (v) swept.current = true; }, [v]);
   const catRef = useRef<HTMLDivElement>(null);
   const { close } = pop;
   // New numbers (another month, filter or a sync) close an open breakdown.
@@ -180,6 +183,8 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
     return () => { stale = true; };
   }, [store, rev, anchor, acct]);
 
+  const switcher = <div className="dashswitch"><Segmented value={view} options={VIEWS} onChange={setView} /></div>;
+  if (view === "Year") return <>{switcher}<YearView /></>;
   if (!v) return null;
   const { base, cur, chart, planned, future, prevTotal, stillDue, from, isCurrent, balances, owed, next, cards, banks, accounts, items, salaryAccount, defaults } = v;
   const fixable = v.orphans.entries.length + v.orphans.rules.length > 0;
@@ -213,7 +218,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
         <div className="toolrow">
           <span className="nav"><button className="title back" onClick={back}><PrevIcon />Dashboard</button></span>
         </div>
-        {sub === "recurring" ? <RecurringView /> : <YearView />}
+        <RecurringView />
       </>
     );
   }
@@ -229,8 +234,13 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
     );
   }
 
+  // Under Spent: the pace in words, then how it compares with last month.
+  const pace = elapsed > 0 ? `${formatMinor(daily.average, base)} a day, ${isCurrent ? `${elapsed} ${elapsed === 1 ? "day" : "days"} in` : `over ${elapsed} days`}. ` : "";
+  const compared = change === null ? "No earlier month to compare yet." : change === 0 ? "Same as last month." : `${Math.abs(change)}% ${change < 0 ? "less" : "more"} than last month.`;
+
   return (
     <>
+      {switcher}
       <div className="toolrow">
         <span className="nav">
           <button aria-label="Previous month" onClick={() => go(-1, (a) => addMonths(monthStart(a), -1))}><PrevIcon /></button>
@@ -240,7 +250,6 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
         </span>
         <span className="subviews">
           <button className="btn ghost sm" onClick={() => setSub("recurring")}>Recurring</button>
-          <button className="btn ghost sm" onClick={() => setSub("year")}>Year</button>
         </span>
         {accounts.length > 0 && (
           <select className="acctpick" aria-label="Spending from" value={acct} onChange={(e) => setAcct(e.target.value)}>
@@ -255,10 +264,9 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
       <div key={from} className={v.dir === 1 ? "period next" : v.dir === -1 ? "period prev" : "period"}>
       {/* Spent leads; Still due and Last month sit side by side under it on phones, beside it on computers. */}
       <div className="statrow">
-        <div className={future ? "card stat hero" : "card stat hero gauged"}><div className="mute">{future ? "Planned" : "Spent"}{acctName && <span className="tag">{acctName}</span>}</div><BigAmount minor={future ? chart.total : cur.total} currency={base} />
-          {/* The bezel: this month so far against last month's same days, past 100% in amber. Empty with no earlier data; none for a later month. */}
-          {!future && <Bezel ratio={prevTotal > 0 ? cur.total / prevTotal : undefined} sweep={!swept.current} />}
-          <div className="mute small">{future ? "Scheduled payments only" : change === null ? "No earlier data" : change === 0 ? "Same as last month" : `${Math.abs(change)}% ${change < 0 ? "less" : "more"} than last month`}</div></div>
+        <div className="card stat hero"><div className="mute">{future ? "Planned" : "Spent"}{acctName && <span className="tag">{acctName}</span>}</div><BigAmount minor={future ? chart.total : cur.total} currency={base} />
+          {!future && prevTotal > 0 && <Compare ratio={cur.total / prevTotal} />}
+          <div className="mute small">{future ? "Scheduled payments only" : pace + compared}</div></div>
         <div className="card stat"><div className="mute">Still due</div><BigAmount minor={stillDue} currency={base} />
           <div className="mute small">{isCurrent ? "yours, rest of this month" : "current month only"}</div></div>
         <div className="card stat"><div className="mute">Last month</div>
@@ -274,12 +282,12 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
         <div className="grid g2">
           <div ref={catRef} className={pop.open ? "card pad catcard popopen" : "card pad catcard"}>
             <div className="mute">Categories{future ? <span className="tag">Planned</span> : upcoming && <span className="tag">incl. upcoming</span>}</div>
-            <div className="donut"><Donut cats={cats} total={catTotal} base={base} trigger={pop.trigger} /></div>
+            <Strip cats={cats} total={catTotal} base={base} trigger={pop.trigger} />
             <ul className="legend">
               {cats.map((c) => (
                 <li key={c.category}>
                   <button type="button" aria-expanded={pop.openKey === c.category} aria-controls={pop.openKey === c.category ? "catpop" : undefined} {...pop.trigger(c.category)}>
-                    <i className={`tone-${categoryTone(c.category)}`} />{c.category}<span className="r">{Math.round((c.amount / catTotal) * 100)}%</span>
+                    <i className={`tone-${categoryTone(c.category)}`} /><span className="lname">{c.category}</span><span className="r">{formatMinor(c.amount, base)} <span className="mute">{Math.round((c.amount / catTotal) * 100)}%</span></span>
                   </button>
                 </li>
               ))}
@@ -307,7 +315,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
           <div className="card pad">
             <div className="dailyhead">
               <span className="mute">Daily{future ? <span className="tag">Planned</span> : upcoming && <span className="tag">incl. upcoming</span>}</span>
-              {elapsed > 0 && <span className="mute small">Avg {formatMinor(daily.average, base)} a day</span>}
+              {elapsed > 0 && <span className="mute small">{formatMinor(daily.average, base)} a day{isCurrent ? `, ${elapsed} ${elapsed === 1 ? "day" : "days"} in` : ""}</span>}
             </div>
             <Lattice days={chart.byDay} from={from} elapsed={elapsed} todayIdx={todayIdx} base={base} label={dailyLabel} />
             <div className="dailystats">
