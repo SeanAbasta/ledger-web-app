@@ -2,56 +2,57 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
-## Unreleased: V2 (branch `v2-build`)
+## V2.0.0 (2026-10-23)
 
-Phase 3, a new look called Folio, and the desktop:
+Ledger 2. Five rooms, each named for the question it answers, the controls that were missing (Undo, settling part of a balance, repeat chips, editing a whole plan), a list of what leaves your bank next, and a new look called Folio, with a proper layout on a computer.
 
-- Paper and ink instead of the machined plates: a light gallery ground, ruled sections instead of cards, one blue for what you press and where you are, green for money in. Dark mode is the same design in reverse.
-- Two typefaces, served by the app itself (nothing is fetched from elsewhere): Spectral for figures and headings, Hanken Grotesk for everything else. Figures line up in columns.
-- Bigger figures: Spent at 84 px on a phone and up to 190 px on a wide screen, stepping down when the amount is long. Each Ledger day starts with its date as a large numeral.
-- **Text size** in Settings, General: Default, Large or Larger, per device.
-- On a computer: a top bar instead of the sidebar. At 1200 px and wider the Ledger shows the list with the open entry's edit sheet beside it, and Add reads in two columns.
-- **Keyboard shortcuts** on a computer: N new, / search, [ and ] previous and next period, T today. Settings, General can turn them off.
-- The phone tab bar is plain paper with a small blue mark on the open room. Card tiles show a small card face beside the name.
-- The app's colour in the phone's status bar changed, so the offline copy of the app refreshes once after the update.
-
-Phases 1 and 2 (same look as V1.4.1 when they were built):
-
-Five rooms named for the question they answer, and the controls that were missing: Undo, settling part of a balance, repeat chips and editing a whole plan. Same look as V1.4.1. No new kinds of data are stored, so an older copy keeps working with everything here; update both computers to get the new screens.
+No new kinds of data are stored and nothing about your data files changes, so an older copy keeps working with everything you save here. Update both computers so they show the same screens. The app's colour in the phone's status bar changed, so the offline copy of the app refreshes once after the update.
 
 Rooms:
 
 - Splits is now **People** and Forecast is now **Coming up**, in the same places in the tab bar. Settings moved behind a gear at the top right, so the phone tab bar has five tabs.
-- **Coming up, Soon** lists what leaves your bank in the next 30 days: card bills on their due dates (an estimate until the statement closes, Paid until the due date passes), payments straight from a bank, card charges still to come with the bill each lands on, and what people owe you. Its figures are the forecast's own. **12 months** is the old Forecast, with the salary months at the foot. **Plans** is the old Recurring list.
+- **Coming up** has three views, remembered on each device. **Soon** lists what leaves your bank in the next 30 days: card bills on their due dates (an estimate until the statement closes, then exact, and Paid until the due date passes), payments straight from a bank, card charges still to come with the bill each lands on, and what people owe you. Its figures are the forecast's own. **12 months** is the old Forecast, with your salary months at the foot. **Plans** is the old Recurring list.
 
 Add:
 
-- New order: amount, Again, note, category (four chips and More), account and date on one row, split, then Repeats. Save stays in view above the tab bar on a phone.
+- New order: amount, **Again**, note, category (four chips and More), account and date on one row, split, then **Repeats**. Save stays in view above the tab bar on a phone, and on the keyboard while you type.
 - **Again** chips: your most repeated notes of the last 30 days (three uses or more). A tap fills the note, category and split, never the amount.
-- After Save a short message names what was saved, with your share and who owes, and **Undo**. Undo puts the values back in the form. On the Add tab, Return in Note closes the keyboard instead of saving.
+- After Save a short message names what was saved, with your share and who owes, and **Undo**. Undo takes it back out and puts the values back in the form. On the Add tab, Return in Note closes the keyboard instead of saving.
+- A first run shows a short checklist: name an account, set up sync, add a salary.
 
 Ledger:
 
 - Each day shows the full amount and, under it, your share (the same figure the Dashboard shows for that day).
 - The Next 30 days card is now one line that opens Coming up.
-- **Edit plan** changes a plan's start, how often, payments and total, or end, with a preview of what changes before you save.
+- **Edit plan** changes a plan's start, how often, number of payments and total, or end date, with a preview of exactly which payments move, appear or go before you save.
 - Delete now has **Undo**.
 
 Dashboard:
 
-- A **Month** and **Year** switch. Categories are one strip, and the ring around Spent is now a thin line against last month's same days, left out when there is no earlier month. Small categories fold into "Everything else".
+- A **Month** and **Year** switch. Categories are one strip with amounts in the legend, and the ring around Spent is now a thin line against last month's same days, left out when there is no earlier month. Small categories fold into "Everything else".
 - Tap a day on the calendar to open it in the Ledger.
 - Still due says "yours" and links to Coming up.
 
 People:
 
-- **Settle up** takes all of it or part of it. After a part payment the unpaid lines stay in view and the payment shows as "Paid". Each line shows the balance after it. Settling has **Undo**.
+- **Settle up** takes all of it or part of it (never more than the balance). After a part payment the unpaid lines stay in view and the payment shows as "Paid". Each line shows the balance after it. Settling has **Undo**.
 
 Settings:
 
-- A **Data health** card on top, and a small dot on the gear when the token needs renewing or nothing has been backed up for 14 days.
-- New accounts and cards are named before they are created. A first run shows a short checklist on Add.
-- **Keep Undo until dismissed** (General).
+- A **Data health** card on top says whether your data is safe on GitHub or backed up, and when your token needs renewing. A small dot on the gear shows when the token needs renewing or nothing has been backed up for 14 days.
+- New accounts and cards are named before they are created.
+- General: **Text size** (Default, Large, Larger, kept on each device), **Keep Undo until dismissed**, and **Keyboard shortcuts** on a computer.
+
+The look, Folio:
+
+- Paper and ink instead of the machined plates: a light ground, sections separated by fine rules instead of cards, one blue for what you press and where you are, green for money in. Dark mode is the same design in reverse.
+- Two typefaces, served by the app itself (nothing is fetched from anywhere else): Spectral for figures and headings, Hanken Grotesk for everything else. Figures line up in columns.
+- Bigger figures: Spent is 84 px on a phone and up to 190 px on a wide screen, stepping down when the amount is long. Each Ledger day starts with its date as a large numeral. The phone tab bar is plain paper with a small blue mark on the open room. Card tiles show a small card face beside the name. The Snapshot image follows the new look.
+
+On a computer:
+
+- A top bar instead of the sidebar. At 1200 px and wider the Ledger shows the list with the open entry's edit sheet beside it (it asks before dropping changes), and Add reads in two columns.
+- **Keyboard shortcuts**: N new, / search, [ and ] previous and next period, T today. Settings can turn them off.
 
 Also: the conflict screen says first that nothing is lost and marks Merge as recommended; the forecast's headline and note say what it assumes; larger tap areas and named controls for screen readers.
 

@@ -3,9 +3,9 @@
 # Ledger
 
 **A quiet, local-first expense tracker.**
-Log it, split it, see where the month and the year went.
+Log it, split it, see what is coming, and where the month and the year went.
 
-![Version](https://img.shields.io/badge/version-1.4.1-1F5FCF?style=flat-square)
+![Version](https://img.shields.io/badge/version-2.0.0-1A34E8?style=flat-square)
 ![Status](https://img.shields.io/badge/status-in%20use-10B981?style=flat-square)
 ![React](https://img.shields.io/badge/React-TypeScript-3B82F6?style=flat-square)
 ![Local first](https://img.shields.io/badge/data-local--first-10B981?style=flat-square)
@@ -24,7 +24,7 @@ Ledger is a personal expense tracker that replaced a spreadsheet. It does the ha
 
 It runs in the browser, keeps your data on your own device first, and syncs between your computers through a private GitHub repository you own. There is no company server, no account to create, and nothing to subscribe to.
 
-> Built for one person. Designed to feel calm: few words, an Apple-like look, light by default with an optional dark mode, and a bottom tab bar on phones.
+> Built for one person. Designed to read like a well-kept paper ledger: few words, large figures, fine rules instead of boxes, one blue for what you press. Light by default with a dark twin, a tab bar on phones and a two-pane layout on a wide screen.
 
 **Getting started takes about 15 minutes:** copy the app, make a private repo for your data, connect. [Jump to the steps](#make-your-own-ledger).
 
@@ -32,7 +32,7 @@ It runs in the browser, keeps your data on your own device first, and syncs betw
 
 ## What it does
 
-Ledger has five rooms, each named for the question it answers, plus Settings behind the gear at the top right. It is set in two typefaces (Spectral and Hanken Grotesk), with a light paper look and an optional dark one, a text size setting, and on a computer a top bar, a two-pane Ledger and keyboard shortcuts. The V2 changes below are on the `v2-build` branch and not released yet.
+Ledger has five rooms, each named for the question it answers, plus Settings behind the gear at the top right. The look is called Folio: paper and ink, figures set in Spectral and everything else in Hanken Grotesk, with a dark twin and a text size setting. On a computer there is a top bar, the Ledger shows the list and the open entry side by side, and keyboard shortcuts cover the common moves.
 
 ### Add: what did I just spend?
 
@@ -180,7 +180,7 @@ Then do steps 2 to 4 above (enable Actions if asked, set Pages to GitHub Actions
 
 ### 3. Connect your computers
 
-1. Open your app link, click the status pill in the top corner (it says "Set up sync"), then **Connect GitHub**.
+1. Open your app link, click the status pill in the top corner (it says "Set up sync"), then **Connect GitHub**. The same setup is in Settings, behind the gear at the top right.
 2. Enter your GitHub username, your data repo name, the token and its expiry date, then **Verify**.
 3. Do the same on your other computer. It downloads everything on first open.
 
@@ -199,7 +199,7 @@ Your copy does not update by itself. When the author releases fixes or new featu
 - **Forked:** on your fork's page, click **Sync fork, then Update branch**. The site rebuilds and redeploys on its own in about a minute.
 - **Cloned:** pull the new changes into your copy, then push to your repo.
 
-Then reload the app (and accept the update if you installed it as an app). An update only replaces the app's code. It does not change your data repo or your browser's copy. If a release ever has to change how data is stored, the release notes will say what to do. Update both computers so they show the same screens. See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
+Then reload the app (and accept the update if you installed it as an app). An update only replaces the app's code. It does not change your data repo or your browser's copy. If a release ever has to change how data is stored, the release notes will say what to do. V2.0.0 stores no new kinds of data, so an older copy keeps working with everything you save. Update both computers so they show the same screens. See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
 
 ### Will my copy use the author's GitHub limits?
 
@@ -209,16 +209,17 @@ No. Your copy is your own repo on your own account, so its site size, bandwidth 
 
 | What you see | What it means | What to do |
 |---|---|---|
-| **Token expired** | The token reached its expiry date, or was revoked. | Create a new token (step 2), then Settings, **Replace token**, on each computer. Your data is safe on the device meanwhile. |
-| **Two versions** | Both computers changed since they last synced. | Pick Keep this device, Keep GitHub's version, or Merge. The version you do not keep is saved to your Downloads first. |
+| **Token expired** | The token reached its expiry date, or was revoked. The Data health card in Settings warns you ahead of time. | Create a new token (step 2), then the gear, Settings, **Replace token**, on each computer. Your data is safe on the device meanwhile. |
+| **Two versions of your ledger** | Both computers changed since they last synced. Nothing is lost. | Choose **Merge** (recommended), Keep this device, or Keep GitHub's version. The version you do not keep is saved to your Downloads first. |
 | **Offline, read-only** | No connection. Ledger holds back edits so your other computer's data stays safe. | Reconnect and press Retry, or choose Edit offline if you are sure. |
 | **Needs sync** that does not clear | A push failed (rate limit, network). | Click the pill, then Sync now. It retries by itself too. |
 | **No access to the data repo** | The token cannot reach that repo. | Check the repo name, and that the token is limited to that repo with Contents read and write. |
 | **Pages shows a 404** | Pages is not on yet. | Settings, Pages, Source: GitHub Actions, then run the workflow again. |
 | **Workflow will not run on a fork** | GitHub disables Actions on forks. | Open the Actions tab and enable workflows. |
-| **Browser data cleared** | Ledger's local copy is gone. | Open Ledger and it downloads everything again from your data repo, or use Settings, **Import** with a backup file. |
+| **Browser data cleared** | Ledger's local copy is gone. | Open Ledger and it downloads everything again from your data repo, or use the gear, Settings, **Import** with a backup file. |
+| **A dot on the gear** | Something in Data health needs you: no backup lately, or a token close to expiry. | Open Settings and read the Data health card at the top. |
 
-Back up now and then with Settings, **Backup file**. The data repo's history is a backup too: GitHub keeps every earlier version.
+Back up now and then with the gear, Settings, **Backup file**. The data repo's history is a backup too: GitHub keeps every earlier version.
 
 ---
 
@@ -226,6 +227,7 @@ Back up now and then with Settings, **Backup file**. The data repo's history is 
 
 - Your data stays in your browser and in a private repo you control.
 - The app has no analytics, no third-party scripts, and a strict Content Security Policy that only allows talking to `api.github.com`.
+- The fonts ship with the app. Nothing is loaded from a font service or any other site.
 - The service worker caches only the app's own files, never your data and never requests to GitHub.
 - Sync uses a GitHub token limited to the data repo only, stored in your browser. Anyone with access to that browser profile, or any malicious script on the page, could use it, so keep your devices locked.
 - A private repo is still stored on GitHub's servers. Do not put anything in Ledger you would not trust to a private repository.
@@ -235,11 +237,12 @@ Back up now and then with Settings, **Backup file**. The data repo's history is 
 
 ## Status
 
-Ledger is deployed and in daily use. Sync between a Mac and a Windows PC has been confirmed against a real GitHub repo. The latest release is **V1.4.1**. It is still a personal project, so keep a backup.
+Ledger is deployed and in daily use. Sync between a Mac and a Windows PC has been confirmed against a real GitHub repo. The latest release is **V2.0.0**. It is still a personal project, so keep a backup.
 
 | Version | Highlights |
 |---|---|
-| **V1.4.1** | A new look, Anodized: silver and space black, a ring gauge around Spent, a calendar of days, drawn icons |
+| **V2.0.0** | Ledger 2: People and Coming up (what leaves your bank next), Undo, part settle, Again chips, Edit plan, Data health, the Folio look, text size, a two-pane layout and shortcuts on a computer |
+| V1.4.1 | A new look, Anodized: silver and space black, a ring gauge around Spent, a calendar of days, drawn icons |
 | V1.4.0 | Faster logging: stay on Add, category buttons, split preview, search all months, your share on split rows, a second tap to delete |
 | V1.3.1 | One-off income, transfers between bank accounts, Recurring list, planned spending in the chart, Year report, full prices on split statements |
 | V1.3.0 | Tap to pick people in splits, Ledger category filter, Dashboard account filter, tap the chart for a breakdown, Forecast chart for 3, 6 or 12 months |
@@ -259,7 +262,8 @@ Full notes for every version are in [CHANGELOG.md](CHANGELOG.md).
 - **IndexedDB** for the local working copy
 - **GitHub REST API** (Git Data) for sync
 - **GitHub Pages** and **GitHub Actions** for hosting
-- **Vitest** for the tests (more than 300 of them, run before every deploy)
+- **Vitest** for the tests (more than 500 of them, run before every deploy)
+- **Spectral** and **Hanken Grotesk**, self-hosted and trimmed to the characters the app uses
 
 Built with Claude Code.
 
