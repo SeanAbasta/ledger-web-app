@@ -1,4 +1,4 @@
-import { useState, type ReactElement } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { AddForm, type SavedNote } from "./features/add/AddForm";
 import { IncomeForm } from "./features/add/IncomeForm";
 import { TransferForm } from "./features/ledger/TransferForm";
@@ -10,7 +10,9 @@ import { Splits } from "./features/splits/Splits";
 import { Gate } from "./features/sync/Gate";
 import { SetupSheet } from "./features/sync/SetupSheet";
 import { SyncSheet } from "./features/sync/SyncSheet";
-import { LedgerProvider } from "./ui/Ledger";
+import { LedgerProvider, useLedger } from "./ui/Ledger";
+import { healthOf } from "./features/settings/health";
+import { daysLeft } from "./sync/config";
 import { AddIcon, CalendarIcon, DashboardIcon, LedgerIcon, PeopleIcon, SettingsIcon } from "./ui/icons";
 import { Pill } from "./ui/Pill";
 import { Segmented } from "./ui/Segmented";
@@ -82,7 +84,16 @@ function Shell() {
   const [focusCard, setFocusCard] = useState<string>();
   // Set when another screen opens a Settings page directly (the Add tab's transfer hint).
   const [settingsPage, setSettingsPage] = useState<SettingsPage>();
-  const { status, readOnly, editOffline, engine } = useSync();
+  const { status, readOnly, editOffline, engine, config } = useSync();
+  const { store, rev } = useLedger();
+  // The gear's dot: the token is expired or expires within 30 days, or nothing is backed up (Data health).
+  const [stamps, setStamps] = useState<{ synced?: string; exported?: string }>({});
+  useEffect(() => {
+    let stale = false;
+    void Promise.all([store.getMeta<string>("lastSynced"), store.getMeta<string>("lastExported")]).then(([synced, exported]) => { if (!stale) setStamps({ synced, exported }); });
+    return () => { stale = true; };
+  }, [store, rev, status.lastSynced]);
+  const attention = healthOf({ connected: !!config, syncState: status.state, tokenError: /token/i.test(status.message ?? ""), lastSynced: status.lastSynced ?? stamps.synced, lastExported: stamps.exported, tokenDays: daysLeft(config), now: new Date() }).attention;
   const locked = readOnly && EDIT_TABS.includes(tab);
   // A tab (or the gear) starts its room fresh: nothing carried over from where another screen sent us.
   const open = (n: Tab) => { setFocusPerson(undefined); setSaved(undefined); setLedgerView(undefined); setFocusCard(undefined); setSettingsPage(undefined); setTab(n); };
@@ -105,7 +116,7 @@ function Shell() {
           <h1>{tab}</h1>
           <span className="baracts">
             <Pill status={status} onClick={() => setSheet("sync")} />
-            <button type="button" className={tab === "Settings" ? "gear on" : "gear"} aria-label="Settings" aria-current={tab === "Settings" ? "page" : undefined} onClick={() => open("Settings")}><SettingsIcon /></button>
+            <button type="button" className={tab === "Settings" ? "gear on" : "gear"} aria-label={attention ? "Settings, needs attention" : "Settings"} aria-current={tab === "Settings" ? "page" : undefined} onClick={() => open("Settings")}><SettingsIcon />{attention && <i className="gear-dot" aria-hidden="true" />}</button>
           </span>
         </header>
         {readOnly && (

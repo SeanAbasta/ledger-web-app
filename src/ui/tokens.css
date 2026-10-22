@@ -322,6 +322,18 @@ main.reading { --col: var(--reading-max); }
 .gear.on { background: var(--lens-ink); color: var(--lens-solid); }
 .gear:focus-visible { outline: var(--ring); outline-offset: 2px; }
 .gear:active { opacity: 0.7; }
+/* The gear's dot: something in Settings needs you (Data health). No number, no motion. */
+.gear-dot { position: absolute; top: 0; right: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 2px var(--lens-solid); }
+/* Data health, top of Settings: a bordered card, never a popup. Amber edge when something needs you. */
+.health { border: 1px solid var(--line-strong); border-radius: var(--radius-card); padding: var(--sp-4) 18px; background: var(--surface); margin-bottom: var(--sp-3); }
+.health.warn { border: 1.5px solid var(--warn); }
+.health-head { display: flex; align-items: baseline; gap: var(--sp-2); }
+.health-head b { font-weight: 600; }
+.health-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--good); }
+.health.warn .health-dot { background: var(--warn); }
+.health.offline .health-dot { background: var(--mute); }
+.health p { margin: var(--sp-1) 0 0 18px; color: var(--sub); font-size: var(--fs-md); }
+.health .acts { margin: var(--sp-3) 0 0 18px; flex-wrap: wrap; }
 /* The sync pill on the lens: its own tints, readable on the smoked glass in both themes. */
 .bar .pill { background: var(--lens-ok-bg); color: var(--lens-ok); }
 .bar .pill.syncing { background: var(--lens-sync-bg); color: var(--lens-sync); }

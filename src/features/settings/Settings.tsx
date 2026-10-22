@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { list, listAll, remove, restore, saveSettings, upsert } from "../../data/collections";
 import { moveAndRemove } from "../../data/accountMove";
 import { CURRENCIES } from "../../data/currencies";
@@ -27,7 +27,39 @@ import { AccountOptions } from "../../ui/AccountOptions";
 import { applyTheme, loadTheme, saveTheme, THEMES, type Theme } from "../../ui/theme";
 import { accountEdit, accountFieldsOf, cardEdit, cardFieldsOf, freshFields, plain, type AccountFields, type CardFields } from "./accountEdit";
 import { CloseIcon, PrevIcon } from "../../ui/icons";
+import { healthOf, sinceWords, syncedWords, type Health } from "./health";
 
+
+/**
+ * Data health, at the top of Settings: one card that says whether the data is safe and offers the fix.
+ * Never a popup. Reads what is already stored; the buttons are the actions that exist (Sync now, Export,
+ * the token sheet).
+ */
+function HealthCard({ h, connected, lastSynced, lastExported, tokenDays, onSync, onCopy, onSetup }: { h: Health; connected: boolean; lastSynced?: string; lastExported?: string; tokenDays?: number; onSync: () => void; onCopy: () => void; onSetup: () => void }) {
+  const now = new Date();
+  const copy = sinceWords(lastExported, now);
+  const synced = lastSynced ? syncedWords(lastSynced, now) : "never";
+  const syncBtn = connected ? <button className="btn sm" onClick={onSync}>Sync now</button> : <button className="btn sm" onClick={onSetup}>Set up sync</button>;
+  const copyBtn = <button className="btn ghost sm" onClick={onCopy}>Save a copy</button>;
+  const [title, body, acts]: [string, string, ReactNode] =
+    h.state === "expired" ? ["Your GitHub token has expired.", "", <button className="btn sm" onClick={onSetup}>Replace token</button>]
+    : h.state === "expiring" ? [`Your GitHub token expires in ${tokenDays} ${tokenDays === 1 ? "day" : "days"}. Renew soon.`, "", <button className="btn sm" onClick={onSetup}>Replace token</button>]
+    : h.state === "offline" ? ["Offline. Changes stay on this device until you are back online.", "", null]
+    : h.state === "healthy" ? (connected
+      ? ["Safe on GitHub", `Synced ${synced}. Last copy saved to this device ${copy}.`, <>{syncBtn}{copyBtn}</>]
+      : ["Copy saved", `Sync is off. Last copy saved to this device ${copy}.`, <>{syncBtn}{copyBtn}</>])
+    : connected
+      ? ["Not backed up lately", `Last synced ${synced}. Last copy saved: ${copy}.`, <>{syncBtn}{copyBtn}</>]
+      : ["Not backed up yet", `Sync is off, so your data is only on this device. Last copy saved: ${copy}.`, <>{syncBtn}{copyBtn}</>];
+  const tone = h.state === "offline" ? "health offline" : h.state === "healthy" ? "health" : "health warn";
+  return (
+    <div className={tone} role="status">
+      <div className="health-head"><i className="health-dot" aria-hidden="true" /><b>{title}</b></div>
+      {body && <p>{body}</p>}
+      {acts && <div className="acts">{acts}</div>}
+    </div>
+  );
+}
 
 /** "Saved" for a moment next to a row's ✕ after a real change (the flag lives in Settings, so it survives the row reloading). */
 const SavedTick = ({ on }: { on?: boolean }) => (on ? <span className="savedtick" role="status">Saved</span> : null);
@@ -132,9 +164,10 @@ const THEME_LABEL: Record<Theme, string> = { light: "Light", dark: "Dark", auto:
 
 /** `focusCard` (from Reconcile, "Set as Owed at start") opens Accounts and scrolls that card into view once loaded. */
 export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => void; focusCard?: string; initialPage?: Page }) {
-  const { store, rev, changed } = useLedger();
+  const { store, rev, changed, refresh } = useLedger();
   const { config, status, engine, disconnect, readOnly } = useSync();
   const [lastExported, setLastExported] = useState<string>();
+  const [lastSynced, setLastSynced] = useState<string>();
   const [incoming, setIncoming] = useState<Bundle>();
   const [backupMsg, setBackupMsg] = useState("");
   const [theme, setThemeState] = useState<Theme>(loadTheme);
@@ -168,8 +201,9 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
       const [entries, rules] = await Promise.all([loadAllEntries(store), list(store, "rules") as Promise<Rule[]>]);
       setRefs({ entries, rules });
       setLastExported(await store.getMeta<string>("lastExported"));
+      setLastSynced(await store.getMeta<string>("lastSynced"));
     })();
-  }, [store, rev]);
+  }, [store, rev, status.lastSynced]);
 
   useEffect(() => { if (focusCard) setPage("accounts"); }, [focusCard]);
   useEffect(() => {
@@ -259,6 +293,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
     await store.setMeta("lastExported", new Date().toISOString());
     setLastExported(new Date().toISOString());
     setBackupMsg("");
+    refresh(); // the gear's dot reads the same stamp
   }
   async function exportCsv() {
     downloadText(entriesCsv(await loadAllEntries(store), people, accounts), `ledger-entries-${stamp()}.csv`, "text/csv");
@@ -347,9 +382,13 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
     </>
   );
 
+  const tokenDays = daysLeft(config);
+  const synced = status.lastSynced ?? lastSynced;
+  const health = healthOf({ connected: !!config, syncState: status.state, tokenError: /token/i.test(status.message ?? ""), lastSynced: synced, lastExported, tokenDays, now: new Date() });
   if (!page) {
     return (
       <div className="stack">
+        <HealthCard h={health} connected={!!config} lastSynced={synced} lastExported={lastExported} tokenDays={tokenDays} onSync={() => void engine.syncNow()} onCopy={() => void exportJson()} onSetup={onSetup} />
         <div className="card">
           {PAGES.map(([p, title]) => (
             <button key={p} className="row" onClick={() => go(p)}><span>{title}<span className="mute small sub">{summary[p]}</span></span></button>

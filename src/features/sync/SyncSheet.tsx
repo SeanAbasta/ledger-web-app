@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { daysLeft } from "../../sync/config";
+import { useLedger } from "../../ui/Ledger";
+import { sinceWords } from "../settings/health";
 import { pillOf } from "../../ui/Pill";
 import { Sheet } from "../../ui/Sheet";
 import { useSync } from "../../ui/Sync";
@@ -8,7 +11,13 @@ const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString(undefined, { m
 
 /** Opened from the status pill: sync now, and the "safe to close" confirmation. */
 export function SyncSheet({ onClose, onSetup }: { onClose: () => void; onSetup: () => void }) {
-  const { engine, status, readOnly, editOffline } = useSync();
+  const { engine, status, readOnly, editOffline, config } = useSync();
+  const { store } = useLedger();
+  const [exported, setExported] = useState<string>();
+  useEffect(() => { void store.getMeta<string>("lastExported").then(setExported); }, [store]);
+  const days = daysLeft(config);
+  // Data health in one sentence: the last saved copy, and the token when it needs renewing.
+  const health = `Last copy saved to this device ${sinceWords(exported, new Date())}.${days !== undefined && days < 0 ? " Your GitHub token has expired." : days !== undefined && days <= 30 ? ` Your GitHub token expires in ${days} ${days === 1 ? "day" : "days"}.` : ""}`;
   const [result, setResult] = useState<"safe" | "not-safe">();
   const [busy, setBusy] = useState(false);
   const { label } = pillOf(status);
@@ -43,7 +52,7 @@ export function SyncSheet({ onClose, onSetup }: { onClose: () => void; onSetup: 
         <>
           <h3>{label}</h3>
           <p className="mute">{status.message ?? (status.state === "synced" ? "Everything is on GitHub." : "")}</p>
-          <p className="mute small">Last synced {fmt(status.lastSynced)}</p>
+          <p className="mute small">Last synced {fmt(status.lastSynced)}. {health}</p>
           {result === "not-safe" && <p className="err" role="alert">Not safe to close yet.</p>}
         </>
       )}
