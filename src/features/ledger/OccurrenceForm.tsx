@@ -74,7 +74,7 @@ export function OccurrenceForm({ occ, rule, onDone }: { occ: Occurrence; rule: R
       <p className="mute">{labelDay(occ.date)}{installment && ` · ${occ.index} of ${occ.count}`} · {occ.currency}</p>
       {!installment && (
         <div className="field"><b>Apply to</b>
-          <Segmented value={scope} options={SCOPES} labels={{ this: "This payment", later: "This and later" }} onChange={setScope} /></div>
+          <Segmented label="Change" value={scope} options={SCOPES} labels={{ this: "This payment", later: "This and later" }} onChange={setScope} /></div>
       )}
       <label className="field"><b>Amount</b><MoneyInput value={amount} onChange={setAmount} currency={occ.currency} /></label>
       <label className="field"><b>Note</b><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional" /></label>

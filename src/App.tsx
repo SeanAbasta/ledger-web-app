@@ -53,7 +53,7 @@ function AddTab({ onView, onOpenSettings }: { onView: (s: SavedNote) => void; on
   };
   return (
     <div className="glasscard addcard">
-      <div className="addkind"><Segmented value={kind} options={ADD_KINDS} onChange={(k) => { setSaved(undefined); setKind(k); }} /></div>
+      <div className="addkind"><Segmented label="Kind of entry" value={kind} options={ADD_KINDS} onChange={(k) => { setSaved(undefined); setKind(k); }} /></div>
       {saved && (
         <p className="savedline" role="status">{saved.message}. <button type="button" className="link" onClick={() => onView(saved)}>View</button></p>
       )}

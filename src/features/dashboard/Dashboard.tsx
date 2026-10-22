@@ -190,7 +190,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
     return () => { stale = true; };
   }, [store, rev, anchor, acct]);
 
-  const switcher = <div className="dashswitch"><Segmented value={view} options={VIEWS} onChange={setView} /></div>;
+  const switcher = <div className="dashswitch"><Segmented label="Month or Year" value={view} options={VIEWS} onChange={setView} /></div>;
   if (view === "Year") return <>{switcher}<YearView /></>;
   if (!v) return null;
   const { base, cur, chart, planned, future, prevTotal, stillDue, from, isCurrent, balances, owed, next, cards, banks, accounts, items, salaryAccount, defaults } = v;

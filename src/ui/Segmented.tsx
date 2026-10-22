@@ -6,11 +6,13 @@ import { useLayoutEffect, useRef } from "react";
  * keep their own widths. Until it has been measured (or with nothing to measure) the picked button draws
  * the key itself. The first placement does not slide.
  */
-export function Segmented<T extends string>({ value, options, onChange, labels }: {
+export function Segmented<T extends string>({ value, options, onChange, labels, label }: {
   value: T;
   options: readonly T[];
   onChange: (v: T) => void;
   labels?: Partial<Record<T, string>>;
+  /** The group's name for assistive tech ("Ledger view"); a visible caption next to it should say the same. */
+  label?: string;
 }) {
   const box = useRef<HTMLSpanElement>(null);
   const placed = useRef(false);
@@ -40,7 +42,7 @@ export function Segmented<T extends string>({ value, options, onChange, labels }
   }, [value, options]);
 
   return (
-    <span ref={box} className="seg" role="radiogroup">
+    <span ref={box} className="seg" role="radiogroup" aria-label={label}>
       {options.map((o) => (
         <button key={o} type="button" role="radio" aria-checked={o === value} className={o === value ? "on" : ""} onClick={() => onChange(o)}>
           {labels?.[o] ?? o}

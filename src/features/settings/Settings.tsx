@@ -452,7 +452,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
                   </select></label>
                 <div className="field"><b>Base currency</b><span className="mute">{s.baseCurrency}</span></div>
                 <div className="field"><b>Appearance</b>
-                  <Segmented value={theme} options={THEMES} labels={THEME_LABEL} onChange={(t) => { setThemeState(t); saveTheme(t); applyTheme(t); }} /></div>
+                  <Segmented label="Appearance" value={theme} options={THEMES} labels={THEME_LABEL} onChange={(t) => { setThemeState(t); saveTheme(t); applyTheme(t); }} /></div>
               </div>
             </>
           )}

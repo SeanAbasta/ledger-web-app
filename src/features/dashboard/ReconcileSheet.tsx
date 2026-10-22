@@ -119,7 +119,7 @@ export function ReconcileSheet({ card, st, bd, items, accounts, onClose, onOpenL
         <div className="actions"><button type="submit" className="btn">Compare</button></div>
       </form>
       {checks && (
-        <div className="recon" ref={results}>
+        <div className="recon" ref={results} aria-live="polite">
           {checks.map((c) => (
             <div key={c.field} className={c.diff ? "recon-item gap" : "recon-item matches"}>
               <p className="recon-head">{c.diff ? <AlertIcon /> : <CheckIcon />} <b>{LABEL[c.field]}</b>{!c.diff ? " matches" : c.field === "available" ? `: Ledger shows ${fmt(c.diff)} ${c.diff > 0 ? "less" : "more"} credit` : `: Ledger ${fmt(c.diff)} ${c.diff > 0 ? "higher" : "lower"}`}</p>

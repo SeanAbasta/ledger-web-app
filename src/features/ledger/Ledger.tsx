@@ -52,6 +52,8 @@ export function Ledger({ initialDate, initialView, notice, onAdd }: { initialDat
   const [cat, setCat] = useState(""); // "" is All categories
   const [categories, setCategories] = useState<string[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
+  // False until the first period has loaded: no "Nothing logged" flash over a list that is coming.
+  const [loaded, setLoaded] = useState(false);
   const [rules, setRules] = useState<Rule[]>([]);
   // People and accounts including removed ones, so old entries still show their names.
   const [people, setPeople] = useState<Person[]>([]);
@@ -85,6 +87,7 @@ export function Ledger({ initialDate, initialView, notice, onAdd }: { initialDat
       setAccounts(a);
       setBase(s.baseCurrency);
       setCategories(s.categories);
+      setLoaded(true);
       const d = dir.current; // read now: the updater below runs later
       dir.current = 0;
       setShown((cur) => (cur.from === from && cur.to === to ? cur : { from, to, dir: d }));
@@ -224,7 +227,7 @@ export function Ledger({ initialDate, initialView, notice, onAdd }: { initialDat
   return (
     <>
       <div className="toolrow">
-        <Segmented value={view} options={VIEWS} onChange={(v) => { dir.current = 0; setScope("period"); setView(v); }} />
+        <Segmented label="Ledger view" value={view} options={VIEWS} onChange={(v) => { dir.current = 0; setScope("period"); setView(v); }} />
         <span className="nav">
           <button aria-label="Previous" onClick={() => go(-1, (a) => shift(view, a, -1))}><PrevIcon /></button>
           <button className="title" title="Go to today" onClick={goToday}>{title(view, anchor)}</button>
@@ -275,7 +278,7 @@ export function Ledger({ initialDate, initialView, notice, onAdd }: { initialDat
         </>
       )}
 
-      {groups.length === 0 && (filtered
+      {loaded && groups.length === 0 && (filtered
         ? <Empty icon={<LedgerIcon />} title="No matches" note={`Nothing${cat ? ` in ${cat}` : ""} in ${title(view, shown.from)}${q.trim() ? ` has "${q.trim()}"` : ""}`} action={{ label: "Search all months", onClick: () => setScope("all") }} />
         : <Empty icon={<LedgerIcon />} title="Nothing logged" note={title(view, shown.from)} action={emptyAction([shown.from, shown.to], t, false) === "add" && onAdd ? { label: "Add expense", onClick: onAdd } : undefined} />)}
       {groups.map(([date, its]) => dayBlock(date, its))}

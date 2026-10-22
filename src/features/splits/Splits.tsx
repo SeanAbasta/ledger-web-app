@@ -23,6 +23,8 @@ const phrase = (name: string, amt: number) => (amt > 0 ? `${name} owes you` : `Y
 export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
   const { store, rev, changed } = useLedger();
   const [rows, setRows] = useState<Row[]>([]);
+  // Nothing is shown until the first load, so the empty state never flashes over a list that is coming.
+  const [loaded, setLoaded] = useState(false);
   const [sel, setSel] = useState<string | undefined>(initialPerson);
   const [settle, setSettle] = useState<Row>();
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -35,6 +37,7 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
       const items = ledgerItems(entries, rules, "0000-01-01", today());
       const rs = people.map((person) => ({ person, lines: personLines(person.id, items) })).filter((r) => r.lines.length);
       setRows(rs);
+      setLoaded(true);
       setAccounts((await list(store, "accounts")).filter((a) => !isCard(a))); // settling up never goes to a card
       setSel((s) => (s && rs.some((r) => r.person.id === s) ? s : rs[0]?.person.id));
     })();
@@ -69,6 +72,7 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
     changed();
   }
 
+  if (!loaded) return null;
   if (!rows.length) return <Empty icon={<PeopleIcon />} title="No one owes anyone yet" note="Turn on Split when you add an expense and balances appear here." />;
 
   return (

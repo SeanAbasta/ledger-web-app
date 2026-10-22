@@ -231,11 +231,11 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
           <button type="button" className={`toggle ${nextBill ? "on" : ""}`} aria-pressed={nextBill} aria-label="Bill on next statement" onClick={() => setNextBill(!nextBill)}><i /></button></div>
       )}
       {!entry && (
-        <div className="field"><b>Type</b><Segmented value={kind} options={KINDS} labels={KIND_LABEL} onChange={setKind} /></div>
+        <div className="field"><b>Type</b><Segmented label="Type" value={kind} options={KINDS} labels={KIND_LABEL} onChange={setKind} /></div>
       )}
       {kind !== "one-off" && !entry && (
         <>
-          <div className="field"><b>Every</b><Segmented value={freq} options={FREQ} labels={FREQ_LABEL} onChange={setFreq} /></div>
+          <div className="field"><b>Every</b><Segmented label="Every" value={freq} options={FREQ} labels={FREQ_LABEL} onChange={setFreq} /></div>
           {kind === "installment" ? (
             <label className="field"><b>Payments</b><input inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value)} />
               <span className="mute small">amount above is the total</span></label>
@@ -274,7 +274,7 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
               ))}
             </div></div>
           {/* Only the modes that fit who paid: Even, They owe, Custom when I paid; Even, I owe, Custom when someone else did. */}
-          <div className="field"><b>Mode</b><Segmented value={mode} options={modesFor(paidBy)} labels={MODE_LABEL} onChange={(m) => { setMode(m); setPaidBy(payerForMode(m, paidBy, names, kept)); }} /></div>
+          <div className="field"><b>Mode</b><Segmented label="Mode" value={mode} options={modesFor(paidBy)} labels={MODE_LABEL} onChange={(m) => { setMode(m); setPaidBy(payerForMode(m, paidBy, names, kept)); }} /></div>
           {/* Custom: what each person owes the payer. When someone else paid, my own share too; the payer owes nothing. */}
           {mode === "custom" && paidBy !== "me" && (
             <label className="field"><b>You owe</b><MoneyInput value={custom.me ?? ""} onChange={(v) => setCustom({ ...custom, me: v })} currency={currency} /></label>

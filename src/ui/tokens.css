@@ -1024,3 +1024,23 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
   .field .acts .btn.sm:not(.filebtn)::before { inset: -3px; }
   .swatch::before { inset: -4px -3px -8px; }
 }
+/* Accessibility pack (V2, V14). Every control has a visible keyboard ring and, on phones, a 44 px hit area
+   without moving anything. The sync pill and inline links grow an invisible ::before; the sheet's close
+   button (wide screens only) grows to 44. */
+.pill:focus-visible, .filebtn:focus-within { outline: var(--ring); outline-offset: 2px; }
+.sheet .close::before { content: ""; position: absolute; inset: calc((28px - var(--hit)) / 2); border-radius: 50%; }
+@media (max-width: 700px) {
+  /* .win raises these above the earlier all: unset rules on links, which would reset position. */
+  .pill, .win button.link { position: relative; }
+  .pill::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: var(--hit); transform: translateY(-50%); }
+  .win button.link::before { content: ""; position: absolute; left: -4px; right: -4px; top: 50%; height: var(--hit); transform: translateY(-50%); }
+}
+/* Windows high contrast and other forced colours: the Add amount's underline is a box-shadow, which is
+   dropped there, so it gets a real outline. */
+@media (forced-colors: active) {
+  .amt input:focus { outline: 2px solid; }
+  .lattice .now { outline: 2px solid; }
+}
+/* Reduce Motion: the spinner pulses instead of turning. */
+@keyframes pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: pulse 1.6s ease-in-out infinite; } }

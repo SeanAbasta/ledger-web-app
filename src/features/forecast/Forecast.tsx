@@ -205,7 +205,7 @@ export function Forecast() {
 
       <div className="grp" role="heading" aria-level={2}>Projected balance</div>
       <div className="card pad">
-        <div className="frange"><Segmented value={range} options={RANGES} labels={RANGE_LABEL} onChange={setRange} /></div>
+        <div className="frange"><Segmented label="Chart range" value={range} options={RANGES} labels={RANGE_LABEL} onChange={setRange} /></div>
         {/* Keyed on the range so an open month closes when the range changes. */}
         <BalanceChart key={range} start={start} months={f.months.slice(0, Number(range))} base={base} />
       </div>

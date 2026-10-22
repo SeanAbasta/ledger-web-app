@@ -52,7 +52,7 @@ export function CardView({ card, st, bd, banks, items, accounts, onOpenLedger, o
   return (
     <div className="cardview">
       <h2 className="cvtitle">{card.name}</h2>
-      <Segmented value={tab} options={TABS} onChange={setTab} />
+      <Segmented label="Card view" value={tab} options={TABS} onChange={setTab} />
 
       {tab === "Statement" && (
         <>
