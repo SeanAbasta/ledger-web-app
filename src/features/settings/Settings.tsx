@@ -26,6 +26,7 @@ import { Segmented } from "../../ui/Segmented";
 import { AccountOptions } from "../../ui/AccountOptions";
 import { applyTheme, loadTheme, saveTheme, THEMES, type Theme } from "../../ui/theme";
 import { loadKeepUndo, saveKeepUndo } from "../../ui/undoPref";
+import { applyTextSize, loadTextSize, saveTextSize, TEXT_SIZES, type TextSize } from "../../ui/textSize";
 import { accountEdit, accountFieldsOf, cardEdit, cardFieldsOf, freshFields, newAccountOf, plain, type AccountFields, type CardFields } from "./accountEdit";
 import { CloseIcon, PrevIcon } from "../../ui/icons";
 import { healthOf, sinceWords, syncedWords, type Health } from "./health";
@@ -162,6 +163,7 @@ export type Page = "accounts" | "people" | "general" | "sync";
 /** Settings opens on a short list of pages, each a group of the old long page. */
 const PAGES: [Page, string][] = [["general", "General"], ["accounts", "Accounts"], ["people", "People and categories"], ["sync", "Sync and backup"]];
 const THEME_LABEL: Record<Theme, string> = { light: "Light", dark: "Dark", auto: "Auto" };
+const TEXT_LABEL: Record<TextSize, string> = { default: "Default", large: "Large", larger: "Larger" };
 
 /** `focusCard` (from Reconcile, "Set as Owed at start") opens Accounts and scrolls that card into view once loaded. */
 export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => void; focusCard?: string; initialPage?: Page }) {
@@ -173,6 +175,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
   const [backupMsg, setBackupMsg] = useState("");
   const [theme, setThemeState] = useState<Theme>(loadTheme);
   const [keepUndo, setKeepUndo] = useState(loadKeepUndo);
+  const [textSize, setTextSize] = useState<TextSize>(loadTextSize);
   const [confirm, setConfirm] = useState<"pull" | "remove">();
   // A person or account that is in use: removing it asks first and says what it affects.
   // An account in use can first move its entries, plans and defaults to `targets` (same kind; banks in the same currency).
@@ -332,7 +335,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
   const summary: Record<Page, string> = {
     accounts: `${n(banks.length, "bank account", "bank accounts")}, ${n(accounts.length - banks.length, "card", "cards")}`,
     people: `${n(people.length, "person", "people")}, ${n(s.categories.length, "category", "categories")}`,
-    general: `${s.defaultCurrency}, ${THEME_LABEL[theme]}`,
+    general: `${s.defaultCurrency}, ${THEME_LABEL[theme]}, text size ${TEXT_LABEL[textSize]}`,
     sync: `${pillOf(status).label}, ${lastExported ? `exported ${sinceText(lastExported).toLowerCase()}` : "never exported"}`,
   };
   const sheets = (
@@ -478,6 +481,10 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
                 <div className="field"><b>Base currency</b><span className="mute">{s.baseCurrency}</span></div>
                 <div className="field"><b>Appearance</b>
                   <Segmented label="Appearance" value={theme} options={THEMES} labels={THEME_LABEL} onChange={(t) => { setThemeState(t); saveTheme(t); applyTheme(t); }} /></div>
+                <div className="field stack"><b>Text size</b>
+                  <Segmented label="Text size" value={textSize} options={TEXT_SIZES} labels={TEXT_LABEL} onChange={(t) => { setTextSize(t); saveTextSize(t); applyTextSize(t); }} />
+                  {/* A live sample, in the sizes the app uses. */}
+                  <p className="textsample" aria-hidden="true"><span>Coffee</span><span className="money">₱250.00</span></p></div>
                 <div className="field"><b>Keep Undo until dismissed<span className="mute small sub">On this device. Otherwise Undo lasts 8 seconds</span></b>
                   <button type="button" className={`toggle ${keepUndo ? "on" : ""}`} aria-pressed={keepUndo} aria-label="Keep Undo until dismissed" onClick={() => { setKeepUndo(!keepUndo); saveKeepUndo(!keepUndo); }}><i /></button></div>
               </div>

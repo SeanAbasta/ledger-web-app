@@ -19,5 +19,12 @@
     if (m) m.setAttribute("content", dark ? "#14171e" : "#f9fafb"); // the paper of each theme
   }
   apply();
+  // Text size (Settings, General), also before first paint. Mirrors src/ui/textSize.ts.
+  try {
+    var t = localStorage.getItem("ledger.text");
+    if (t === "large" || t === "larger") document.documentElement.setAttribute("data-text", t);
+  } catch (e) {
+    // storage blocked: default size
+  }
   if (mq && mq.addEventListener) mq.addEventListener("change", apply); // "auto" follows the system live
 })();

@@ -118,8 +118,10 @@
   --fs-3xl: calc(34px * var(--ts));
   --fig-card: calc(32px * var(--ts));
   --fig-sec: calc(54px * var(--ts));
-  --fig-hero: calc(84px * var(--ts));
-  --fig-amount: calc(78px * var(--ts));
+  /* The hero and the Add amount do not grow with the text size; at Larger they step down (--hero-scale). */
+  --hero-scale: 1;
+  --fig-hero: calc(84px * var(--hero-scale));
+  --fig-amount: calc(78px * var(--hero-scale));
   --fig-day: calc(36px * var(--ts));
   /* Spacing: 4 to 64. */
   --sp-1: 4px;
@@ -166,8 +168,8 @@
   accent-color: var(--accent);
 }
 /* Bigger figures on wider screens. */
-@media (min-width: 701px) { :root { --fig-hero: calc(120px * var(--ts)); --fig-day: calc(52px * var(--ts)); } }
-@media (min-width: 1200px) { :root { --gutter: 56px; --fig-hero: calc(190px * var(--ts)); --fig-sec: calc(44px * var(--ts)); --fig-amount: calc(150px * var(--ts)); } }
+@media (min-width: 701px) { :root { --fig-hero: calc(120px * var(--hero-scale)); --fig-day: calc(52px * var(--ts)); } }
+@media (min-width: 1200px) { :root { --gutter: 56px; --fig-hero: calc(190px * var(--hero-scale)); --fig-sec: calc(44px * var(--ts)); --fig-amount: calc(150px * var(--hero-scale)); } }
 /* Dark is opt-in (Settings, Appearance). public/theme.js sets data-theme before first paint. No pure black. */
 :root[data-theme="dark"] {
   --bg: #0d0f14;
@@ -215,7 +217,7 @@
 :root { --tabs-total: calc(var(--tabbar-h) - 14px + max(14px, env(safe-area-inset-bottom))); --sticky-top: 72px; }
 @media (max-width: 700px) { :root { --sticky-top: calc(var(--bar-h) + env(safe-area-inset-top)); } }
 :root[data-text="large"] { --ts: 1.15; }
-:root[data-text="larger"] { --ts: 1.3; }
+:root[data-text="larger"] { --ts: 1.3; --hero-scale: 0.85; }
 
 * { box-sizing: border-box; }
 /* No double-tap zoom, and no font inflation when the phone turns. */
@@ -280,7 +282,7 @@ main.reading { --col: var(--reading-max); }
   gap: var(--sp-3);
   padding: var(--sp-6) max(var(--gutter), calc((100% - var(--col)) / 2)) 0;
 }
-.bar h1 { font: 300 var(--fs-3xl)/1.05 var(--fig); letter-spacing: -0.025em; color: var(--ink); margin: 0; }
+.bar h1 { font: 300 var(--fs-3xl)/1.05 var(--fig); letter-spacing: -0.025em; color: var(--ink); margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bar .baracts { display: none; }
 .baracts { display: inline-flex; align-items: center; gap: var(--sp-2); }
 .body { padding: var(--sp-5) max(var(--gutter), env(safe-area-inset-right)) var(--sp-7) max(var(--gutter), env(safe-area-inset-left)); }
@@ -323,6 +325,9 @@ main.reading { --col: var(--reading-max); }
     border-bottom: 1px solid transparent;
   }
   .bar.scrolled { border-bottom-color: var(--line); }
+  /* The title gives way first on narrow phones and at large text sizes, so the pill and gear always fit. */
+  .bar h1 { font-size: min(var(--fs-3xl), 8.5vw); }
+  .bar .baracts { flex: none; }
   .bar .baracts { display: inline-flex; }
   .body { padding-bottom: calc(var(--tabs-total) + var(--sp-5)); }
 }
@@ -332,6 +337,7 @@ main.reading { --col: var(--reading-max); }
 .pill.syncing i { background: var(--accent-data); }
 .pill.offline i { background: var(--mute); }
 .pill.needs-sync i { background: var(--warn); }
+@media (max-width: 400px) { .pill { padding: 0 10px; font-size: min(calc(13px * var(--ts)), 14px); } }
 .pill::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: var(--hit); transform: translateY(-50%); }
 /* The gear: Settings, from every room. Filled while Settings is open; an amber dot when it needs you. */
 .gear { all: unset; box-sizing: border-box; position: relative; width: 36px; height: 36px; flex: none; border-radius: 50%; border: 1px solid var(--edge); display: grid; place-items: center; cursor: pointer; color: var(--ink); -webkit-tap-highlight-color: transparent; }
@@ -586,7 +592,7 @@ button.link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .legend .r .mute { font: 400 var(--fs-sm) var(--font); margin-left: 6px; }
 /* The Daily calendar (decision 15): Monday-first day cells in four shades of ink against the month's
    highest day; today ringed in the accent; scheduled days still to come dashed; quiet days a hairline. */
-.dailyhead { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); }
+.dailyhead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--sp-1) var(--sp-3); }
 .lattice { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: var(--sp-3); }
 .lattice .wk { font-size: var(--fs-xs); font-weight: 600; color: var(--mute); text-align: center; padding-bottom: 2px; }
 .lattice button { all: unset; }
@@ -603,7 +609,8 @@ button.link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .lattice .now.quiet, .lattice .now.later { color: var(--ink); }
 .lattice button.cell { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .lattice button.cell:focus-visible { outline: var(--ring); outline-offset: 2px; }
-@media (max-width: 700px) { .lattice .cell { min-height: var(--hit); } }
+/* Phones: 44 px tall cells; the ratio goes, or it would stretch them wider than their columns. */
+@media (max-width: 700px) { .lattice .cell { aspect-ratio: auto; min-height: var(--hit); } }
 @media (min-width: 1000px) { .lattice .cell { aspect-ratio: 1.6; } }
 .latkey { margin: var(--sp-2) 0 0; }
 .dailystats { margin-top: var(--sp-3); }
@@ -792,6 +799,7 @@ fieldset:disabled .swatch { cursor: default; }
 .health p { margin: var(--sp-1) 0 0 18px; color: var(--sub); font-size: var(--fs-md); }
 .health .acts { margin: var(--sp-3) 0 0 18px; flex-wrap: wrap; }
 /* First run: a checklist card above the Add form. */
+.textsample { display: flex; justify-content: space-between; align-items: baseline; margin: 0; padding: var(--sp-2) 0 0; font-weight: 500; }
 .firstrun { max-width: 520px; margin: 0 auto var(--sp-4); }
 .firstrun .health-head { justify-content: space-between; }
 .firstrun .health-head button.link { font-size: var(--fs-md); }
