@@ -14,14 +14,11 @@
 /* Folio (V2, Phase 3): a paper ledger. Gallery ground, paper surfaces, ink text, one blue accent that
    marks the current place, focus and the primary action, and one green for money in. Sections are ruled
    with hairlines, not boxed; nothing is bevelled or glassy. Every colour lives here, in both themes;
-   components never set their own dark colours. Older names are kept (their values changed) so components
-   did not need renaming; the bevel names are flat until they are deleted. */
+   components never set their own dark colours. */
 :root {
   --bg: #eceef2; /* the ground, flat */
   --ground: var(--bg);
   --surface: #f9fafb; /* paper: sheets, fields, the bars */
-  --plate: var(--surface);
-  --choice: var(--surface);
   --ink: #0b0c0f;
   --sub: #4a5162; /* secondary text, 7.6:1 on paper */
   --mute: #5a6275; /* captions, 5.8:1 on paper, 5.3:1 on the ground */
@@ -45,51 +42,11 @@
   --fill: #eceef2; /* tracks, the preview block, row hover */
   --fill-2: #e3e6eb;
   --fill-3: #c5cad4;
-  --track: var(--fill-2);
   --scrim: rgba(11, 12, 15, 0.42);
-  --ok: var(--good);
-  --off: var(--mute);
-  --pend: var(--warn-ink);
-  --banner: var(--ink);
   /* Elevation, declared once: popovers, sheets and the toast. Nothing else casts a shadow. */
   --elev-pop: 0 0 0 1px var(--line-strong), 0 24px 48px -28px rgba(20, 24, 40, 0.45);
   --elev-sheet: 0 -20px 60px -20px rgba(0, 0, 0, 0.4);
   --elev-toast: 0 12px 28px -12px rgba(0, 0, 0, 0.5);
-  --shadow: 0 24px 48px -28px rgba(20, 24, 40, 0.45);
-  --sheet-shadow: var(--elev-sheet);
-  /* Retired (flat until deleted): plates, bevels, glass, the smoked lens. */
-  --glass: var(--surface);
-  --glass-line: transparent;
-  --glass-hi: transparent;
-  --card-shadow: none;
-  --plate-shadow: none;
-  --seg-track: transparent;
-  --seg-edge: inset 0 0 0 1px var(--edge);
-  --seg-on: var(--ink);
-  --seg-on-edge: none;
-  --btn-edge: none;
-  --ghost-edge: inset 0 0 0 1px var(--edge);
-  --input-edge: none;
-  --toggle-off: transparent;
-  --toggle-edge: inset 0 0 0 1px var(--edge);
-  --knob: var(--edge);
-  --knob-shadow: none;
-  --face-edge: none;
-  --chip-metal: none;
-  --lens: var(--surface);
-  --lens-solid: var(--surface);
-  --lens-ink: var(--ink);
-  --lens-mute: var(--mute);
-  --lens-key: transparent;
-  --lens-key-edge: none;
-  --lens-edge: none;
-  --lens-focus: var(--focus);
-  --bar-bg: var(--surface);
-  --side-bg: var(--surface);
-  --side-edge: none;
-  --tab-bg: var(--surface);
-  --tab-edge: none;
-  --tab-shadow: none;
   /* The Daily calendar: four shades of ink against the month's highest day. */
   --day-1: color-mix(in srgb, var(--ink) 10%, var(--surface));
   --day-2: color-mix(in srgb, var(--ink) 24%, var(--surface));
@@ -105,7 +62,6 @@
   --font: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --fig: "Spectral", Georgia, "Times New Roman", serif;
   --label: 500 var(--fs-md)/1.3 var(--font); /* section labels: sentence case, not tracked */
-  --label-track: 0;
   --cap: 600 calc(11.5px * var(--ts))/1.3 var(--font); /* the caption inside a ruled field: small capitals */
   --cap-track: 0.12em;
   --fs-xs: calc(11px * var(--ts));
@@ -140,8 +96,6 @@
   --radius-card: 14px;
   --r-sheet: 18px;
   --r-face: 5px;
-  --r-ctl: 999px;
-  --r-input: 0;
   --hit: 44px;
   --ring: 2px solid var(--focus);
   --gutter: 24px;
@@ -200,7 +154,6 @@
   --scrim: rgba(0, 0, 0, 0.6);
   --elev-pop: 0 0 0 1px var(--line-strong), 0 24px 48px -28px rgba(0, 0, 0, 0.8);
   --elev-sheet: 0 -20px 60px -20px rgba(0, 0, 0, 0.7);
-  --shadow: 0 24px 48px -28px rgba(0, 0, 0, 0.8);
   --select-chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b92a3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3C/svg%3E");
   --day-3-ink: #0b0c0f;
   --t-orange: #ef7a5f; --t-purple: #a28ae8; --t-blue: #63a8e0; --t-green: #4fc2a8; --t-teal: #52c0c0; --t-yellow: #e0b04a; --t-pink: #ec86b8;
@@ -521,7 +474,6 @@ button.link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .filters { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
 .catpick { max-width: 180px; text-overflow: ellipsis; }
 .acctpick { max-width: 240px; text-overflow: ellipsis; }
-.toolrow .subviews { display: flex; gap: var(--sp-2); margin-left: auto; }
 @media (max-width: 700px) {
   /* Period on its own row, Today at the far end: tapping the arrows never shifts. */
   .toolrow .nav { order: 3; flex-basis: 100%; }
