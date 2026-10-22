@@ -18,14 +18,14 @@ export function Gate() {
 
   if (status.state === "conflict") {
     return (
-      <div className="scrim" role="alertdialog" aria-label="Two versions">
+      <div className="scrim" role="alertdialog" aria-label="Two versions of your ledger">
         <div className="glasscard sheet center gate">
-          <h3>Two versions</h3>
-          <p className="mute">This device and GitHub both changed.</p>
+          <h3>Two versions of your ledger</h3>
+          {/* The safe thing first, then the choices, Merge recommended. The choices themselves are unchanged. */}
+          <p className="mute">Nothing is lost: the version you do not keep is saved to Downloads first.</p>
+          <button className="choice rec" onClick={() => void engine.resolve("merge")}>Merge, recommended<small>Combine by entry, newest edit wins</small></button>
           <button className="choice" onClick={() => void engine.resolve("local")}>Keep this device<small>Replace GitHub with what is here</small></button>
           <button className="choice" onClick={() => void engine.resolve("remote")}>Keep GitHub's version<small>Replace this device with GitHub</small></button>
-          <button className="choice" onClick={() => void engine.resolve("merge")}>Merge<small>Combine by entry, newest edit wins</small></button>
-          <p className="mute small">The other version is saved to Downloads first.</p>
         </div>
       </div>
     );
