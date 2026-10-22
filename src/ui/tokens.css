@@ -1044,3 +1044,26 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
 /* Reduce Motion: the spinner pulses instead of turning. */
 @keyframes pulse { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation: pulse 1.6s ease-in-out infinite; } }
+/* Add (V5): Account and When share a row, each with its caption over its control; the Category caption
+   can say where the chip came from ("Food, last used"); More opens the whole list; the Save bar. */
+.field.pair { gap: var(--sp-3); align-items: stretch; }
+.field.pair > label { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: var(--sp-1); }
+.field.pair > label > b { font-weight: 500; }
+.field.pair input, .field.pair select { max-width: none; width: 100%; text-align: left; }
+.sheet .field.pair input[type="date"] { max-width: none; } /* outranks the sheet's 60% date rule */
+.field.stack > b { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-2); }
+.catfrom { font-weight: 400; font-size: var(--fs-md); color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pick.more { color: var(--accent-ink); }
+.savebar { display: flex; flex-direction: column; align-items: flex-end; gap: var(--sp-2); margin-top: var(--sp-3); }
+.savebar .err { align-self: stretch; margin: 0; }
+/* Phones: the bar is sticky above the floating tab bar, full width, with a short fade above it so rows
+   never meet a hard edge. With the keyboard open (kb-open) the tab bar hides and the bar sits on the
+   keyboard (--kb, from visualViewport). */
+@media (max-width: 700px) {
+  .savebar { position: sticky; z-index: 1; bottom: calc(var(--tabbar-h) + max(16px, env(safe-area-inset-bottom))); align-items: stretch; margin: var(--sp-3) -22px -22px; padding: 10px 22px 12px; background: var(--surface); border-top: 1px solid var(--line); border-radius: 0 0 var(--radius-card) var(--radius-card); }
+  .savebar::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%; height: 12px; background: linear-gradient(to top, var(--surface), transparent); pointer-events: none; }
+  .savebar .btn { min-height: 52px; font-size: var(--fs-lg); }
+  .kb-open .side { display: none; }
+  .kb-open .savebar { bottom: var(--kb, 0px); border-radius: 0; }
+  .kb-open .body { padding-bottom: var(--sp-5); }
+}

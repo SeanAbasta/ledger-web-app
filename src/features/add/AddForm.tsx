@@ -19,11 +19,13 @@ import { modeAfterPayer, modesFor, splitPreview } from "./splitPreview";
 import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
+import { useKeyboardInset } from "../../ui/useKeyboardInset";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 
 type Kind = "one-off" | "recurring" | "installment";
 const KINDS = ["one-off", "recurring", "installment"] as const;
-const KIND_LABEL = { "one-off": "One-off", recurring: "Recurring", installment: "Installment" } as const;
+// "Repeats" says what happens; Every, Payments and Ends open under it.
+const KIND_LABEL = { "one-off": "No", recurring: "Recurring", installment: "In installments" } as const;
 const FREQ = ["weekly", "monthly", "yearly"] as const;
 const FREQ_LABEL = { weekly: "Weekly", monthly: "Monthly", yearly: "Yearly" } as const;
 
@@ -47,8 +49,9 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
   const [note, setNote] = useState(entry?.note ?? "");
   const [date, setDate] = useState(entry?.date ?? today());
   const [accountId, setAccountId] = useState(entry?.accountId ?? "");
-  // The account a new item started with, so the form can say it came from a default.
+  // The account and category a new item started with, so the form can say they came from a default.
   const [startAcct, setStartAcct] = useState({ id: "", from: "" });
+  const [startCat, setStartCat] = useState({ name: "", from: "" });
   const [kind, setKind] = useState<Kind>("one-off");
   const [freq, setFreq] = useState<Frequency>("monthly");
   const [count, setCount] = useState("12");
@@ -74,7 +77,9 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
       setAccounts(a);
       setCurrency((c) => c || s.defaultCurrency);
       const last = loadLastUsed();
-      setCategory((c) => c || (entry ? s.categories[0] ?? "" : startCategory(s.defaults, last, s.categories)));
+      const cat = startCategory(s.defaults, last, s.categories);
+      if (!entry) setStartCat({ name: cat, from: s.defaults?.lastUsed && last.category === cat ? "last used" : s.defaults?.category === cat ? "default" : "" });
+      setCategory((c) => c || (entry ? s.categories[0] ?? "" : cat));
       if (!entry) {
         const start = startAccount("expense", s.defaults, last, a);
         setStartAcct({ id: start, from: s.defaults?.lastUsed && last.expense === start ? "last used" : "default" });
@@ -90,6 +95,8 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
     })();
   }, [store, entry]);
 
+  // The Add tab (not an edit sheet): Save rides above the tab bar, and on the keyboard while typing.
+  useKeyboardInset(!entry);
   const foreign = currency !== settings.baseCurrency;
   const nameList = namesOf(names);
   // When someone else paid a split, none of my money moved, so no account is needed.
@@ -214,35 +221,27 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
       {foreign && (
         <label className="field"><b>Rate</b><input placeholder={`${settings.baseCurrency} per 1 ${currency}`} inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} /></label>
       )}
-      <div className="field stack"><b>Category</b><CategoryChips list={settings.categories} value={category} onChange={setCategory} /></div>
-      {/* Full width right after the category: every expense gets a note, and it is the row's title in the Ledger. */}
-      <label className="field stack"><b>Note</b><input className="notefield" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What was it?" /></label>
-      <label className="field"><b>{kind === "one-off" ? "Date" : "Starts"}{card && validDate && cutoffFor(card, date) === date && <span className="tag">statement day</span>}</b><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
-      {accounts.length > 0 && (
-        <label className="field"><b>Account{!entry && !someoneElsePaid && accountId && accountId === startAcct.id && <span className="tag">{startAcct.from}</span>}</b>
-          {/* Someone else paid: only None. The picked account is kept in state and comes back if I paid after all. */}
-          <select value={someoneElsePaid ? "" : accountId} onChange={(e) => setAccountId(e.target.value)}>
-            {someoneElsePaid ? <option value="">None</option> : <>{!accountId && <option value="" disabled>Pick an account</option>}<AccountOptions accounts={accounts} /></>}
-          </select></label>
-      )}
+      {/* Order: amount, note, category, account and when, split, then repeats. Save stays in view. */}
+      {/* Note comes before Category now, so on the Add tab Return closes the keyboard instead of saving
+          before a category is picked. In an edit sheet Return still saves. */}
+      <label className="field stack"><b>Note</b><input className="notefield" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What was it?" enterKeyHint={entry ? undefined : "done"}
+        onKeyDown={(e) => { if (!entry && e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); } }} /></label>
+      <div className="field stack"><b>Category{!entry && category === startCat.name && startCat.from && <span className="catfrom">{category}, {startCat.from}</span>}</b><CategoryChips list={settings.categories} value={category} onChange={setCategory} compact={!entry} /></div>
+      {/* Account and When share a row, each with its own caption. */}
+      <div className="field pair">
+        {accounts.length > 0 && (
+          <label><b>Account{!entry && !someoneElsePaid && accountId && accountId === startAcct.id && <span className="tag">{startAcct.from}</span>}</b>
+            {/* Someone else paid: only None. The picked account is kept in state and comes back if I paid after all. */}
+            <select value={someoneElsePaid ? "" : accountId} onChange={(e) => setAccountId(e.target.value)}>
+              {someoneElsePaid ? <option value="">None</option> : <>{!accountId && <option value="" disabled>Pick an account</option>}<AccountOptions accounts={accounts} /></>}
+            </select></label>
+        )}
+        <label><b>{kind === "one-off" ? "When" : "Starts"}{card && validDate && cutoffFor(card, date) === date && <span className="tag">statement day</span>}</b><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+      </div>
 
       {billable && card && nextCut && (
         <div className="field"><b>Bill on next statement<span className="mute small sub">{labelShort(nextCut)} statement, due {labelShort(dueFor(card, nextCut))}</span></b>
           <button type="button" className={`toggle ${nextBill ? "on" : ""}`} aria-pressed={nextBill} aria-label="Bill on next statement" onClick={() => setNextBill(!nextBill)}><i /></button></div>
-      )}
-      {!entry && (
-        <div className="field"><b>Type</b><Segmented label="Type" value={kind} options={KINDS} labels={KIND_LABEL} onChange={setKind} /></div>
-      )}
-      {kind !== "one-off" && !entry && (
-        <>
-          <div className="field"><b>Every</b><Segmented label="Every" value={freq} options={FREQ} labels={FREQ_LABEL} onChange={setFreq} /></div>
-          {kind === "installment" ? (
-            <label className="field"><b>Payments</b><input inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value)} />
-              <span className="mute small">amount above is the total</span></label>
-          ) : (
-            <label className="field"><b>Ends</b><input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></label>
-          )}
-        </>
       )}
 
       {entry?.kind !== "income" && (
@@ -293,11 +292,36 @@ export function AddForm({ entry, onDone }: { entry?: Entry; onDone?: (saved?: Sa
         </>
       )}
 
-      {error && <p className="err" role="alert">{error}</p>}
-      <div className="actions">
-        {entry && <ConfirmButton danger label="Delete" ask={confirmLabel("delete", entry)} onConfirm={() => void remove()} />}
-        <button type="submit" className="btn">Save</button>
-      </div>
+      {!entry && (
+        <div className="field"><b>Repeats</b><Segmented label="Repeats" value={kind} options={KINDS} labels={KIND_LABEL} onChange={setKind} /></div>
+      )}
+      {kind !== "one-off" && !entry && (
+        <>
+          <div className="field"><b>Every</b><Segmented label="Every" value={freq} options={FREQ} labels={FREQ_LABEL} onChange={setFreq} /></div>
+          {kind === "installment" ? (
+            <label className="field"><b>Payments</b><input inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value)} />
+              <span className="mute small">amount above is the total</span></label>
+          ) : (
+            <label className="field"><b>Ends</b><input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></label>
+          )}
+        </>
+      )}
+
+      {entry ? (
+        <>
+          {error && <p className="err" role="alert">{error}</p>}
+          <div className="actions">
+            <ConfirmButton danger label="Delete" ask={confirmLabel("delete", entry)} onConfirm={() => void remove()} />
+            <button type="submit" className="btn">Save</button>
+          </div>
+        </>
+      ) : (
+        // The Add tab's Save bar: always in view above the tab bar (and on the keyboard), its error just above the button.
+        <div className="savebar">
+          {error && <p className="err" role="alert">{error}</p>}
+          <button type="submit" className="btn">Save</button>
+        </div>
+      )}
     </form>
   );
 }
