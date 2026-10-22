@@ -9,8 +9,10 @@ export function BigAmount({ minor, currency, word, className, sign }: { minor?: 
   const cls = (...c: (string | undefined)[]) => c.filter(Boolean).join(" ");
   if (word !== undefined || minor === undefined) return <div className={cls("big", "word", className)}>{word}</div>;
   const p = moneyParts(minor, currency);
+  // A figure over 11 characters steps down one size (the hero, in CSS), so it never wraps or clips.
+  const long = `${sign ?? ""}${p.sign}${p.symbol}${p.whole}${p.cents ?? ""}`.length > 11;
   return (
-    <div className={cls("big", className)}>
+    <div className={cls("big", long ? "long" : undefined, className)}>
       {sign}{p.sign}<span className="cur">{p.symbol}</span>{p.whole}{p.cents && <span className="cents">{p.cents}</span>}
     </div>
   );

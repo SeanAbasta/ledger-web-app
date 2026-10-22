@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadTheme, parseTheme, resolveTheme, saveTheme } from "../src/ui/theme";
+import { themeColor } from "../src/ui/theme";
 
 const mem = () => {
   const m = new Map<string, string>();
@@ -32,5 +33,12 @@ describe("theme", () => {
     expect(resolveTheme("auto", false)).toBe("light");
     expect(resolveTheme("light", true)).toBe("light");
     expect(resolveTheme("dark", false)).toBe("dark");
+  });
+});
+
+describe("themeColor", () => {
+  it("is the paper of each theme", () => {
+    expect(themeColor(false)).toBe("#f9fafb");
+    expect(themeColor(true)).toBe("#14171e");
   });
 });

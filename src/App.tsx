@@ -107,14 +107,29 @@ function Shell() {
     void Promise.all([store.getMeta<string>("lastSynced"), store.getMeta<string>("lastExported")]).then(([synced, exported]) => { if (!stale) setStamps({ synced, exported }); });
     return () => { stale = true; };
   }, [store, rev, status.lastSynced]);
+  // The phone header draws its hairline only once the page has scrolled.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const on = () => setScrolled(window.scrollY > 4);
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, []);
   const attention = healthOf({ connected: !!config, syncState: status.state, tokenError: /token/i.test(status.message ?? ""), lastSynced: status.lastSynced ?? stamps.synced, lastExported: stamps.exported, tokenDays: daysLeft(config), now: new Date() }).attention;
   const locked = readOnly && EDIT_TABS.includes(tab);
   // A tab (or the gear) starts its room fresh: nothing carried over from where another screen sent us.
   const open = (n: Tab) => { setFocusPerson(undefined); setSaved(undefined); setLedgerView(undefined); setFocusTile(undefined); setFocusCard(undefined); setSettingsPage(undefined); setTab(n); };
 
+  // The sync pill and the gear: in the top bar on computers, in each room's header on phones (CSS shows one).
+  const actions = (cls: string) => (
+    <span className={cls}>
+      <Pill status={status} onClick={() => setSheet("sync")} />
+      <button type="button" className={tab === "Settings" ? "gear on" : "gear"} aria-label={attention ? "Settings, needs attention" : "Settings"} aria-current={tab === "Settings" ? "page" : undefined} onClick={() => open("Settings")}><SettingsIcon />{attention && <i className="gear-dot" aria-hidden="true" />}</button>
+    </span>
+  );
+
   return (
     <div className={tab === "Add" ? "win on-add" : "win"}>
-      <nav className="side">
+      <nav className="side" aria-label="Rooms">
         <div className="brand">Ledger</div>
         {ROOMS.map((n) => {
           const Icon = ICON[n];
@@ -124,14 +139,12 @@ function Shell() {
             </button>
           );
         })}
+        {actions("baracts topacts")}
       </nav>
       <main className={READING_TABS.includes(tab) ? "reading" : undefined}>
-        <header className="bar">
+        <header className={scrolled ? "bar scrolled" : "bar"}>
           <h1>{tab}</h1>
-          <span className="baracts">
-            <Pill status={status} onClick={() => setSheet("sync")} />
-            <button type="button" className={tab === "Settings" ? "gear on" : "gear"} aria-label={attention ? "Settings, needs attention" : "Settings"} aria-current={tab === "Settings" ? "page" : undefined} onClick={() => open("Settings")}><SettingsIcon />{attention && <i className="gear-dot" aria-hidden="true" />}</button>
-          </span>
+          {actions("baracts")}
         </header>
         {readOnly && (
           <div className="banner">

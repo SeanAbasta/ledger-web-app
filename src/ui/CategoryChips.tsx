@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { categoryChips, visibleChips } from "./categoryChipList";
+import { categoryTone } from "./categoryColor";
 
 /**
  * Category as a wrapping row of tap chips (same look as People), one of them picked. `compact` (the Add
@@ -11,7 +12,7 @@ export function CategoryChips({ list, value, onChange, compact }: { list: readon
   return (
     <div className="picks" role="radiogroup" aria-label="Category">
       {shown.map((c) => (
-        <button key={c} type="button" role="radio" aria-checked={c === value} className={c === value ? "pick on" : "pick"} onClick={() => onChange(c)}>{c}</button>
+        <button key={c} type="button" role="radio" aria-checked={c === value} className={c === value ? "pick on" : "pick"} onClick={() => onChange(c)}><i className={`dot tone-${categoryTone(c)}`} aria-hidden="true" />{c}</button>
       ))}
       {more > 0 && <button type="button" className="pick more" aria-expanded={false} aria-label={`More categories, ${more} more`} onClick={() => setAll(true)}>More</button>}
     </div>

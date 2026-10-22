@@ -38,8 +38,11 @@ export function saveTheme(t: Theme, s: Storage | undefined = ls()): boolean {
   }
 }
 
+/** The browser bar colour: the paper of each theme (the same values are in index.html, theme.js and the manifest). */
+export const themeColor = (dark: boolean) => (dark ? "#14171e" : "#f9fafb");
+
 export function applyTheme(t: Theme) {
   const dark = resolveTheme(t, typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches) === "dark";
   document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#16181c");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", themeColor(dark));
 }

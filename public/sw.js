@@ -1,7 +1,7 @@
 // Keeps the app opening offline after the first visit. Same-origin files only:
 // api.github.com is never touched, so sync always talks to GitHub directly.
 // Bump when an unhashed file (theme.js, icons, manifest) changes, so the old cache is dropped on update.
-const CACHE = "ledger-shell-v3";
+const CACHE = "ledger-shell-v4";
 
 self.addEventListener("install", () => self.skipWaiting());
 

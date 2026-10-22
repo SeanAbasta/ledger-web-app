@@ -414,7 +414,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
     return (
       <div className="stack">
         <HealthCard h={health} connected={!!config} lastSynced={synced} lastExported={lastExported} tokenDays={tokenDays} onSync={() => void engine.syncNow()} onCopy={() => void exportJson()} onSetup={onSetup} />
-        <div className="card">
+        <div className="card pages">
           {PAGES.map(([p, title]) => (
             <button key={p} className="row" onClick={() => go(p)}><span>{title}<span className="mute small sub">{summary[p]}</span></span></button>
           ))}
