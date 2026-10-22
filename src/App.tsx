@@ -19,9 +19,11 @@ import { SyncProvider, useSync } from "./ui/Sync";
 // Rooms are named for the question they answer. People (was Splits) and Coming up (was Forecast) keep their slots.
 const NAV = ["Add", "Ledger", "Dashboard", "People", "Coming up", "Settings"] as const;
 export type Tab = (typeof NAV)[number];
+/** The tab bar (phones) and sidebar (computers): five rooms. Settings sits behind the gear in the header. */
+const ROOMS = NAV.filter((n): n is Exclude<Tab, "Settings"> => n !== "Settings");
 
-/** One icon per tab: the phone tab bar and the sidebar show the same ones. */
-const ICON: Record<Tab, () => ReactElement> = { Add: AddIcon, Ledger: LedgerIcon, Dashboard: DashboardIcon, People: PeopleIcon, "Coming up": CalendarIcon, Settings: SettingsIcon };
+/** One icon per room: the phone tab bar and the sidebar show the same ones. */
+const ICON: Record<Exclude<Tab, "Settings">, () => ReactElement> = { Add: AddIcon, Ledger: LedgerIcon, Dashboard: DashboardIcon, People: PeopleIcon, "Coming up": CalendarIcon };
 
 /** The screens that are all about editing are locked as a whole while offline and read-only. */
 const EDIT_TABS: Tab[] = ["Add", "Coming up"]; // Settings locks its own edit controls so Export still works offline
@@ -80,15 +82,17 @@ function Shell() {
   const [settingsPage, setSettingsPage] = useState<SettingsPage>();
   const { status, readOnly, editOffline, engine } = useSync();
   const locked = readOnly && EDIT_TABS.includes(tab);
+  // A tab (or the gear) starts its room fresh: nothing carried over from where another screen sent us.
+  const open = (n: Tab) => { setFocusPerson(undefined); setSaved(undefined); setFocusCard(undefined); setSettingsPage(undefined); setTab(n); };
 
   return (
     <div className="win">
       <nav className="side">
         <div className="brand">Ledger</div>
-        {NAV.map((n) => {
+        {ROOMS.map((n) => {
           const Icon = ICON[n];
           return (
-            <button key={n} className={n === tab ? "on" : ""} aria-current={n === tab ? "page" : undefined} onClick={() => { setFocusPerson(undefined); setSaved(undefined); setFocusCard(undefined); setSettingsPage(undefined); setTab(n); }}>
+            <button key={n} className={n === tab ? "on" : ""} aria-current={n === tab ? "page" : undefined} onClick={() => open(n)}>
               <Icon /><span>{n}</span>
             </button>
           );
@@ -97,7 +101,10 @@ function Shell() {
       <main className={READING_TABS.includes(tab) ? "reading" : undefined}>
         <header className="bar">
           <h1>{tab}</h1>
-          <Pill status={status} onClick={() => setSheet("sync")} />
+          <span className="baracts">
+            <Pill status={status} onClick={() => setSheet("sync")} />
+            <button type="button" className={tab === "Settings" ? "gear on" : "gear"} aria-label="Settings" aria-current={tab === "Settings" ? "page" : undefined} onClick={() => open("Settings")}><SettingsIcon /></button>
+          </span>
         </header>
         {readOnly && (
           <div className="banner">

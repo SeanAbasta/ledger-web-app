@@ -314,6 +314,14 @@ main.reading { --col: var(--reading-max); }
 @media (max-width: 700px) and (prefers-reduced-transparency: reduce) { .side::before { background: var(--lens-solid); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 @media (prefers-reduced-transparency: reduce) { .glasscard { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .bar h1 { font-size: var(--fs-lg); font-weight: 600; color: var(--lens-ink); margin: 0; }
+/* Header, right: the sync pill, then the gear (Settings), on every screen and at every width. */
+.baracts { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.gear { all: unset; box-sizing: border-box; position: relative; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; color: var(--lens-ink); background: var(--lens-off-bg); -webkit-tap-highlight-color: transparent; }
+.gear .icon { width: 20px; height: 20px; }
+.gear::before { content: ""; position: absolute; inset: calc((36px - var(--hit)) / 2); border-radius: 50%; }
+.gear.on { background: var(--lens-ink); color: var(--lens-solid); }
+.gear:focus-visible { outline: var(--ring); outline-offset: 2px; }
+.gear:active { opacity: 0.7; }
 /* The sync pill on the lens: its own tints, readable on the smoked glass in both themes. */
 .bar .pill { background: var(--lens-ok-bg); color: var(--lens-ok); }
 .bar .pill.syncing { background: var(--lens-sync-bg); color: var(--lens-sync); }
@@ -495,7 +503,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
   .drawer .sheet { animation-name: fade-in; }
   .drawer.closing .sheet { transform: none; opacity: 0; }
 }
-/* Phones: a floating glass tab bar at the bottom, under the thumb, with all six tabs always visible
+/* Phones: a floating glass tab bar at the bottom, under the thumb, with all five rooms always visible
    (the old top row scrolled sideways and hid Settings below 440 px). It clears the home indicator, and
    the page keeps room under its last row so nothing hides behind the bar. Like the top bar, the glass
    is a layer behind the icons and labels, never the element that holds them. */
