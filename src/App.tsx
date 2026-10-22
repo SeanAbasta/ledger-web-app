@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactElement } from "react";
 import { AddForm, type SavedNote } from "./features/add/AddForm";
 import type { Draft } from "./features/add/draft";
+import { FirstRun } from "./features/add/FirstRun";
 import { IncomeForm } from "./features/add/IncomeForm";
 import { TransferForm } from "./features/ledger/TransferForm";
 import { Dashboard } from "./features/dashboard/Dashboard";
@@ -46,7 +47,7 @@ type AddKind = (typeof ADD_KINDS)[number];
  * only a plan that starts later opens the Ledger at once (`open`). Undo takes the item back out and
  * returns its values to the form (`refill`, also after a tab change).
  */
-function AddTab({ onView, onOpenSettings, refill, onRefill }: { onView: (s: SavedNote) => void; onOpenSettings: () => void; refill?: { draft: Draft; n: number }; onRefill: (d: Draft) => void }) {
+function AddTab({ onView, onOpenSettings, onSetup, onSalary, refill, onRefill }: { onView: (s: SavedNote) => void; onOpenSettings: () => void; onSetup: () => void; onSalary: () => void; refill?: { draft: Draft; n: number }; onRefill: (d: Draft) => void }) {
   const [kind, setKind] = useState<AddKind>(refill?.draft.kind ?? "Expense");
   const { show } = useToast();
   const done = (s?: SavedNote) => {
@@ -59,17 +60,20 @@ function AddTab({ onView, onOpenSettings, refill, onRefill }: { onView: (s: Save
   };
   const draft = refill?.draft.kind === kind ? refill.draft : undefined;
   return (
+    <>
+    <FirstRun onAccount={onOpenSettings} onSync={onSetup} onSalary={onSalary} />
     <div className="glasscard addcard">
       <div className="addkind"><Segmented label="Kind of entry" value={kind} options={ADD_KINDS} onChange={setKind} /></div>
       {kind === "Expense" ? <AddForm key={`e${refill?.n ?? 0}`} onDone={done} draft={draft?.kind === "Expense" ? draft.fields : undefined} />
         : kind === "Income" ? <IncomeForm key={`i${refill?.n ?? 0}`} onDone={done} draft={draft?.kind === "Income" ? draft.fields : undefined} />
         : <TransferForm key={`t${refill?.n ?? 0}`} onDone={done} onOpenSettings={onOpenSettings} draft={draft?.kind === "Transfer" ? draft.fields : undefined} />}
     </div>
+    </>
   );
 }
 
 function Screen({ refill, onRefill, tab, go, setup, focusPerson, openPerson, saved, onSaved, ledgerView, setLedgerView, focusCard, openCard, focusTile, openTile, settingsPage, openSettings }: { refill?: { draft: Draft; n: number }; onRefill: (d: Draft) => void; tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; ledgerView?: LedgerView; setLedgerView: (v?: LedgerView) => void; focusCard?: string; openCard: (id: string) => void; focusTile?: string; openTile: (id: string) => void; settingsPage?: SettingsPage; openSettings: (p: SettingsPage) => void }) {
-  if (tab === "Add") return <AddTab key={refill?.n ?? 0} refill={refill} onRefill={onRefill} onView={(s) => { onSaved(s); go("Ledger"); }} onOpenSettings={() => openSettings("accounts")} />;
+  if (tab === "Add") return <AddTab key={refill?.n ?? 0} refill={refill} onRefill={onRefill} onView={(s) => { onSaved(s); go("Ledger"); }} onOpenSettings={() => openSettings("accounts")} onSetup={setup} onSalary={() => { try { localStorage.setItem("ledger.comingUp", "12 months"); } catch { /* storage blocked */ } go("Coming up"); }} />;
   if (tab === "Ledger") return <Ledger key={`${saved?.date ?? ""}/${ledgerView ?? ""}`} initialDate={saved?.date} initialView={ledgerView} notice={saved?.message} onAdd={() => go("Add")} onComingUp={() => go("Coming up")} />;
   if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); setLedgerView(undefined); go("Ledger"); }} onOpenDay={(date) => { onSaved({ date, message: "" }); setLedgerView("Day"); go("Ledger"); }} onOpenCardSettings={openCard} onAdd={() => go("Add")} onComingUp={() => go("Coming up")} focusTile={focusTile} />;
   if (tab === "People") return <Splits key={focusPerson ?? ""} initialPerson={focusPerson} />;

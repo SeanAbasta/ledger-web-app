@@ -26,7 +26,7 @@ import { Segmented } from "../../ui/Segmented";
 import { AccountOptions } from "../../ui/AccountOptions";
 import { applyTheme, loadTheme, saveTheme, THEMES, type Theme } from "../../ui/theme";
 import { loadKeepUndo, saveKeepUndo } from "../../ui/undoPref";
-import { accountEdit, accountFieldsOf, cardEdit, cardFieldsOf, freshFields, plain, type AccountFields, type CardFields } from "./accountEdit";
+import { accountEdit, accountFieldsOf, cardEdit, cardFieldsOf, freshFields, newAccountOf, plain, type AccountFields, type CardFields } from "./accountEdit";
 import { CloseIcon, PrevIcon } from "../../ui/icons";
 import { healthOf, sinceWords, syncedWords, type Health } from "./health";
 
@@ -191,6 +191,9 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
   // Read once on mount (the page resets per tab): Reconcile's card, or the Add tab's "Open Settings".
   const [page, setPage] = useState<Page | undefined>(focusCard ? "accounts" : initialPage);
   const [person, setPerson] = useState("");
+  // Add account / Add card ask for the name first, in a sheet; Create stays off until one is typed.
+  const [naming, setNaming] = useState<"bank" | "card">();
+  const [newName, setNewName] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -334,6 +337,26 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
   };
   const sheets = (
     <>
+      {naming && (
+        <Sheet locked onClose={() => setNaming(undefined)}>
+          <h3>{naming === "card" ? "Name this card" : "Name this account"}</h3>
+          <form className="form" onSubmit={async (e) => {
+            e.preventDefault();
+            const a = newAccountOf(newName, s.baseCurrency, naming);
+            if (!a) return;
+            await upsert(store, "accounts", a);
+            changed();
+            setNaming(undefined);
+          }}>
+            <label className="field"><b>Name</b><input aria-label={naming === "card" ? "Card name" : "Account name"} placeholder={naming === "card" ? "Card A" : "Bank A"} value={newName} onChange={(e) => setNewName(e.target.value)} /></label>
+            <p className="mute small">{naming === "card" ? "Cut-off day, days until due, limit and colour can be set after." : `Starts in ${s.baseCurrency} with a balance of 0. Both can be changed after.`}</p>
+            <div className="actions">
+              <button type="button" className="btn ghost" onClick={() => setNaming(undefined)}>Cancel</button>
+              <button type="submit" className="btn" disabled={!newName.trim()}>Create</button>
+            </div>
+          </form>
+        </Sheet>
+      )}
       {incoming && (
         <Sheet onClose={() => setIncoming(undefined)}>
           <h3>Import backup</h3>
@@ -470,7 +493,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
                     onSave={async (x) => { await upsert(store, "accounts", x); changed(); markSaved(a.id); }}
                     onRemove={() => askRemoveAccount(a)} />
                 ))}
-                <button className="btn ghost sm" onClick={async () => { await upsert(store, "accounts", { name: "New account", currency: s.baseCurrency, openingBalance: 0 }); changed(); }}>Add account</button>
+                <button className="btn ghost sm" onClick={() => { setNewName(""); setNaming("bank"); }}>Add account</button>
               </div>
 
               <div className="grp" role="heading" aria-level={3}>Credit cards</div>
@@ -481,7 +504,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
                     onSave={async (x) => { await upsert(store, "accounts", x); changed(); markSaved(a.id); }}
                     onRemove={() => askRemoveAccount(a)} />
                 ))}
-                <button className="btn ghost sm" onClick={async () => { await upsert(store, "accounts", { name: "New card", currency: s.baseCurrency, openingBalance: 0, type: "card", statementDay: 15, dueDays: DEFAULT_DUE_DAYS }); changed(); }}>Add card</button>
+                <button className="btn ghost sm" onClick={() => { setNewName(""); setNaming("card"); }}>Add card</button>
               </div>
 
               {removed.length > 0 && (

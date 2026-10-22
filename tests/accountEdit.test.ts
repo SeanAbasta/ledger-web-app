@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Account } from "../src/data/schema";
-import { accountEdit, accountFieldsOf, cardEdit, cardFieldsOf, freshFields, sameAccount } from "../src/features/settings/accountEdit";
+import { accountEdit, accountFieldsOf, cardEdit, cardFieldsOf, freshFields, newAccountOf, sameAccount } from "../src/features/settings/accountEdit";
+import { firstRun } from "../src/features/add/firstRunState";
 
 const U = "2026-10-01T00:00:00Z";
 const bank: Account = { id: "A1", name: "Bank A", currency: "PHP", openingBalance: 5000000, type: "bank", updatedAt: U };
@@ -90,5 +91,26 @@ describe("freshFields", () => {
     // The name was just saved (stored), the limit is still being typed.
     const stored = cardFieldsOf({ ...card, name: "Card A" }, "PHP");
     expect(freshFields(typing, stored, "limit")).toEqual({ ...cardFields, name: "Card A", limit: "2000" });
+  });
+});
+
+describe("newAccountOf: name first (V20)", () => {
+  it("a bank account starts in the base currency with nothing in it, named as typed", () => {
+    expect(newAccountOf("  Bank A ", "PHP", "bank")).toEqual({ name: "Bank A", currency: "PHP", openingBalance: 0 });
+  });
+  it("a card starts with the usual cut-off and due days", () => {
+    expect(newAccountOf("Card A", "PHP", "card")).toEqual({ name: "Card A", currency: "PHP", openingBalance: 0, type: "card", statementDay: 15, dueDays: 25 });
+  });
+  it("no name, no account", () => {
+    expect(newAccountOf("   ", "PHP", "bank")).toBeUndefined();
+  });
+});
+
+describe("firstRun: the Add tab's checklist", () => {
+  it("lists what is not done yet, and hides once everything is done or it was dismissed", () => {
+    expect(firstRun({ accounts: 0, synced: false, salary: false, dismissed: false })).toEqual({ show: true, account: false, sync: false, salary: false });
+    expect(firstRun({ accounts: 1, synced: true, salary: false, dismissed: false }).show).toBe(true);
+    expect(firstRun({ accounts: 1, synced: true, salary: true, dismissed: false }).show).toBe(false);
+    expect(firstRun({ accounts: 0, synced: false, salary: false, dismissed: true }).show).toBe(false);
   });
 });

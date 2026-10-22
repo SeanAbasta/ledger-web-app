@@ -68,3 +68,14 @@ export const cardFieldsOf = (a: Account, base: string): CardFields => ({
 export function freshFields<F extends object>(local: F, stored: F, focused?: keyof F): F {
   return focused === undefined ? { ...stored } : { ...stored, [focused]: local[focused] };
 }
+
+/**
+ * A new bank account or card, named before it is created: no more "New account" placeholders to
+ * rename. Undefined while the name is blank. A card starts with the cut-off on the 15th and the usual
+ * days until due, as before.
+ */
+export function newAccountOf(name: string, base: string, kind: "bank" | "card"): Omit<Account, "id" | "updatedAt"> | undefined {
+  const n = name.trim();
+  if (!n) return undefined;
+  return kind === "card" ? { name: n, currency: base, openingBalance: 0, type: "card", statementDay: 15, dueDays: DEFAULT_DUE_DAYS } : { name: n, currency: base, openingBalance: 0 };
+}
