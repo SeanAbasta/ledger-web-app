@@ -45,7 +45,7 @@ describe("items per category", () => {
   });
 });
 
-describe("the folded Other", () => {
+describe("the fold, Everything else", () => {
   const cats = [
     { category: "Rent", amount: 900 }, { category: "Food", amount: 500 }, { category: "Other", amount: 300, top: [{ label: "Gift", date: "2026-10-02", amount: 300 }] },
     { category: "Bills", amount: 200 }, { category: "Fun", amount: 150 }, { category: "Health", amount: 100 }, { category: "Pets", amount: 120 },
@@ -53,7 +53,7 @@ describe("the folded Other", () => {
 
   it("lists its member categories, a real Other among them, largest first, and keeps the total", () => {
     const t = topCategories(cats, 5);
-    expect(t.map((c) => c.category)).toEqual(["Rent", "Food", "Bills", "Fun", "Other"]);
+    expect(t.map((c) => c.category)).toEqual(["Rent", "Food", "Bills", "Fun", "Everything else"]);
     const other = t[4]!;
     expect(other.members).toEqual([{ category: "Other", amount: 300 }, { category: "Pets", amount: 120 }, { category: "Health", amount: 100 }]);
     expect(other.amount).toBe(520);

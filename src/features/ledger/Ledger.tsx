@@ -11,7 +11,7 @@ import { isCard, type Account, type Entry, type Person, type Rule } from "../../
 import { AddForm } from "../add/AddForm";
 import { IncomeForm } from "../add/IncomeForm";
 import { PlanSheet } from "./PlanSheet";
-import { shareLine } from "./rowShare";
+import { dayShare, shareLine } from "./rowShare";
 import { NEXT_CARD_ROWS, cardVisible, nextCardKeys, withoutCardRows } from "./nextCard";
 import { allTimeRange, emptyAction, groupByDay, groupByMonth } from "./allTime";
 import { TransferForm } from "./TransferForm";
@@ -176,10 +176,15 @@ export function Ledger({ initialDate, notice, onAdd }: { initialDate?: string; n
   const moneyIn = (x: Entry | Occurrence) => x.kind === "income" || (x.kind === "settlement" && "direction" in x && x.direction === "in");
 
   // One day: its pinned header with the day total, then its rows. Used by the period and by all months.
-  const dayBlock = (date: string, its: LedgerItem[]) => (
+  // The total is the full amount paid; "yours" under it is what it cost me, shown when the two differ.
+  const dayBlock = (date: string, its: LedgerItem[]) => {
+    const full = total(its);
+    const happened = its.filter((it) => !upcoming(it));
+    const yours = happened.length ? dayShare(happened, base, allScope && allData ? allData.entries : entries) : 0;
+    return (
     <div key={date}>
       {/* The day stays pinned under the top bar while its rows scroll. */}
-      <div className="grp day" role="heading" aria-level={3}>{labelDay(date)}<span className="r">{dayTotal(total(its))}</span></div>
+      <div className="grp day day-head" role="heading" aria-level={3}>{labelDay(date)}<span className="r">{dayTotal(full)}{yours !== full && <span className="dayyours">yours {formatMinor(yours, base)}</span>}</span></div>
       <div className="card">
         {its.map((it) => {
           const x = it.type === "entry" ? it.entry : it.occ;
@@ -212,7 +217,8 @@ export function Ledger({ initialDate, notice, onAdd }: { initialDate?: string; n
         })}
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <>
@@ -261,7 +267,7 @@ export function Ledger({ initialDate, notice, onAdd }: { initialDate?: string; n
             {due.slice(0, NEXT_CARD_ROWS).map((o) => (
               <button key={o.ruleId + o.date} className="row" title="Edit" onClick={() => setOcc(o)}>
                 <span>{labelShort(o.date)} &nbsp;{o.note || o.category}<span className="tag">{o.type === "installment" ? `${o.index} of ${o.count}` : "recurring"}</span></span>
-                <span>{formatMinor(o.amount, o.currency)}</span>
+                <span className="money later">{formatMinor(o.amount, o.currency)}{o.split && <span className="share">{shareLine({ type: "occurrence", date: o.date, occ: o })}</span>}</span>
               </button>
             ))}
           </div>

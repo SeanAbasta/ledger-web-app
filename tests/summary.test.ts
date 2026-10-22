@@ -48,10 +48,10 @@ describe("summarize", () => {
 });
 
 describe("helpers", () => {
-  it("folds small categories into Other", () => {
+  it("folds small categories into Everything else", () => {
     const cats = ["a", "b", "c", "d", "e", "f", "g"].map((category, i) => ({ category, amount: 100 - i }));
     const t = topCategories(cats, 5);
-    expect(t.map((c) => c.category)).toEqual(["a", "b", "c", "d", "e", "Other"]);
+    expect(t.map((c) => c.category)).toEqual(["a", "b", "c", "d", "e", "Everything else"]);
     expect(t[5]!.amount).toBe(95 + 94);
   });
   it("computes percent change", () => {

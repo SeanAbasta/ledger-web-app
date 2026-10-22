@@ -24,6 +24,7 @@ const NAMED: Record<string, Tone> = {
   gifts: "red",
   salary: "green",
   other: "gray",
+  "everything else": "gray",
   others: "gray",
   settlement: "gray",
   "card payment": "gray",

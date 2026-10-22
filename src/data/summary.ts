@@ -113,15 +113,18 @@ function tally(items: LedgerItem[], base: string, from: IsoDate, to: IsoDate, al
   return today === undefined ? { total, byCategory, byDay, unconverted } : { total, byCategory, byDay, unconverted, planned };
 }
 
+/** The name of the folded bucket of small categories (it was "Other", which clashed with a category of that name). */
+export const FOLD = "Everything else";
+
 /**
- * Top `n` categories, the rest folded into "Other". The folded Other lists what went into it
+ * Top `n` categories, the rest folded into FOLD ("Everything else"). The fold lists what went into it
  * (`members`, largest first; a real "Other" category among them keeps its name) instead of items.
  */
 export function topCategories(cats: Summary["byCategory"], n = 5): Summary["byCategory"] {
   if (cats.length <= n) return cats;
   const head = cats.slice(0, n).filter((c) => c.category !== "Other");
   const folded = cats.filter((c) => !head.includes(c)).map(({ category, amount }) => ({ category, amount })).sort((a, b) => b.amount - a.amount);
-  return [...head, { category: "Other", amount: folded.reduce((a, c) => a + c.amount, 0), members: folded }];
+  return [...head, { category: FOLD, amount: folded.reduce((a, c) => a + c.amount, 0), members: folded }];
 }
 
 /** Percent change from `prev` to `cur`, rounded; null when there is nothing to compare to. */

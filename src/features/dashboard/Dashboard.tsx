@@ -260,7 +260,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
           {!future && <Bezel ratio={prevTotal > 0 ? cur.total / prevTotal : undefined} sweep={!swept.current} />}
           <div className="mute small">{future ? "Scheduled payments only" : change === null ? "No earlier data" : change === 0 ? "Same as last month" : `${Math.abs(change)}% ${change < 0 ? "less" : "more"} than last month`}</div></div>
         <div className="card stat"><div className="mute">Still due</div><BigAmount minor={stillDue} currency={base} />
-          <div className="mute small">{isCurrent ? "rest of this month" : "current month only"}</div></div>
+          <div className="mute small">{isCurrent ? "yours, rest of this month" : "current month only"}</div></div>
         <div className="card stat"><div className="mute">Last month</div>
           {/* Nothing to compare (same rule as Spent's "No earlier data"): say so instead of ₱0.00. */}
           {prevTotal > 0 ? <BigAmount minor={prevTotal} currency={base} /> : <BigAmount currency={base} word="No data" className="nodata" />}

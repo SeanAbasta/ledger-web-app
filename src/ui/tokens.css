@@ -820,6 +820,9 @@ details { margin: var(--sp-2) 0; font-size: var(--fs-md); color: var(--mute); }
 .money { display: flex; flex-direction: column; align-items: flex-end; white-space: nowrap; font-weight: 500; }
 .money .approx, .money .share { font-size: var(--fs-xs); font-weight: 400; color: var(--mute); }
 .money.in, .grp .in { color: var(--good-ink); }
+/* A day head's "yours" under the full total, when the two differ. */
+.grp.day .r { display: inline-flex; flex-direction: column; align-items: flex-end; }
+.grp.day .dayyours { font-size: var(--fs-xs); font-weight: 400; color: var(--mute); }
 .money.later { color: var(--mute); }
 /* Next 30 days: planned, not spent, so the amounts sit in graphite. */
 .nextcard .row > span:last-child { color: var(--mute); font-weight: 500; white-space: nowrap; }
