@@ -61,7 +61,7 @@ export function RecurringView() {
 
   return (
     <div className="cardview">
-      <h2 className="cvtitle">Recurring payments</h2>
+      <h2 className="cvtitle">Plans</h2>
       {active + l.ended.length === 0 ? (
         <Empty icon={<DashboardIcon />} title="No recurring payments" note="Set Type to Recurring or Installment when you add an expense" />
       ) : (

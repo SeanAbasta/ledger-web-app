@@ -29,7 +29,6 @@ import { balanceNote } from "./balanceNote";
 import { CardTile } from "./CardTile";
 import { CardView } from "./CardView";
 import { FixSheet } from "./FixSheet";
-import { RecurringView } from "./RecurringView";
 import { YearView } from "./YearView";
 
 interface View {
@@ -124,7 +123,8 @@ function Lattice({ days, from, elapsed, todayIdx, base, label, onOpen }: { days:
 }
 
 /** `onOpenDay` opens one day in the Ledger's Day view (a tap on the Daily calendar); `onOpenLedger` opens the Month view at a date, as before. */
-export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSettings, onAdd }: { onOpenPerson: (personId: string) => void; onOpenLedger: (date: string) => void; onOpenDay?: (date: string) => void; onOpenCardSettings: (cardId: string) => void; onAdd?: () => void }) {
+/** `focusTile` (a Coming up bill) scrolls that card's tile into view once loaded; `onComingUp` opens Coming up. */
+export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSettings, onAdd, onComingUp, focusTile }: { onOpenPerson: (personId: string) => void; onOpenLedger: (date: string) => void; onOpenDay?: (date: string) => void; onOpenCardSettings: (cardId: string) => void; onAdd?: () => void; onComingUp?: () => void; focusTile?: string }) {
   const { store, rev } = useLedger();
   const [anchor, setAnchor] = useState(today());
   const [v, setV] = useState<View>();
@@ -133,8 +133,6 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
   const [fixing, setFixing] = useState(false);
   // Month or Year, one switch. The Year report is the old Year view, whole.
   const [view, setView] = useState<(typeof VIEWS)[number]>("Month");
-  // A Dashboard sub-view (like the card view): the Recurring list.
-  const [sub, setSub] = useState<"recurring">();
   // Spending filter: "" is all accounts, an account id, or NO_ACCOUNT. Balances are never filtered.
   const [acct, setAcct] = useState("");
   const pop = usePopover<string>();
@@ -142,6 +140,13 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
   const { close } = pop;
   // New numbers (another month, filter or a sync) close an open breakdown.
   useEffect(() => close(), [v, close]);
+  // A Coming up bill opened this card: bring its tile into view once the numbers are in.
+  const tileShown = useRef(false);
+  useEffect(() => {
+    if (!focusTile || !v || tileShown.current) return;
+    tileShown.current = true;
+    document.getElementById(`tile-${focusTile}`)?.scrollIntoView({ block: "center" });
+  }, [focusTile, v]);
   const dir = useRef<-1 | 0 | 1>(0);
   const go = (d: -1 | 0 | 1, next: (a: string) => string) => { dir.current = d; setAnchor(next); };
   const goToday = () => { const t = today(); go(monthStart(t) === monthStart(anchor) ? 0 : t > anchor ? 1 : -1, () => t); };
@@ -217,18 +222,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
   const note = balanceNote(v.from, today(), acctName);
 
   // Going back never slides the month in again.
-  const back = () => { setV({ ...v, dir: 0 }); setOpenCard(undefined); setSub(undefined); };
-
-  if (sub) {
-    return (
-      <>
-        <div className="toolrow">
-          <span className="nav"><button className="title back" onClick={back}><PrevIcon />Dashboard</button></span>
-        </div>
-        <RecurringView />
-      </>
-    );
-  }
+  const back = () => { setV({ ...v, dir: 0 }); setOpenCard(undefined); };
 
   if (opened) {
     return (
@@ -255,9 +249,6 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
           <button aria-label="Next month" onClick={() => go(1, (a) => addMonths(monthStart(a), 1))}><NextIcon /></button>
           <button className={monthStart(anchor) === monthStart(today()) ? "today off" : "today"} onClick={goToday}>Today</button>
         </span>
-        <span className="subviews">
-          <button className="btn ghost sm" onClick={() => setSub("recurring")}>Recurring</button>
-        </span>
         {accounts.length > 0 && (
           <select className="acctpick" aria-label="Spending from" value={acct} onChange={(e) => setAcct(e.target.value)}>
             <option value="">All accounts</option>
@@ -275,7 +266,8 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
           {!future && prevTotal > 0 && <Compare ratio={cur.total / prevTotal} />}
           <div className="mute small">{future ? "Scheduled payments only" : pace + compared}</div></div>
         <div className="card stat"><div className="mute">Still due</div><BigAmount minor={stillDue} currency={base} />
-          <div className="mute small">{isCurrent ? "yours, rest of this month" : "current month only"}</div></div>
+          <div className="mute small">{isCurrent ? "yours, rest of this month" : "current month only"}</div>
+          {onComingUp && <button type="button" className="link golink" onClick={onComingUp}>Coming up<NextIcon /></button>}</div>
         <div className="card stat"><div className="mute">Last month</div>
           {/* Nothing to compare (same rule as Spent's "No earlier data"): say so instead of ₱0.00. */}
           {prevTotal > 0 ? <BigAmount minor={prevTotal} currency={base} /> : <BigAmount currency={base} word="No data" className="nodata" />}
@@ -339,7 +331,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
       {note && <p className="mute small hint balnote">{note}</p>}
       {cards.length > 0 && (
         <div className={`grid ${cards.length % 3 === 0 ? "g3" : "g2"}`}>
-          {cards.map(({ card, st }) => <CardTile key={card.id} card={card} color={cardColor(card, accounts)} st={st} banks={banks} defaultBank={salaryAccount} defaults={defaults} onOpen={() => setOpenCard(card.id)} />)}
+          {cards.map(({ card, st }) => <CardTile key={card.id} focused={card.id === focusTile} card={card} color={cardColor(card, accounts)} st={st} banks={banks} defaultBank={salaryAccount} defaults={defaults} onOpen={() => setOpenCard(card.id)} />)}
         </div>
       )}
       <div className={`grid ${bottomCards === 3 ? "g3" : "g2"}`}>

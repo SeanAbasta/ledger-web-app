@@ -3,7 +3,7 @@ import { AddForm, type SavedNote } from "./features/add/AddForm";
 import { IncomeForm } from "./features/add/IncomeForm";
 import { TransferForm } from "./features/ledger/TransferForm";
 import { Dashboard } from "./features/dashboard/Dashboard";
-import { Forecast } from "./features/forecast/Forecast";
+import { ComingUp } from "./features/comingUp/ComingUp";
 import { Ledger, type View as LedgerView } from "./features/ledger/Ledger";
 import { Settings, type Page as SettingsPage } from "./features/settings/Settings";
 import { Splits } from "./features/splits/Splits";
@@ -28,7 +28,9 @@ const ROOMS = NAV.filter((n): n is Exclude<Tab, "Settings"> => n !== "Settings")
 const ICON: Record<Exclude<Tab, "Settings">, () => ReactElement> = { Add: AddIcon, Ledger: LedgerIcon, Dashboard: DashboardIcon, People: PeopleIcon, "Coming up": CalendarIcon };
 
 /** The screens that are all about editing are locked as a whole while offline and read-only. */
-const EDIT_TABS: Tab[] = ["Add", "Coming up"]; // Settings locks its own edit controls so Export still works offline
+// Coming up locks its own Salary block and plan sheets, so its views and rows still open offline; Settings
+// locks its own edit controls so Export still works offline.
+const EDIT_TABS: Tab[] = ["Add"];
 
 /** Lists read better in a narrower column on big screens; Dashboard and Coming up use the full one. */
 const READING_TABS: Tab[] = ["Add", "Ledger", "People", "Settings"];
@@ -62,12 +64,12 @@ function AddTab({ onView, onOpenSettings }: { onView: (s: SavedNote) => void; on
   );
 }
 
-function Screen({ tab, go, setup, focusPerson, openPerson, saved, onSaved, ledgerView, setLedgerView, focusCard, openCard, settingsPage, openSettings }: { tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; ledgerView?: LedgerView; setLedgerView: (v?: LedgerView) => void; focusCard?: string; openCard: (id: string) => void; settingsPage?: SettingsPage; openSettings: (p: SettingsPage) => void }) {
+function Screen({ tab, go, setup, focusPerson, openPerson, saved, onSaved, ledgerView, setLedgerView, focusCard, openCard, focusTile, openTile, settingsPage, openSettings }: { tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; ledgerView?: LedgerView; setLedgerView: (v?: LedgerView) => void; focusCard?: string; openCard: (id: string) => void; focusTile?: string; openTile: (id: string) => void; settingsPage?: SettingsPage; openSettings: (p: SettingsPage) => void }) {
   if (tab === "Add") return <AddTab onView={(s) => { onSaved(s); go("Ledger"); }} onOpenSettings={() => openSettings("accounts")} />;
-  if (tab === "Ledger") return <Ledger key={`${saved?.date ?? ""}/${ledgerView ?? ""}`} initialDate={saved?.date} initialView={ledgerView} notice={saved?.message} onAdd={() => go("Add")} />;
-  if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); setLedgerView(undefined); go("Ledger"); }} onOpenDay={(date) => { onSaved({ date, message: "" }); setLedgerView("Day"); go("Ledger"); }} onOpenCardSettings={openCard} onAdd={() => go("Add")} />;
+  if (tab === "Ledger") return <Ledger key={`${saved?.date ?? ""}/${ledgerView ?? ""}`} initialDate={saved?.date} initialView={ledgerView} notice={saved?.message} onAdd={() => go("Add")} onComingUp={() => go("Coming up")} />;
+  if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); setLedgerView(undefined); go("Ledger"); }} onOpenDay={(date) => { onSaved({ date, message: "" }); setLedgerView("Day"); go("Ledger"); }} onOpenCardSettings={openCard} onAdd={() => go("Add")} onComingUp={() => go("Coming up")} focusTile={focusTile} />;
   if (tab === "People") return <Splits key={focusPerson ?? ""} initialPerson={focusPerson} />;
-  if (tab === "Coming up") return <Forecast />;
+  if (tab === "Coming up") return <ComingUp onOpenCard={openTile} onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); setLedgerView(undefined); go("Ledger"); }} />;
   return <Settings onSetup={setup} focusCard={focusCard} initialPage={settingsPage} />;
 }
 
@@ -80,6 +82,8 @@ function Shell() {
   const [saved, setSaved] = useState<SavedNote>();
   // Set when the Dashboard calendar opens one day, so the Ledger starts in Day view.
   const [ledgerView, setLedgerView] = useState<LedgerView>();
+  // Set when a Coming up bill opens its card, so the Dashboard scrolls to that card's tile (where Pay is).
+  const [focusTile, setFocusTile] = useState<string>();
   // Set when Reconcile opens a card's settings ("Set as Owed at start"), so Settings scrolls to it.
   const [focusCard, setFocusCard] = useState<string>();
   // Set when another screen opens a Settings page directly (the Add tab's transfer hint).
@@ -96,7 +100,7 @@ function Shell() {
   const attention = healthOf({ connected: !!config, syncState: status.state, tokenError: /token/i.test(status.message ?? ""), lastSynced: status.lastSynced ?? stamps.synced, lastExported: stamps.exported, tokenDays: daysLeft(config), now: new Date() }).attention;
   const locked = readOnly && EDIT_TABS.includes(tab);
   // A tab (or the gear) starts its room fresh: nothing carried over from where another screen sent us.
-  const open = (n: Tab) => { setFocusPerson(undefined); setSaved(undefined); setLedgerView(undefined); setFocusCard(undefined); setSettingsPage(undefined); setTab(n); };
+  const open = (n: Tab) => { setFocusPerson(undefined); setSaved(undefined); setLedgerView(undefined); setFocusTile(undefined); setFocusCard(undefined); setSettingsPage(undefined); setTab(n); };
 
   return (
     <div className="win">
@@ -130,7 +134,7 @@ function Shell() {
           <fieldset className="plain" disabled={locked}>
             {/* Keyed on the tab so the new screen fades in (screens already remount on a tab change). */}
             <div key={tab} className="tabfade">
-            <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("People"); }} saved={saved} onSaved={setSaved} ledgerView={ledgerView} setLedgerView={setLedgerView} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} settingsPage={settingsPage} openSettings={(p) => { setSettingsPage(p); setTab("Settings"); }} />
+            <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("People"); }} saved={saved} onSaved={setSaved} ledgerView={ledgerView} setLedgerView={setLedgerView} focusTile={focusTile} openTile={(id) => { setFocusTile(id); setTab("Dashboard"); }} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} settingsPage={settingsPage} openSettings={(p) => { setSettingsPage(p); setTab("Settings"); }} />
             </div>
           </fieldset>
         </section>

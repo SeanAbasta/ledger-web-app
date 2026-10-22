@@ -12,7 +12,7 @@ import { AddForm } from "../add/AddForm";
 import { IncomeForm } from "../add/IncomeForm";
 import { PlanSheet } from "./PlanSheet";
 import { dayShare, shareLine } from "./rowShare";
-import { NEXT_CARD_ROWS, cardVisible, nextCardKeys, withoutCardRows } from "./nextCard";
+import { cardVisible } from "./nextCard";
 import { allTimeRange, emptyAction, groupByDay, groupByMonth } from "./allTime";
 import { TransferForm } from "./TransferForm";
 import { MoneyInput } from "../../ui/MoneyInput";
@@ -44,7 +44,7 @@ function title(view: View, anchor: string): string {
  * `initialView` opens Day, Week or Month (default Month); a tap on the Dashboard calendar opens Day.
  * `onAdd` opens the Add tab (the empty state's button on the period that holds today).
  */
-export function Ledger({ initialDate, initialView, notice, onAdd }: { initialDate?: string; initialView?: View; notice?: string; onAdd?: () => void } = {}) {
+export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: { initialDate?: string; initialView?: View; notice?: string; onAdd?: () => void; onComingUp?: () => void } = {}) {
   const { store, rev, changed } = useLedger();
   const [view, setView] = useState<View>(initialView ?? "Month");
   const [anchor, setAnchor] = useState(initialDate ?? today());
@@ -132,11 +132,10 @@ export function Ledger({ initialDate, initialView, notice, onAdd }: { initialDat
     [rules, t],
   );
 
-  // A payment shown in the visible "Next 30 days" card is not listed again above today (it shows on its day).
-  const showCard = cardVisible(listHasToday, due, filtered);
-  const listed = useMemo(() => withoutCardRows(items, nextCardKeys(due, showCard)), [items, due, showCard]);
+  // History first: what is coming is one line pointing to Coming up, on the period that holds today.
+  const showPointer = cardVisible(listHasToday, due, filtered);
 
-  const groups = useMemo(() => groupByDay(listed), [listed]);
+  const groups = useMemo(() => groupByDay(items), [items]);
 
   const accountName = (id?: string) => nameOf(id, accounts, "Removed account");
   const onCard = (e: Entry) => accounts.some((a) => a.id === e.accountId && !a.deleted && isCard(a));
@@ -264,18 +263,10 @@ export function Ledger({ initialDate, initialView, notice, onAdd }: { initialDat
           )))
       ) : (
       <div key={`${shown.from}/${shown.to}`} className={shown.dir === 1 ? "period next" : shown.dir === -1 ? "period prev" : "period"}>
-      {showCard && (
-        <>
-          <div className="grp" role="heading" aria-level={2}>Next 30 days</div>
-          <div className="card nextcard">
-            {due.slice(0, NEXT_CARD_ROWS).map((o) => (
-              <button key={o.ruleId + o.date} className="row" title="Edit" onClick={() => setOcc(o)}>
-                <span>{labelShort(o.date)} &nbsp;{o.note || o.category}<span className="tag">{o.type === "installment" ? `${o.index} of ${o.count}` : "recurring"}</span></span>
-                <span className="money later">{formatMinor(o.amount, o.currency)}{o.split && <span className="share">{shareLine({ type: "occurrence", date: o.date, occ: o })}</span>}</span>
-              </button>
-            ))}
-          </div>
-        </>
+      {showPointer && onComingUp && (
+        <button type="button" className="pointer" onClick={onComingUp}>
+          <span>Coming up: {due.length} in the next 30 days</span><span className="go">View<NextIcon /></span>
+        </button>
       )}
 
       {loaded && groups.length === 0 && (filtered

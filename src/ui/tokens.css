@@ -1067,3 +1067,30 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
   .kb-open .savebar { bottom: var(--kb, 0px); border-radius: 0; }
   .kb-open .body { padding-bottom: var(--sp-5); }
 }
+/* Coming up (V3): the view switch, Soon's two figures and sentence, group heads, and the row grid
+   [date, what, amount] for bills, scheduled charges and owed money. No alarm colour for money due. */
+.cuswitch { display: flex; margin-bottom: var(--sp-3); }
+.cuswitch .seg { flex: 1 1 auto; max-width: 360px; }
+.cuswitch .seg button { flex: 1 1 0; text-align: center; }
+.soontop { margin-top: 0; }
+.soonline { margin: var(--sp-3) 0 0; font-size: var(--fs-md); }
+.group-head .r { font-size: var(--fs-md); }
+.row.bill-row, .row.sched-row, .row.owed-row { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto auto; align-items: center; min-height: 64px; }
+.row.owed-row { grid-template-columns: minmax(0, 1fr) auto auto; }
+.row .when { font-size: var(--fs-md); font-weight: 500; color: var(--sub); }
+.row .what { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.row .what b { font-weight: 600; overflow-wrap: anywhere; }
+.row .amt { font-weight: 500; white-space: nowrap; text-align: right; }
+.paidline { display: flex; align-items: center; gap: var(--sp-1); margin: var(--sp-2) 0 0; font-size: var(--fs-md); color: var(--good-ink); }
+.paidline .icon { width: 16px; height: 16px; }
+.soonfoot { margin-top: var(--sp-4); }
+/* Ledger: one bordered line pointing to Coming up, in place of the Next 30 days card. */
+.pointer { all: unset; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); width: 100%; min-height: 48px; margin-top: var(--sp-3); padding: 0 var(--sp-4); border: 1px solid var(--edge); border-radius: var(--r-ctl); cursor: pointer; font-size: var(--fs-md); -webkit-tap-highlight-color: transparent; }
+.pointer .go { display: inline-flex; align-items: center; color: var(--accent-ink); font-weight: 500; }
+.pointer .go .icon { width: 16px; height: 16px; }
+.pointer:focus-visible { outline: var(--ring); outline-offset: 2px; }
+.pointer:active { opacity: 0.7; }
+/* Dashboard: Still due links to Coming up; a tile opened from a Coming up bill is ringed. */
+.golink { all: unset; display: inline-flex; align-items: center; gap: 2px; margin-top: var(--sp-2); color: var(--accent-ink); font-size: var(--fs-md); font-weight: 500; cursor: pointer; }
+.golink .icon { width: 15px; height: 15px; }
+.card.focused { box-shadow: var(--plate-shadow), 0 0 0 2px var(--accent-ink); }

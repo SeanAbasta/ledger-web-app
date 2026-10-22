@@ -11,6 +11,7 @@ import { itemsToDate, loadWorld, type World } from "../../data/world";
 import { isCard } from "../../data/schema";
 import { BigAmount } from "../../ui/Amount";
 import { useLedger } from "../../ui/Ledger";
+import { useSync } from "../../ui/Sync";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Popover, usePopover } from "../../ui/Popover";
@@ -122,6 +123,7 @@ function SalaryField({ initial, currency, onCommit }: { initial: string; currenc
 
 export function Forecast() {
   const { store, rev, changed } = useLedger();
+  const { readOnly } = useSync();
   const [w, setW] = useState<World>();
   const [start, setStart] = useState(0);
   const [skipped, setSkipped] = useState(0);
@@ -190,13 +192,10 @@ export function Forecast() {
 
   return (
     <>
-      <div className={`grid ${owed?.net ? "g3" : "g2"}`}>
+      {/* Owed to you is a People fact; it lives in Soon now, and the note under the headline names it. */}
+      <div className="grid g2">
         <div className="card stat"><div className="mute">Balance today</div><BigAmount minor={start} currency={base} />
           <div className="mute small">{!w.accounts.length ? "add accounts in Settings" : w.accounts.some(isCard) ? "bank accounts, cards not included" : "all accounts"}{skipped ? ` · ${skipped} left out (no rate)` : ""}</div></div>
-        {!!owed?.net && (
-          <div className="card stat"><div className="mute">{owed.net > 0 ? "Owed to you" : "You owe"}</div><BigAmount minor={Math.abs(owed.net)} currency={base} />
-            <div className="mute small">net, {owed.net > 0 ? "expected back" : "to pay"} this month</div></div>
-        )}
         {/* The headline names what is in it: with no full month of entries yet, everyday spending is not. */}
         <div className="card stat"><div className="mute">{f.basis ? "In 12 months" : "In 12 months, bills and income only"}</div><BigAmount minor={f.months[11]?.end ?? start} currency={base} />
           <div className="mute small">{f.basis ? `with everyday spending, the average of ${f.basis} ${f.basis === 1 ? "month" : "months"}` : "everyday spending not in it yet"}</div></div>
@@ -226,6 +225,9 @@ export function Forecast() {
 
       {/* Salary months after the chart and the table (owner, Q3): the forecast is what this screen is opened for. */}
       <div className="grp" role="heading" aria-level={2}>Salary</div>
+      <p className="mute small">Salary is the only place income is set for the forecast. Other income, such as a gift or a sale, is added from Add, Income.</p>
+      {/* Offline and read-only, only the Salary fields lock; the views, chart and table still work. */}
+      <fieldset className="plain" disabled={readOnly}>
       <div className="card pad">
         {Array.from({ length: 12 }, (_, i) => addMonths(monthStart(t), i)).map((m) => {
           const s = salaryFor(m, w.entries, w.rules);
@@ -244,6 +246,7 @@ export function Forecast() {
         )}
         {error && <p className="err" role="alert">{error}</p>}
       </div>
+      </fieldset>
 
     </>
   );

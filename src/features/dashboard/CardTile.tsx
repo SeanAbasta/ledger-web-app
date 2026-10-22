@@ -19,7 +19,7 @@ const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[
 type Choice = "statement" | "all" | "other";
 
 /** One credit card: the last statement, what is unbilled, the credit left, and paying the bill. */
-export function CardTile({ card, color, st, banks, defaultBank, defaults, onOpen }: { card: Account; color: CardColor; st: CardStatus; banks: Account[]; defaultBank?: string; defaults?: Defaults; onOpen?: () => void }) {
+export function CardTile({ card, color, st, banks, defaultBank, defaults, onOpen, focused }: { card: Account; color: CardColor; st: CardStatus; banks: Account[]; defaultBank?: string; defaults?: Defaults; onOpen?: () => void; focused?: boolean }) {
   const { store, changed } = useLedger();
   const [sheet, setSheet] = useState<"pay" | "due">();
   const [from, setFrom] = useState("");
@@ -82,7 +82,7 @@ export function CardTile({ card, color, st, banks, defaultBank, defaults, onOpen
   }
 
   return (
-    <div className="card pad">
+    <div className={focused ? "card pad focused" : "card pad"} id={`tile-${card.id}`}>
       {/* The top of the tile is the card face, in the card's colour; tapping it opens the per-card view. */}
       <button className={`cardhead face-${color}`} title="See what makes up these numbers" onClick={onOpen}>
         <div className="mute">{card.name}<span className="chev"><NextIcon /></span></div>

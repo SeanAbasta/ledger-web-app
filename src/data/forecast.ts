@@ -33,14 +33,18 @@ export interface Forecast {
 const spend = (e: { amount: Minor; currency: string; rate?: string; split?: Entry["split"] }, base: string) =>
   toBase({ amount: myShare(e.amount, e.split), currency: e.currency, rate: e.rate }, base) ?? 0;
 
+/** One card bill: when it leaves the bank and how much. `cardId` and `cutoff` (the statement it is) are
+ *  for Coming up; the forecast reads only `due` and `amount`. */
+export interface CardBill { due: IsoDate; amount: Minor; cardId: string; cutoff: IsoDate }
+
 /**
  * What each card's bills take from the bank, by due date. The last statement and what is unbilled
  * today are real charges at their full amount (other people's part of a split is already in
  * `owed`). Later charges on the card (installments, recurring, future-dated entries) go on the
  * statement they fall in, at my share, like other future spending.
  */
-export function cardBills(cards: Account[], entries: Entry[], rules: Rule[], today: IsoDate, until: IsoDate, base: string): { due: IsoDate; amount: Minor }[] {
-  const out: { due: IsoDate; amount: Minor }[] = [];
+export function cardBills(cards: Account[], entries: Entry[], rules: Rule[], today: IsoDate, until: IsoDate, base: string): CardBill[] {
+  const out: CardBill[] = [];
   if (!cards.length) return out;
   const past = ledgerItems(entries, rules, "0000-01-01", today);
   const byId = new Map(entries.map((e) => [e.id, e]));
@@ -61,14 +65,14 @@ export function cardBills(cards: Account[], entries: Entry[], rules: Rule[], tod
   for (const card of cards) {
     const st = cardStatus(card, past, rules, today);
     // A statement past its due date that is still unpaid is assumed to be paid tomorrow.
-    if (st.remaining) out.push({ due: st.due > today ? st.due : addDays(today, 1), amount: st.remaining });
+    if (st.remaining) out.push({ due: st.due > today ? st.due : addDays(today, 1), amount: st.remaining, cardId: card.id, cutoff: st.cutoff });
     let from = st.cutoff;
     let carried = st.unbilled;
     // One statement per cycle, until the cycles start after the horizon.
     while (from <= until) {
       const c = nextCutoff(card, from);
       const amount = carried + future.filter((f) => f.accountId === card.id && f.date > from && f.date <= c).reduce((n, f) => n + f.amount, 0);
-      if (amount) out.push({ due: dueFor(card, c), amount });
+      if (amount) out.push({ due: dueFor(card, c), amount, cardId: card.id, cutoff: c });
       carried = 0;
       from = c;
     }
