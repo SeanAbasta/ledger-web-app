@@ -3,9 +3,9 @@ import { getSettings, list, listAll, remove as removeItem, upsert } from "../../
 import { canBillNext, cutoffFor, dueFor, nextCutoff } from "../../data/cards";
 import { CURRENCIES } from "../../data/currencies";
 import { startAccount, startCategory } from "../../data/defaults";
-import { addEntry, deleteEntry, restoreEntry, updateEntry } from "../../data/months";
+import { addEntry, deleteEntry, loadEntries, restoreEntry, updateEntry } from "../../data/months";
 import { formatMinor, parseMinor, splitEvenly } from "../../data/money";
-import { labelShort, today } from "../../data/dates";
+import { addDays, labelShort, today } from "../../data/dates";
 import type { Account, Entry, Frequency, Person, Settings, SplitMode } from "../../data/schema";
 import { isCard, monthOf, DEFAULT_SETTINGS } from "../../data/schema";
 import { addName, hasName, keptKey, namesOf, payerAfter, payerForMode, resolveNames, splitFormOf, splitFromForm, toggleName, type SplitFormState } from "../../data/splitForm";
@@ -23,6 +23,7 @@ import { useKeyboardInset } from "../../ui/useKeyboardInset";
 import { useToast } from "../../ui/Toast";
 import { myShare } from "../../data/splits";
 import type { Draft, ExpenseDraft } from "./draft";
+import { recents, type Again } from "./recents";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 
 type Kind = "one-off" | "recurring" | "installment";
@@ -50,9 +51,13 @@ export interface SavedNote {
 
 /** New expense, or edit an existing one (pass `entry`). `draft` starts a new one from values put back by Undo. */
 export function AddForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (saved?: SavedNote) => void; draft?: ExpenseDraft }) {
-  const { store, changed } = useLedger();
+  const { store, rev, changed } = useLedger();
   const { show } = useToast();
   const d = entry ? undefined : draft;
+  // Again chips (new expenses only): the most repeated notes of the last 30 days.
+  const [again, setAgain] = useState<Again[]>([]);
+  // Where the category came from when an Again chip filled it ("from Coffee").
+  const [catSource, setCatSource] = useState<{ name: string; from: string }>();
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [people, setPeople] = useState<Person[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -109,6 +114,14 @@ export function AddForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (sav
       }
     })();
   }, [store, entry]);
+
+  useEffect(() => {
+    if (entry) return;
+    let stale = false;
+    const t = today();
+    void loadEntries(store, addDays(t, -30), t).then((es) => { if (!stale) setAgain(recents(es, t)); });
+    return () => { stale = true; };
+  }, [store, rev, entry]);
 
   // The Add tab (not an edit sheet): Save rides above the tab bar, and on the keyboard while typing.
   useKeyboardInset(!entry);
@@ -236,6 +249,39 @@ export function AddForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (sav
     setNewName("");
   };
 
+  // An Again chip's split in the form's terms: names of live people (a removed person drops the split).
+  const againSplit = (a: Again) => {
+    if (!a.split) return undefined;
+    const names = a.split.people.map((id) => people.find((p) => p.id === id)?.name);
+    if (names.some((x) => !x)) return undefined;
+    const payer = a.split.paidBy === "me" ? "me" : people.find((p) => p.id === a.split!.paidBy)?.name.toLowerCase();
+    return payer ? { names: names as string[], paidBy: payer, mode: a.split.mode } : undefined;
+  };
+  const againWords = (a: Again) => {
+    const s = againSplit(a);
+    if (!s) return a.category ?? "";
+    const who = s.names.filter((x) => x.toLowerCase() !== s.paidBy);
+    return s.paidBy === "me" ? `${MODE_LABEL[s.mode]} with ${who.join(" and ")}` : `${MODE_LABEL[s.mode]}, ${s.names.find((x) => x.toLowerCase() === s.paidBy)} paid`;
+  };
+  // Picked while the form still holds what the chip filled; a second tap clears it.
+  const againOn = (a: Again) => {
+    if (note !== a.note || (a.category && category !== a.category)) return false;
+    const s = againSplit(a);
+    if (!s) return !split;
+    return split && paidBy === s.paidBy && mode === s.mode && namesOf(names).map((x) => x.toLowerCase()).sort().join() === s.names.map((x) => x.toLowerCase()).sort().join();
+  };
+  const pickAgain = (a: Again) => {
+    if (againOn(a)) {
+      setNote(""); setSplit(false); setNames(""); setPaidBy("me"); setMode("half"); setCustom({}); setCatSource(undefined);
+      if (startCat.name) setCategory(startCat.name);
+      return;
+    }
+    setNote(a.note);
+    if (a.category) { setCategory(a.category); setCatSource({ name: a.category, from: `from ${a.note}` }); }
+    const s = againSplit(a);
+    setSplit(!!s); setNames(s ? s.names.join(", ") : ""); setPaidBy(s?.paidBy ?? "me"); setMode(s?.mode ?? "half"); setCustom({});
+  };
+
   return (
     <form className="form" onSubmit={(e) => { e.preventDefault(); void save(); }}>
       <div className="amt">
@@ -247,12 +293,29 @@ export function AddForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (sav
       {foreign && (
         <label className="field"><b>Rate</b><input placeholder={`${settings.baseCurrency} per 1 ${currency}`} inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} /></label>
       )}
-      {/* Order: amount, note, category, account and when, split, then repeats. Save stays in view. */}
+      {!entry && again.length > 0 && (
+        <div className="again">
+          <span className="again-label" id="again-label">Again</span>
+          <div className="again-row" role="group" aria-labelledby="again-label">
+            {again.map((a) => {
+              const on = againOn(a);
+              const words = againWords(a);
+              return (
+                <button key={a.note} type="button" className={on ? "again-chip on" : "again-chip"} aria-pressed={on} onClick={() => pickAgain(a)}
+                  aria-label={`${a.note}${words ? `, ${words}` : ""}. Fills the note, category and split.`}>
+                  <b>{a.note}</b>{words && <span>{words}</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {/* Order: amount, again, note, category, account and when, split, then repeats. Save stays in view. */}
       {/* Note comes before Category now, so on the Add tab Return closes the keyboard instead of saving
           before a category is picked. In an edit sheet Return still saves. */}
       <label className="field stack"><b>Note</b><input className="notefield" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What was it?" enterKeyHint={entry ? undefined : "done"}
         onKeyDown={(e) => { if (!entry && e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); } }} /></label>
-      <div className="field stack"><b>Category{!entry && category === startCat.name && startCat.from && <span className="catfrom">{category}, {startCat.from}</span>}</b><CategoryChips list={settings.categories} value={category} onChange={setCategory} compact={!entry} /></div>
+      <div className="field stack"><b>Category{!entry && (catSource && category === catSource.name ? <span className="catfrom">{category}, {catSource.from}</span> : category === startCat.name && startCat.from && <span className="catfrom">{category}, {startCat.from}</span>)}</b><CategoryChips list={settings.categories} value={category} onChange={setCategory} compact={!entry} /></div>
       {/* Account and When share a row, each with its own caption. */}
       <div className="field pair">
         {accounts.length > 0 && (

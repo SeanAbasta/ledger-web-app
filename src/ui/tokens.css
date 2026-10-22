@@ -1122,3 +1122,17 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
 @keyframes toast-in { from { opacity: 0; transform: translateY(12px); } }
 /* Reduce Motion: the toast fades in and its line is a full, still bar (the toast still times out). */
 @media (prefers-reduced-motion: reduce) { .toast { animation: fade-in 120ms ease-out; } .toast-line { animation: none; } }
+/* Again (V6): two-line chips in a sideways row above Note; the third chip is cut off so the row reads as
+   scrollable. Picked (the accent fill, in today's look) until the form changes; a second tap clears what it filled. */
+.again { margin: var(--sp-1) 0 var(--sp-2); }
+.again-label { display: block; font-size: var(--fs-md); font-weight: 500; color: var(--sub); margin-bottom: var(--sp-1); }
+.again-row { display: flex; gap: var(--sp-2); overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin: 0 -22px; padding: 2px 22px 4px; scroll-padding-inline: 22px; }
+.again-row::-webkit-scrollbar { display: none; }
+.again-chip { all: unset; box-sizing: border-box; flex: 0 0 auto; scroll-snap-align: start; min-width: 96px; max-width: 42%; min-height: 54px; padding: var(--sp-2) 14px; border-radius: var(--r-pop); background: var(--fill-2); box-shadow: var(--ghost-edge); display: flex; flex-direction: column; justify-content: center; gap: 2px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.again-chip b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.again-chip span { font-size: var(--fs-sm); color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.again-chip.on { background: var(--accent); color: var(--on-accent); box-shadow: var(--btn-edge); }
+.again-chip.on span { color: var(--on-accent); }
+.again-chip:active { opacity: 0.7; }
+.again-chip:focus-visible { outline: var(--ring); outline-offset: 2px; }
+fieldset:disabled .again-chip { cursor: default; }
