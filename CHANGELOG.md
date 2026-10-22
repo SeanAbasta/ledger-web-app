@@ -2,7 +2,20 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
-## Unreleased: V2, Phases 1 and 2 (branch `v2-build`)
+## Unreleased: V2 (branch `v2-build`)
+
+Phase 3, a new look called Folio, and the desktop:
+
+- Paper and ink instead of the machined plates: a light gallery ground, ruled sections instead of cards, one blue for what you press and where you are, green for money in. Dark mode is the same design in reverse.
+- Two typefaces, served by the app itself (nothing is fetched from elsewhere): Spectral for figures and headings, Hanken Grotesk for everything else. Figures line up in columns.
+- Bigger figures: Spent at 84 px on a phone and up to 190 px on a wide screen, stepping down when the amount is long. Each Ledger day starts with its date as a large numeral.
+- **Text size** in Settings, General: Default, Large or Larger, per device.
+- On a computer: a top bar instead of the sidebar. At 1200 px and wider the Ledger shows the list with the open entry's edit sheet beside it, and Add reads in two columns.
+- **Keyboard shortcuts** on a computer: N new, / search, [ and ] previous and next period, T today. Settings, General can turn them off.
+- The phone tab bar is plain paper with a small blue mark on the open room. Card tiles show a small card face beside the name.
+- The app's colour in the phone's status bar changed, so the offline copy of the app refreshes once after the update.
+
+Phases 1 and 2 (same look as V1.4.1 when they were built):
 
 Five rooms named for the question they answer, and the controls that were missing: Undo, settling part of a balance, repeat chips and editing a whole plan. Same look as V1.4.1. No new kinds of data are stored, so an older copy keeps working with everything here; update both computers to get the new screens.
 

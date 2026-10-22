@@ -32,7 +32,7 @@ It runs in the browser, keeps your data on your own device first, and syncs betw
 
 ## What it does
 
-Ledger has five rooms, each named for the question it answers, plus Settings behind the gear at the top right. The V2 changes below are on the `v2-build` branch and not released yet.
+Ledger has five rooms, each named for the question it answers, plus Settings behind the gear at the top right. It is set in two typefaces (Spectral and Hanken Grotesk), with a light paper look and an optional dark one, a text size setting, and on a computer a top bar, a two-pane Ledger and keyboard shortcuts. The V2 changes below are on the `v2-build` branch and not released yet.
 
 ### Add: what did I just spend?
 
@@ -82,7 +82,7 @@ A **Month** and **Year** switch at the top.
 ### Settings (the gear)
 
 - A **Data health** card on top says whether your data is safe on GitHub or backed up, and when your token needs renewing. The gear shows a small dot when something there needs you.
-- **General:** currency, appearance (Light, Dark, or Auto), and keeping Undo until dismissed.
+- **General:** currency, appearance (Light, Dark, or Auto), text size (Default, Large, Larger), keeping Undo until dismissed, and keyboard shortcuts on a computer (N new, / search, [ and ] previous and next, T today).
 - **Accounts:** bank accounts and credit cards (named before they are created), card colours, defaults. Removing an account that is in use offers to move its entries and plans first, and removed accounts can be restored.
 - **People and categories.**
 - **Sync and backup:** connect GitHub, export everything as one file or a spreadsheet, and import a backup (nothing is deleted on import).
