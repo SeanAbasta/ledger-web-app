@@ -27,7 +27,7 @@ import { useLedger } from "../../ui/Ledger";
 import { useTodayKey } from "../../ui/useTodayKey";
 
 const VIEWS = ["Day", "Week", "Month"] as const;
-type View = (typeof VIEWS)[number];
+export type View = (typeof VIEWS)[number];
 type Dir = -1 | 0 | 1;
 
 function shift(view: View, anchor: string, dir: 1 | -1): string {
@@ -41,11 +41,12 @@ function title(view: View, anchor: string): string {
 
 /**
  * `initialDate` and `notice` come from the Add form: open where the new item is, and say it was saved.
+ * `initialView` opens Day, Week or Month (default Month); a tap on the Dashboard calendar opens Day.
  * `onAdd` opens the Add tab (the empty state's button on the period that holds today).
  */
-export function Ledger({ initialDate, notice, onAdd }: { initialDate?: string; notice?: string; onAdd?: () => void } = {}) {
+export function Ledger({ initialDate, initialView, notice, onAdd }: { initialDate?: string; initialView?: View; notice?: string; onAdd?: () => void } = {}) {
   const { store, rev, changed } = useLedger();
-  const [view, setView] = useState<View>("Month");
+  const [view, setView] = useState<View>(initialView ?? "Month");
   const [anchor, setAnchor] = useState(initialDate ?? today());
   const [q, setQ] = useState("");
   const [cat, setCat] = useState(""); // "" is All categories

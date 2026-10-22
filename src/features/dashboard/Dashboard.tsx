@@ -93,12 +93,13 @@ const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
 /** The Daily card as a lattice of day cells, seven to a row from Monday (the Ledger's Week order). Spend
  *  lights a cell in four steps against the month's highest day. Today is ringed; days still to come with
  *  something scheduled are outlined (never lit, so planned days never read as spending); quiet days that
- *  have happened are a plain track; days still to come with nothing are empty. */
-function Lattice({ days, from, elapsed, todayIdx, base, label }: { days: number[]; from: string; elapsed: number; todayIdx: number; base: string; label: string }) {
+ *  have happened are a plain track; days still to come with nothing are empty. Every day that has
+ *  happened, and every later day with something scheduled, is a button that opens that day in the Ledger. */
+function Lattice({ days, from, elapsed, todayIdx, base, label, onOpen }: { days: number[]; from: string; elapsed: number; todayIdx: number; base: string; label: string; onOpen?: (date: string) => void }) {
   const max = Math.max(...days, 1);
   const lead = weekday(from);
   return (
-    <div className="lattice" role="img" aria-label={label}>
+    <div className="lattice" role="group" aria-label={label}>
       {WEEK.map((w, i) => <span key={`w${i}`} className="wk" aria-hidden="true">{w}</span>)}
       {Array.from({ length: lead }, (_, i) => <span key={`b${i}`} className="cell blank" />)}
       {days.map((v, i) => {
@@ -107,17 +108,23 @@ function Lattice({ days, from, elapsed, todayIdx, base, label }: { days: number[
         const lit = v <= 0 ? 0 : Math.sqrt(v / max);
         const step = lit === 0 ? 0 : lit > 0.75 ? 4 : lit > 0.5 ? 3 : lit > 0.25 ? 2 : 1;
         const cls = past ? (step ? `cell l${step}` : "cell quiet") : v > 0 ? "cell plan" : "cell later";
+        const date = addDays(from, i);
+        const title = `${labelShort(date)}: ${formatMinor(v, base)}${!past && v ? " planned" : ""}`;
+        const className = i === todayIdx ? `${cls} now` : cls;
+        if (!onOpen || (!past && v <= 0)) return <span key={i} className={className} title={title}>{i + 1}</span>;
+        const what = !past ? `planned ${formatMinor(v, base)}` : v ? `spent ${formatMinor(v, base)}` : "nothing spent";
         return (
-          <span key={i} className={i === todayIdx ? `${cls} now` : cls} title={`${labelShort(addDays(from, i))}: ${formatMinor(v, base)}${!past && v ? " planned" : ""}`}>
+          <button key={i} type="button" className={className} title={title} aria-label={`${labelShort(date)}${i === todayIdx ? ", today" : ""}, ${what}, open in the Ledger`} onClick={() => onOpen(date)}>
             {i + 1}
-          </span>
+          </button>
         );
       })}
     </div>
   );
 }
 
-export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAdd }: { onOpenPerson: (personId: string) => void; onOpenLedger: (date: string) => void; onOpenCardSettings: (cardId: string) => void; onAdd?: () => void }) {
+/** `onOpenDay` opens one day in the Ledger's Day view (a tap on the Daily calendar); `onOpenLedger` opens the Month view at a date, as before. */
+export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSettings, onAdd }: { onOpenPerson: (personId: string) => void; onOpenLedger: (date: string) => void; onOpenDay?: (date: string) => void; onOpenCardSettings: (cardId: string) => void; onAdd?: () => void }) {
   const { store, rev } = useLedger();
   const [anchor, setAnchor] = useState(today());
   const [v, setV] = useState<View>();
@@ -317,7 +324,9 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenCardSettings, onAd
               <span className="mute">Daily{future ? <span className="tag">Planned</span> : upcoming && <span className="tag">incl. upcoming</span>}</span>
               {elapsed > 0 && <span className="mute small">{formatMinor(daily.average, base)} a day{isCurrent ? `, ${elapsed} ${elapsed === 1 ? "day" : "days"} in` : ""}</span>}
             </div>
-            <Lattice days={chart.byDay} from={from} elapsed={elapsed} todayIdx={todayIdx} base={base} label={dailyLabel} />
+            <Lattice days={chart.byDay} from={from} elapsed={elapsed} todayIdx={todayIdx} base={base} label={dailyLabel} onOpen={onOpenDay} />
+            {/* Today and planned days are told apart by a ring and a dashed edge; say so in words too. */}
+            <p className="mute small latkey">{isCurrent ? "Ringed: today. " : ""}{chart.byDay.some((d, i) => i >= elapsed && d > 0) ? "Dashed: planned. " : ""}Tap a day to open it in the Ledger.</p>
             <div className="dailystats">
               {future && <div className="row static"><span>Planned</span><span>{formatMinor(chart.total, base)}</span></div>}
               {upcoming && <div className="row static"><span>Still scheduled</span><span>{formatMinor(planned, base)}</span></div>}

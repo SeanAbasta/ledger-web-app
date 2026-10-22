@@ -4,7 +4,7 @@ import { IncomeForm } from "./features/add/IncomeForm";
 import { TransferForm } from "./features/ledger/TransferForm";
 import { Dashboard } from "./features/dashboard/Dashboard";
 import { Forecast } from "./features/forecast/Forecast";
-import { Ledger } from "./features/ledger/Ledger";
+import { Ledger, type View as LedgerView } from "./features/ledger/Ledger";
 import { Settings, type Page as SettingsPage } from "./features/settings/Settings";
 import { Splits } from "./features/splits/Splits";
 import { Gate } from "./features/sync/Gate";
@@ -60,10 +60,10 @@ function AddTab({ onView, onOpenSettings }: { onView: (s: SavedNote) => void; on
   );
 }
 
-function Screen({ tab, go, setup, focusPerson, openPerson, saved, onSaved, focusCard, openCard, settingsPage, openSettings }: { tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; focusCard?: string; openCard: (id: string) => void; settingsPage?: SettingsPage; openSettings: (p: SettingsPage) => void }) {
+function Screen({ tab, go, setup, focusPerson, openPerson, saved, onSaved, ledgerView, setLedgerView, focusCard, openCard, settingsPage, openSettings }: { tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; ledgerView?: LedgerView; setLedgerView: (v?: LedgerView) => void; focusCard?: string; openCard: (id: string) => void; settingsPage?: SettingsPage; openSettings: (p: SettingsPage) => void }) {
   if (tab === "Add") return <AddTab onView={(s) => { onSaved(s); go("Ledger"); }} onOpenSettings={() => openSettings("accounts")} />;
-  if (tab === "Ledger") return <Ledger key={saved?.date ?? ""} initialDate={saved?.date} notice={saved?.message} onAdd={() => go("Add")} />;
-  if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); go("Ledger"); }} onOpenCardSettings={openCard} onAdd={() => go("Add")} />;
+  if (tab === "Ledger") return <Ledger key={`${saved?.date ?? ""}/${ledgerView ?? ""}`} initialDate={saved?.date} initialView={ledgerView} notice={saved?.message} onAdd={() => go("Add")} />;
+  if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); setLedgerView(undefined); go("Ledger"); }} onOpenDay={(date) => { onSaved({ date, message: "" }); setLedgerView("Day"); go("Ledger"); }} onOpenCardSettings={openCard} onAdd={() => go("Add")} />;
   if (tab === "People") return <Splits key={focusPerson ?? ""} initialPerson={focusPerson} />;
   if (tab === "Coming up") return <Forecast />;
   return <Settings onSetup={setup} focusCard={focusCard} initialPage={settingsPage} />;
@@ -76,6 +76,8 @@ function Shell() {
   const [focusPerson, setFocusPerson] = useState<string>();
   // Set when the Add form saves, so the Ledger opens where the new item is and says it was saved.
   const [saved, setSaved] = useState<SavedNote>();
+  // Set when the Dashboard calendar opens one day, so the Ledger starts in Day view.
+  const [ledgerView, setLedgerView] = useState<LedgerView>();
   // Set when Reconcile opens a card's settings ("Set as Owed at start"), so Settings scrolls to it.
   const [focusCard, setFocusCard] = useState<string>();
   // Set when another screen opens a Settings page directly (the Add tab's transfer hint).
@@ -83,7 +85,7 @@ function Shell() {
   const { status, readOnly, editOffline, engine } = useSync();
   const locked = readOnly && EDIT_TABS.includes(tab);
   // A tab (or the gear) starts its room fresh: nothing carried over from where another screen sent us.
-  const open = (n: Tab) => { setFocusPerson(undefined); setSaved(undefined); setFocusCard(undefined); setSettingsPage(undefined); setTab(n); };
+  const open = (n: Tab) => { setFocusPerson(undefined); setSaved(undefined); setLedgerView(undefined); setFocusCard(undefined); setSettingsPage(undefined); setTab(n); };
 
   return (
     <div className="win">
@@ -117,7 +119,7 @@ function Shell() {
           <fieldset className="plain" disabled={locked}>
             {/* Keyed on the tab so the new screen fades in (screens already remount on a tab change). */}
             <div key={tab} className="tabfade">
-            <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("People"); }} saved={saved} onSaved={setSaved} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} settingsPage={settingsPage} openSettings={(p) => { setSettingsPage(p); setTab("Settings"); }} />
+            <Screen tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("People"); }} saved={saved} onSaved={setSaved} ledgerView={ledgerView} setLedgerView={setLedgerView} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} settingsPage={settingsPage} openSettings={(p) => { setSettingsPage(p); setTab("Settings"); }} />
             </div>
           </fieldset>
         </section>
