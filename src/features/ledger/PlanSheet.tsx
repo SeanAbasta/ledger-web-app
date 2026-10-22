@@ -5,7 +5,7 @@ import { formatMinor } from "../../data/money";
 import type { Occurrence } from "../../data/rules";
 import { REMOVED_PERSON } from "../../data/splits";
 import type { Person, Rule } from "../../data/schema";
-import { Sheet } from "../../ui/Sheet";
+import { Dock, Sheet } from "../../ui/Sheet";
 import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
@@ -18,7 +18,9 @@ import { PlanEditForm } from "./PlanEditForm";
  * Shared by the Ledger and the Dashboard's Recurring list. `people` should include removed ones (listAll)
  * so a split still names them.
  */
-export function PlanSheet({ occ, rule, people, onClose }: { occ: Occurrence; rule?: Rule; people: Person[]; onClose: () => void }) {
+export function PlanSheet({ occ, rule, people, onClose, docked }: { occ: Occurrence; rule?: Rule; people: Person[]; onClose: () => void; docked?: boolean }) {
+  // Docked: the Ledger's edit pane on wide screens.
+  const Sheet_ = docked ? Dock : Sheet;
   const { store, changed } = useLedger();
   const [editing, setEditing] = useState<"payment" | "plan">();
   const personName = (id: string) => (id === "me" ? "me" : nameOf(id, people, REMOVED_PERSON));
@@ -38,21 +40,21 @@ export function PlanSheet({ occ, rule, people, onClose }: { occ: Occurrence; rul
   if (editing) {
     if (!rule) return null;
     return editing === "plan" ? (
-      <Sheet key="plan" locked onClose={onClose}>
+      <Sheet_ key="plan" locked onClose={onClose}>
         <h3>Edit plan</h3>
         <p className="mute small">{occ.note || occ.category}, {occ.type === "installment" ? "installment" : "recurring"}</p>
         <PlanEditForm rule={rule} onDone={onClose} />
-      </Sheet>
+      </Sheet_>
     ) : (
-      <Sheet key="edit" locked onClose={onClose}>
+      <Sheet_ key="edit" locked onClose={onClose}>
         <h3>Edit payment</h3>
         <OccurrenceForm occ={occ} rule={rule} onDone={onClose} />
-      </Sheet>
+      </Sheet_>
     );
   }
 
   return (
-    <Sheet locked onClose={onClose}>
+    <Sheet_ locked onClose={onClose}>
       <h3>{occ.note || occ.category}</h3>
       <p className="mute">
         {labelDay(occ.date)} · {formatMinor(occ.amount, occ.currency)}
@@ -65,6 +67,6 @@ export function PlanSheet({ occ, rule, people, onClose }: { occ: Occurrence; rul
         <ConfirmButton label="Skip this one" ask={confirmLabel("skip", occ)} onConfirm={() => void skip()} />
         <ConfirmButton danger label="End series" ask={confirmLabel("end", occ)} onConfirm={() => void endSeries()} />
       </div>
-    </Sheet>
+    </Sheet_>
   );
 }

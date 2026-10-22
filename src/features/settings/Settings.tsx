@@ -27,6 +27,7 @@ import { AccountOptions } from "../../ui/AccountOptions";
 import { applyTheme, loadTheme, saveTheme, THEMES, type Theme } from "../../ui/theme";
 import { loadKeepUndo, saveKeepUndo } from "../../ui/undoPref";
 import { applyTextSize, loadTextSize, saveTextSize, TEXT_SIZES, type TextSize } from "../../ui/textSize";
+import { loadShortcutsOn, saveShortcutsOn } from "../../ui/shortcuts";
 import { accountEdit, accountFieldsOf, cardEdit, cardFieldsOf, freshFields, newAccountOf, plain, type AccountFields, type CardFields } from "./accountEdit";
 import { CloseIcon, PrevIcon } from "../../ui/icons";
 import { healthOf, sinceWords, syncedWords, type Health } from "./health";
@@ -176,6 +177,9 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
   const [theme, setThemeState] = useState<Theme>(loadTheme);
   const [keepUndo, setKeepUndo] = useState(loadKeepUndo);
   const [textSize, setTextSize] = useState<TextSize>(loadTextSize);
+  const [keys, setKeys] = useState(loadShortcutsOn);
+  // Keyboard shortcuts are a computer thing: the switch shows where there is a fine pointer and hover.
+  const computer = typeof matchMedia === "function" && matchMedia("(hover: hover) and (pointer: fine)").matches;
   const [confirm, setConfirm] = useState<"pull" | "remove">();
   // A person or account that is in use: removing it asks first and says what it affects.
   // An account in use can first move its entries, plans and defaults to `targets` (same kind; banks in the same currency).
@@ -487,6 +491,10 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
                   <p className="textsample" aria-hidden="true"><span>Coffee</span><span className="money">₱250.00</span></p></div>
                 <div className="field"><b>Keep Undo until dismissed<span className="mute small sub">On this device. Otherwise Undo lasts 8 seconds</span></b>
                   <button type="button" className={`toggle ${keepUndo ? "on" : ""}`} aria-pressed={keepUndo} aria-label="Keep Undo until dismissed" onClick={() => { setKeepUndo(!keepUndo); saveKeepUndo(!keepUndo); }}><i /></button></div>
+                {computer && (
+                  <div className="field"><b>Keyboard shortcuts<span className="mute small sub">N new, / search, [ and ] previous and next, T today</span></b>
+                    <button type="button" className={`toggle ${keys ? "on" : ""}`} aria-pressed={keys} aria-label="Keyboard shortcuts" onClick={() => { setKeys(!keys); saveShortcutsOn(!keys); }}><i /></button></div>
+                )}
               </div>
             </>
           )}

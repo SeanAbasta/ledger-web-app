@@ -284,6 +284,8 @@ export function AddForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (sav
 
   return (
     <form className="form" onSubmit={(e) => { e.preventDefault(); void save(); }}>
+      {/* Two groups: one column on phones and in sheets; on a wide Add tab, left then right. */}
+      <div className="slip-l">
       <div className="amt">
         <MoneyInput aria-label="Amount" placeholder="0.00" value={amount} onChange={setAmount} currency={currency || settings.defaultCurrency} autoFocus={!entry} />
         <select aria-label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value)}>
@@ -316,6 +318,8 @@ export function AddForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (sav
       <label className="field stack"><b>Note</b><input className="notefield" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What was it?" enterKeyHint={entry ? undefined : "done"}
         onKeyDown={(e) => { if (!entry && e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); } }} /></label>
       <div className="field stack"><b>Category{!entry && (catSource && category === catSource.name ? <span className="catfrom">{category}, {catSource.from}</span> : category === startCat.name && startCat.from && <span className="catfrom">{category}, {startCat.from}</span>)}</b><CategoryChips list={settings.categories} value={category} onChange={setCategory} compact={!entry} /></div>
+      </div>
+      <div className="slip-r">
       {/* Account and When share a row, each with its own caption. */}
       <div className="field pair">
         {accounts.length > 0 && (
@@ -411,6 +415,7 @@ export function AddForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (sav
           <button type="submit" className="btn">Save</button>
         </div>
       )}
+      </div>
     </form>
   );
 }

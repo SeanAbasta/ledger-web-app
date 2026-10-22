@@ -95,3 +95,25 @@ export function Sheet({ children, onClose, locked }: { children: ReactNode; onCl
     </div>
   );
 }
+
+/**
+ * The same sheet, docked: on wide screens the Ledger shows its edit sheets in a pane beside the list
+ * (V19). No scrim, no drag, nothing slides; a close button at the top. The first h3 names the region.
+ */
+export function Dock({ children, onClose, locked }: { children: ReactNode; onClose: () => void; locked?: boolean }) {
+  const { readOnly } = useSync();
+  const id = useId();
+  const box = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const h = box.current?.querySelector("h3");
+    if (!h || !box.current) return;
+    if (!h.id) h.id = `${id}-title`;
+    box.current.setAttribute("aria-labelledby", h.id);
+  });
+  return (
+    <section ref={box} className="sheet docked">
+      <button type="button" className="close" aria-label="Close" onClick={onClose}><CloseIcon /></button>
+      <fieldset className="plain" disabled={!!locked && readOnly}>{children}</fieldset>
+    </section>
+  );
+}

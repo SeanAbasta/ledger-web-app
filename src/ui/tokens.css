@@ -996,3 +996,26 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
   .win button.link::before { content: ""; position: absolute; left: -4px; right: -4px; top: 50%; height: var(--hit); transform: translateY(-50%); }
   .legend button { min-height: var(--hit); }
 }
+
+/* ---------- desktop (V19) ---------- */
+/* Wide screens: the Ledger is a list with its edit sheet docked beside it, and Add reads in two columns. */
+@media (min-width: 1200px) {
+  main[data-tab="Ledger"], main[data-tab="Add"] { --col: var(--content-max); }
+  .addcard, .addcard.glasscard { max-width: 1120px; }
+  .addcard .form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 var(--sp-8); align-items: start; }
+  .addcard .addkind .seg { max-width: 420px; }
+  .addcard .firstrun, .firstrun { max-width: 1120px; }
+}
+.ledger2 { display: grid; grid-template-columns: minmax(420px, 44%) minmax(0, 1fr); }
+.lpane { min-width: 0; padding-right: var(--sp-6); }
+.dpane { position: sticky; top: calc(72px + var(--sp-3)); align-self: start; max-height: calc(100vh - 72px - var(--sp-5)); overflow-y: auto; border-left: 1px solid var(--line); padding: 0 0 var(--sp-5) var(--sp-6); }
+.sheet.docked { width: auto; max-width: none; max-height: none; overflow: visible; padding: var(--sp-2) 0 0; border-radius: 0; box-shadow: none; background: none; }
+.sheet.docked .close { top: var(--sp-2); right: 0; }
+.dmeta { margin: 0 0 var(--sp-2); font-size: var(--fs-md); }
+.dquiet { margin: var(--sp-6) 0 0; font-size: var(--fs-md); }
+.keys { margin: var(--sp-5) 0 0; }
+.discard { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; margin: var(--sp-2) 0 var(--sp-3); padding: 10px 14px; border: 1.5px solid var(--warn); border-radius: var(--r-slip); font-weight: 600; }
+.discard span { margin-right: auto; }
+/* The open row: a filled band and its note in 600. */
+.row.item.picked { background: var(--fill); box-shadow: -8px 0 0 var(--fill), 8px 0 0 var(--fill); }
+.row.item.picked .l1 { font-weight: 600; }

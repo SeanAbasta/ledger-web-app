@@ -20,6 +20,7 @@ import { Pill } from "./ui/Pill";
 import { Segmented } from "./ui/Segmented";
 import { SyncProvider, useSync } from "./ui/Sync";
 import { ToastProvider, useToast } from "./ui/Toast";
+import { useShortcuts } from "./ui/shortcuts";
 
 // Rooms are named for the question they answer. People (was Splits) and Coming up (was Forecast) keep their slots.
 const NAV = ["Add", "Ledger", "Dashboard", "People", "Coming up", "Settings"] as const;
@@ -107,6 +108,12 @@ function Shell() {
     void Promise.all([store.getMeta<string>("lastSynced"), store.getMeta<string>("lastExported")]).then(([synced, exported]) => { if (!stale) setStamps({ synced, exported }); });
     return () => { stale = true; };
   }, [store, rev, status.lastSynced]);
+  // Computer shortcuts (Off switch in Settings): N opens Add, / searches the Ledger, [ and ] step the period.
+  useShortcuts((s, e) => {
+    if (s === "new") open("Add");
+    else if (s === "search" && tab === "Ledger") { e.preventDefault(); document.querySelector<HTMLInputElement>(".body .search")?.focus(); }
+    else if (s === "prev" || s === "next") document.querySelector<HTMLButtonElement>(`.body .nav button[aria-label^="${s === "prev" ? "Previous" : "Next"}"]`)?.click();
+  });
   // The phone header draws its hairline only once the page has scrolled.
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -141,7 +148,7 @@ function Shell() {
         })}
         {actions("baracts topacts")}
       </nav>
-      <main className={READING_TABS.includes(tab) ? "reading" : undefined}>
+      <main className={READING_TABS.includes(tab) ? "reading" : undefined} data-tab={tab}>
         <header className={scrolled ? "bar scrolled" : "bar"}>
           <h1>{tab}</h1>
           {actions("baracts")}

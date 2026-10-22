@@ -17,7 +17,8 @@ import { allTimeRange, emptyAction, groupByDay, groupByMonth } from "./allTime";
 import { TransferForm } from "./TransferForm";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
-import { Sheet } from "../../ui/Sheet";
+import { Dock, Sheet } from "../../ui/Sheet";
+import { useWide } from "../../ui/useWide";
 import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
 import { categoryTone } from "../../ui/categoryColor";
@@ -140,6 +141,37 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
   const groups = useMemo(() => groupByDay(items), [items]);
 
   const accountName = (id?: string) => nameOf(id, accounts, "Removed account");
+
+  // Wide screens dock the edit sheet beside the list (one item open at a time). Opening another row with
+  // changes typed in the pane asks first. "Changes" means any field typed in or control tapped there.
+  const wide = useWide();
+  const Panel = wide ? Dock : Sheet;
+  const pane = useRef<HTMLElement>(null);
+  const dirty = useRef(false);
+  const [discard, setDiscard] = useState<{ go: () => void }>();
+  const open = !!(editing || paid || refunding || occ);
+  useEffect(() => {
+    const el = pane.current;
+    if (!el) return;
+    const mark = () => { dirty.current = true; };
+    const tap = (e: Event) => { const b = (e.target as HTMLElement).closest("button"); if (b && b.closest("form") && b.getAttribute("type") !== "submit") dirty.current = true; };
+    el.addEventListener("input", mark);
+    el.addEventListener("change", mark);
+    el.addEventListener("click", tap);
+    return () => { el.removeEventListener("input", mark); el.removeEventListener("change", mark); el.removeEventListener("click", tap); };
+  }, [wide]);
+  const isOpen = (it: LedgerItem) => (it.type === "entry" ? editing?.id === it.entry.id || paid?.id === it.entry.id : !!occ && occ.ruleId === it.occ.ruleId && occ.date === it.date);
+  function openItem(it: LedgerItem) {
+    const go = () => {
+      dirty.current = false;
+      setEditing(undefined); setPaid(undefined); setOcc(undefined); setRefunding(undefined);
+      if (it.type === "occurrence") setOcc(it.occ);
+      else if (it.entry.kind === "settlement" || it.entry.kind === "transfer") setPaid(it.entry);
+      else setEditing(it.entry);
+    };
+    if (wide && open && dirty.current && !isOpen(it)) setDiscard({ go });
+    else go();
+  }
   const onCard = (e: Entry) => accounts.some((a) => a.id === e.accountId && !a.deleted && isCard(a));
 
   async function openRefund(e: Entry) {
@@ -198,7 +230,7 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
           const later = upcoming(it);
           const share = shareLine(it); // split rows: what it cost me (day totals stay the full amount)
           return (
-            <button key={it.type === "entry" ? it.entry.id : it.occ.ruleId + it.date} className="row item" title="Edit" onClick={() => (it.type === "entry" ? (it.entry.kind === "settlement" || it.entry.kind === "transfer" ? setPaid(it.entry) : setEditing(it.entry)) : setOcc(it.occ))}>
+            <button key={it.type === "entry" ? it.entry.id : it.occ.ruleId + it.date} className={isOpen(it) ? "row item picked" : "row item"} title="Edit" aria-current={isOpen(it) || undefined} onClick={() => openItem(it)}>
               {/* What it was first; then its colour, category (or the two accounts of a transfer) and tags. */}
               <span className="main">
                 <span className="l1">{x.note || x.category || "Transfer"}</span>
@@ -225,7 +257,7 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
     );
   };
 
-  return (
+  const listPart = (
     <>
       <div className="toolrow">
         <Segmented label="Ledger view" value={view} options={VIEWS} onChange={(v) => { dir.current = 0; setScope("period"); setView(v); }} />
@@ -278,24 +310,30 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
       </div>
       )}
 
+    </>
+  );
+
+  const sheets = (
+    <>
       {editing && (
-        <Sheet locked onClose={() => setEditing(undefined)}>
+        <Panel key={editing.id} locked onClose={() => setEditing(undefined)}>
+          {wide && <p className="mute dmeta">{labelDay(editing.date)}{editing.accountId ? `, ${accountName(editing.accountId)}` : ""}</p>}
           <h3>{editing.refund ? "Edit refund" : editing.kind === "income" ? "Edit income" : "Edit expense"}</h3>
           {/* One-off side income opens its own form; salary entries and refunds open the expense form as before. */}
           {incomeEditor(editing) === "income" ? <IncomeForm entry={editing} onDone={() => setEditing(undefined)} /> : <AddForm entry={editing} onDone={() => setEditing(undefined)} />}
           {editing.kind === "expense" && onCard(editing) && (
             <div className="actions"><button className="btn ghost" onClick={() => void openRefund(editing)}>Refund</button></div>
           )}
-        </Sheet>
+        </Panel>
       )}
       {paid?.kind === "transfer" && (
-        <Sheet locked onClose={() => setPaid(undefined)}>
+        <Panel key={paid.id} locked onClose={() => setPaid(undefined)}>
           <h3>{paid.category === "Card payment" ? "Edit card payment" : "Edit transfer"}</h3>
           <TransferForm entry={paid} accounts={accounts} onDone={() => setPaid(undefined)} />
-        </Sheet>
+        </Panel>
       )}
       {paid && paid.kind !== "transfer" && (
-        <Sheet locked onClose={() => setPaid(undefined)}>
+        <Panel key={paid.id} locked onClose={() => setPaid(undefined)}>
           <h3>{paid.note || paid.category || "Transfer"}</h3>
           <p className="mute">
             {labelDay(paid.date)} · {formatMinor(paid.amount, paid.currency)}
@@ -309,10 +347,10 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
               show({ message: `Deleted: ${gone.note || gone.category || "Settlement"} ${formatMinor(gone.amount, gone.currency)}`, undo: async () => { await restoreEntry(store, gone.date.slice(0, 7), gone.id); } });
             }} />
           </div>
-        </Sheet>
+        </Panel>
       )}
       {refunding && (
-        <Sheet locked onClose={() => setRefunding(undefined)}>
+        <Panel key={refunding.entry.id} locked onClose={() => setRefunding(undefined)}>
           <h3>Refund</h3>
           <p className="mute">{refunding.entry.note || refunding.entry.category} · {labelDay(refunding.entry.date)} · {formatMinor(refunding.entry.amount, refunding.entry.currency)} on {accountName(refunding.entry.accountId)}</p>
           {refunding.left > 0 ? (
@@ -326,10 +364,29 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
           ) : (
             <p className="mute">Already fully refunded.</p>
           )}
-        </Sheet>
+        </Panel>
       )}
       {/* A generated payment: Edit, Skip this one, End series (shared with the Dashboard's Recurring list). */}
-      {occ && <PlanSheet occ={occ} rule={rules.find((r) => r.id === occ.ruleId)} people={people} onClose={() => setOcc(undefined)} />}
+      {occ && <PlanSheet key={occ.ruleId + occ.date} occ={occ} rule={rules.find((r) => r.id === occ.ruleId)} people={people} onClose={() => setOcc(undefined)} docked={wide} />}
     </>
+  );
+
+  if (!wide) return <>{listPart}{sheets}</>;
+  // Wide screens: the list on the left, the open item's edit sheet docked on the right.
+  return (
+    <div className="ledger2">
+      <div className="lpane">{listPart}</div>
+      <aside className="dpane" aria-label="Edit" ref={pane}>
+        {discard && (
+          <div className="discard" role="alert">
+            <span>Discard changes?</span>
+            <button type="button" className="btn ghost sm" onClick={() => setDiscard(undefined)}>Keep editing</button>
+            <button type="button" className="btn sm" onClick={() => { const go = discard.go; setDiscard(undefined); dirty.current = false; go(); }}>Discard</button>
+          </div>
+        )}
+        {open ? sheets : <p className="mute dquiet">Select a row to edit it.</p>}
+        <p className="mute small keys">N new, / search, [ and ] previous and next, T today</p>
+      </aside>
+    </div>
   );
 }
