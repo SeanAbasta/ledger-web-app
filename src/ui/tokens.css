@@ -1098,3 +1098,7 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
 .pv { margin: var(--sp-3) 0 0; padding: var(--sp-2) var(--sp-3); border-radius: var(--r-slip); background: var(--fill); font-size: var(--fs-md); }
 .pv p { margin: 2px 0; }
 .pv .err { margin: 0; }
+/* People (V7): each statement amount with the balance after it underneath; the Settle up sheet's switch. */
+.num.stmt { display: flex; flex-direction: column; align-items: flex-end; }
+.num.stmt .run { font-size: var(--fs-xs); color: var(--mute); }
+.settlehow { display: flex; margin: var(--sp-2) 0 var(--sp-1); }

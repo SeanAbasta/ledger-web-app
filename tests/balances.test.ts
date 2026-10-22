@@ -145,3 +145,34 @@ describe("statement lines carry the full price", () => {
     expect([o.owedToMe, o.iOwe, o.net]).toEqual([0, 40000, -40000]);
   });
 });
+
+describe("statementOf after a part payment (settledOnly, used by People and the snapshot)", () => {
+  it("a part payment keeps the unpaid lines in view and is labelled Paid", () => {
+    const lines = personLines("maya", [meHalf("a", "2026-09-01", 1000), settle("s", "2026-09-10", 200, "in"), meHalf("b", "2026-10-01", 400)]);
+    const st = statementOf(lines, { settledOnly: true });
+    expect(st.lines.map((l) => [l.id, l.label])).toEqual([["a", "Food"], ["s", "Paid"], ["b", "Food"]]);
+    expect(nonZero(st.earlier)).toEqual([]);
+    expect(st.net).toEqual({ PHP: 500 });
+  });
+  it("an exact payment is a fully settled point: everything before it folds away", () => {
+    const lines = personLines("maya", [meHalf("a", "2026-09-01", 1000), settle("s", "2026-09-10", 500, "in"), meHalf("b", "2026-10-01", 400)]);
+    const st = statementOf(lines, { settledOnly: true });
+    expect(st.lines.map((l) => l.id)).toEqual(["b"]);
+    expect(st.earlier).toEqual({ PHP: 0 });
+  });
+  it("part payments, then one that settles the rest, fold at the last one", () => {
+    const lines = personLines("maya", [meHalf("a", "2026-09-01", 1000), settle("s1", "2026-09-10", 200, "in"), settle("s2", "2026-09-20", 300, "in"), meHalf("b", "2026-10-01", 400)]);
+    expect(statementOf(lines, { settledOnly: true }).lines.map((l) => l.id)).toEqual(["b"]);
+  });
+  it("two currencies settle at the point where both are zero", () => {
+    const usd = it_({ id: "u", date: "2026-09-02", amount: 1000, currency: "USD", split: { paidBy: "me", mode: "half", shares: [{ personId: "maya", amount: 500 }] } });
+    const usdBack = it_({ id: "s2", date: "2026-09-10", amount: 500, currency: "USD", kind: "settlement", personId: "maya", direction: "in" });
+    const lines = personLines("maya", [meHalf("a", "2026-09-01", 1000), usd, settle("s1", "2026-09-10", 500, "in"), usdBack, meHalf("b", "2026-10-01", 400)]);
+    expect(statementOf(lines, { settledOnly: true }).lines.map((l) => l.id)).toEqual(["b"]);
+  });
+  it("the default (no option) is today's rule, unchanged", () => {
+    const lines = personLines("maya", [meHalf("a", "2026-09-01", 1000), settle("s", "2026-09-10", 200, "in"), meHalf("b", "2026-10-01", 400)]);
+    expect(statementOf(lines).lines.map((l) => l.id)).toEqual(["b"]);
+    expect(statementOf(lines).earlier).toEqual({ PHP: 300 });
+  });
+});

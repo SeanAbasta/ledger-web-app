@@ -58,12 +58,26 @@ export interface Statement {
   net: ByCurrency;
 }
 
-/** Lines since the last settlement, with everything before it rolled into one carried balance. */
-export function statementOf(lines: Line[]): Statement {
+/**
+ * Lines since the last settlement, with everything before it rolled into one carried balance.
+ * `settledOnly` (People and the snapshot, since part payments exist): fold only at a fully settled point,
+ * the last settlement after which every currency is at exactly zero, so after a part payment the unpaid
+ * lines stay in view; a settlement still shown is a part payment and is labelled "Paid". The default is
+ * the old rule, unchanged. The net is the same either way.
+ */
+export function statementOf(lines: Line[], opts: { settledOnly?: boolean } = {}): Statement {
   let last = -1;
-  lines.forEach((l, i) => { if (l.settlement) last = i; });
+  if (opts.settledOnly) {
+    const run: ByCurrency = {};
+    lines.forEach((l, i) => {
+      run[l.currency] = (run[l.currency] ?? 0) + l.amount;
+      if (l.settlement && Object.values(run).every((v) => v === 0)) last = i;
+    });
+  } else {
+    lines.forEach((l, i) => { if (l.settlement) last = i; });
+  }
   const earlier = last >= 0 ? sumBy(lines.slice(0, last + 1)) : {};
-  const recent = lines.slice(last + 1);
+  const recent = lines.slice(last + 1).map((l) => (opts.settledOnly && l.settlement ? { ...l, label: "Paid" } : l));
   return { earlier, lines: recent, net: sumBy(lines) };
 }
 

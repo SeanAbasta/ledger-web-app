@@ -99,7 +99,9 @@ export function renderStatement(m: StatementModel, scale = 2): Promise<Blob> {
     text(labelShort(l.date), X_DATE, y - 14, `400 15px ${FONT}`, MUTE);
     text(l.label, X_ITEM, y - 14, `400 16px ${FONT}`, INK, "left", ITEM_MAX);
     if (l.total !== undefined) text(formatMinor(l.total, l.currency), X_TOTAL, y - 14, `400 16px ${FONT}`, MUTE, "right");
-    text(formatMinor(l.amount, l.currency), X_SHARE, y - 14, `500 16px ${FONT}`, l.amount < 0 ? "#2fb457" : INK, "right");
+    // A part payment ("Paid") shows with its sign, quietly; it is not a share of anything.
+    if (l.settlement) text(`${l.amount < 0 ? "\u2212" : "+"}${formatMinor(Math.abs(l.amount), l.currency)}`, X_SHARE, y - 14, `500 16px ${FONT}`, MUTE, "right");
+    else text(formatMinor(l.amount, l.currency), X_SHARE, y - 14, `500 16px ${FONT}`, l.amount < 0 ? "#2fb457" : INK, "right");
   }
 
   y += 16;
