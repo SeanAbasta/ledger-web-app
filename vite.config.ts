@@ -6,6 +6,7 @@ import react from "@vitejs/plugin-react";
 // Add the exchange-rate host to connect-src if an online rate source is ever used.
 const CSP = [
   "default-src 'none'",
+  "font-src 'self'",
   "script-src 'self'",
   "style-src 'self'",
   "img-src 'self' data: blob:",
@@ -28,6 +29,8 @@ const csp = (): Plugin => ({
 export default defineConfig(({ mode }) => ({
   base: loadEnv(mode, ".", "LEDGER_").LEDGER_BASE ?? "/ledger-web-app/",
   plugins: [react(), csp()],
+  // Fonts stay files, however small: the CSP allows fonts from 'self' only, never data: URIs.
+  build: { assetsInlineLimit: (file: string) => (file.endsWith(".woff2") ? false : undefined) },
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],

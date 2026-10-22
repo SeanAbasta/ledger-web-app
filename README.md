@@ -291,3 +291,5 @@ npm run preview   # serve the production build locally
 ## License
 
 This is a personal project. No license has been chosen yet, so all rights are reserved.
+
+The app ships two fonts, Spectral and Hanken Grotesk, under the SIL Open Font License 1.1 (texts in [LICENSES](LICENSES/)).

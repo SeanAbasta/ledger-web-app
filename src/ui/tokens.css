@@ -1,3 +1,16 @@
+/* Fonts (V2, Phase 3): self-hosted, cut down to Latin and the few signs Ledger shows (the peso sign comes
+   from a second, tiny file per weight). Spectral for figures and headings, Hanken Grotesk for the rest.
+   SIL Open Font License, see LICENSES/. If a file fails, Georgia and the system font take over. */
+@font-face { font-family: "Spectral"; font-style: normal; font-weight: 200; font-display: swap; src: url("../assets/fonts/spectral-200.woff2") format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+2013-2014, U+2018-201D, U+2022, U+2026, U+2039-203A, U+2212; }
+@font-face { font-family: "Spectral"; font-style: normal; font-weight: 200; font-display: swap; src: url("../assets/fonts/spectral-200-peso.woff2") format("woff2"); unicode-range: U+20B1; }
+@font-face { font-family: "Spectral"; font-style: normal; font-weight: 300; font-display: swap; src: url("../assets/fonts/spectral-300.woff2") format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+2013-2014, U+2018-201D, U+2022, U+2026, U+2039-203A, U+2212; }
+@font-face { font-family: "Spectral"; font-style: normal; font-weight: 300; font-display: swap; src: url("../assets/fonts/spectral-300-peso.woff2") format("woff2"); unicode-range: U+20B1; }
+@font-face { font-family: "Spectral"; font-style: normal; font-weight: 400; font-display: swap; src: url("../assets/fonts/spectral-400.woff2") format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+2013-2014, U+2018-201D, U+2022, U+2026, U+2039-203A, U+2212; }
+@font-face { font-family: "Spectral"; font-style: normal; font-weight: 400; font-display: swap; src: url("../assets/fonts/spectral-400-peso.woff2") format("woff2"); unicode-range: U+20B1; }
+@font-face { font-family: "Spectral"; font-style: normal; font-weight: 500; font-display: swap; src: url("../assets/fonts/spectral-500.woff2") format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+2013-2014, U+2018-201D, U+2022, U+2026, U+2039-203A, U+2212; }
+@font-face { font-family: "Spectral"; font-style: normal; font-weight: 500; font-display: swap; src: url("../assets/fonts/spectral-500-peso.woff2") format("woff2"); unicode-range: U+20B1; }
+@font-face { font-family: "Hanken Grotesk"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("../assets/fonts/hanken-grotesk-var.woff2") format("woff2"); unicode-range: U+0020-007E, U+00A0-00FF, U+2013-2014, U+2018-201D, U+2022, U+2026, U+2039-203A, U+2212; }
+@font-face { font-family: "Hanken Grotesk"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("../assets/fonts/hanken-grotesk-var-peso.woff2") format("woff2"); unicode-range: U+20B1; }
 /* Anodized: Ledger as a machined object. Bead-blasted silver by day, space black by night; cards are
    machined plates; the chrome is smoked glass; one anodized blue, only on what can be pressed.
    Every colour lives here, in both themes. Blue has three roles: --accent fills what you press,
