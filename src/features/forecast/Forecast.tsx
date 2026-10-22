@@ -83,8 +83,8 @@ function BalanceChart({ start, months, base }: { start: number; months: Forecast
         </div>
       </div>
       <div className="dailystats">
-        {stats.lowest && <div className="row static"><span>Lowest point</span><span>{formatMinor(stats.lowest.amount, base)} <span className="mute">{labelMonth(stats.lowest.month)}</span></span></div>}
-        {stats.highest && <div className="row static"><span>Highest point</span><span>{formatMinor(stats.highest.amount, base)} <span className="mute">{labelMonth(stats.highest.month)}</span></span></div>}
+        {stats.lowest && <div className="row static"><span>Lowest month end</span><span>{formatMinor(stats.lowest.amount, base)} <span className="mute">{labelMonth(stats.lowest.month)}</span></span></div>}
+        {stats.highest && <div className="row static"><span>Highest month end</span><span>{formatMinor(stats.highest.amount, base)} <span className="mute">{labelMonth(stats.highest.month)}</span></span></div>}
         <div className="row static"><span>Change over {months.length} months</span><span className={stats.change > 0 ? "pos" : ""}>{stats.change > 0 ? "+" : stats.change < 0 ? "\u2212" : ""}{formatMinor(Math.abs(stats.change), base)}</span></div>
         {stats.below > 0 && <div className="row static"><span>Below zero</span><span className="warnink">{stats.below} {stats.below === 1 ? "month" : "months"}</span></div>}
       </div>
@@ -103,6 +103,15 @@ function BalanceChart({ start, months, base }: { start: number; months: Forecast
       )}
     </div>
   );
+}
+
+/** The forecast's two assumptions, in words: what everyday spending is, and that owed money comes back this month. */
+function assumes(basis: number, owedNet: number, base: string): string {
+  const spending = basis
+    ? `Everyday spending is the average of your last ${basis === 1 ? "full month" : `${basis} full months`}: logged entries only, your share.`
+    : "Everyday spending is not in it yet. It needs one full month of entries.";
+  const owed = owedNet > 0 ? ` People pay you back this month: ${formatMinor(owedNet, base)}.` : owedNet < 0 ? ` You pay people back this month: ${formatMinor(-owedNet, base)}.` : "";
+  return spending + owed;
 }
 
 /** A month's salary box: shows commas while typing, saves when you leave the field or press Enter. */
@@ -188,9 +197,11 @@ export function Forecast() {
           <div className="card stat"><div className="mute">{owed.net > 0 ? "Owed to you" : "You owe"}</div><BigAmount minor={Math.abs(owed.net)} currency={base} />
             <div className="mute small">net, {owed.net > 0 ? "expected back" : "to pay"} this month</div></div>
         )}
-        <div className="card stat"><div className="mute">In 12 months</div><BigAmount minor={f.months[11]?.end ?? start} currency={base} />
-          <div className="mute small">{f.basis ? `spending averaged over ${f.basis} ${f.basis === 1 ? "month" : "months"}` : "no spending history yet"}</div></div>
+        {/* The headline names what is in it: with no full month of entries yet, everyday spending is not. */}
+        <div className="card stat"><div className="mute">{f.basis ? "In 12 months" : "In 12 months, bills and income only"}</div><BigAmount minor={f.months[11]?.end ?? start} currency={base} />
+          <div className="mute small">{f.basis ? `with everyday spending, the average of ${f.basis} ${f.basis === 1 ? "month" : "months"}` : "everyday spending not in it yet"}</div></div>
       </div>
+      <p className="mute small fnote">{assumes(f.basis, owed?.net ?? 0, base)}</p>
 
       <div className="grp" role="heading" aria-level={2}>Projected balance</div>
       <div className="card pad">
@@ -212,7 +223,6 @@ export function Forecast() {
           </div>
         ))}
       </div>
-      <p className="mute small">Assumes people settle what they owe you this month, and everyday spending repeats your recent average.</p>
 
       {/* Salary months after the chart and the table (owner, Q3): the forecast is what this screen is opened for. */}
       <div className="grp" role="heading" aria-level={2}>Salary</div>

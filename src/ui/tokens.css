@@ -746,6 +746,8 @@ fieldset:disabled .grp button.link { opacity: 0.5; cursor: default; }
 .flab.now { color: var(--accent-ink); font-weight: 600; }
 @media (max-width: 480px) { .flab.skip { display: none; } }
 .warnink { color: var(--pend); }
+/* Coming up, 12 months: the forecast's assumptions, right under the headline. */
+.fnote { margin: var(--sp-3) 0 0; }
 .ftable { padding: 4px 16px; margin-top: 12px; }
 .frow { display: grid; grid-template-columns: 1fr 1.3fr 1fr 1fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); text-align: right; }
 .frow:last-child { border-bottom: 0; }
