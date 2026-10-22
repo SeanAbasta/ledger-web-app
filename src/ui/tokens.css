@@ -134,6 +134,32 @@
   /* Category colours, anodized shades. src/ui/categoryColor.ts picks one per category. */
   --t-red: #d0453b; --t-orange: #d9822b; --t-yellow: #c9a227; --t-green: #3a9a5b; --t-mint: #2aa58f; --t-teal: #2a9d9f; --t-cyan: #2b93c4;
   --t-blue: #3b7ddd; --t-indigo: #5b5fd6; --t-purple: #8e5bd0; --t-pink: #d4567e; --t-brown: #9a7a5a; --t-gray: #8b9097;
+  /* V2 names (build prompt 11.8), set to today's values so new parts use them from the start and the
+     later skin changes values only. */
+  --sub: var(--mute);
+  --line-strong: var(--line);
+  --edge: var(--off);
+  --warn-ink: var(--pend);
+  --hit: 44px;
+  --ring: 2px solid var(--focus);
+  --ts: 1; /* text scale, for the later text size setting */
+  --r-pop: var(--radius-card);
+  --r-sheet: var(--radius-card);
+  --r-slip: var(--r-ctl);
+  --elev-pop: 0 0 0 0.5px var(--line), var(--shadow);
+  --elev-sheet: var(--sheet-shadow);
+  --elev-toast: var(--shadow);
+  /* The toast: ink with paper text, so it inverts in dark. Its link and timer line never use the accent on ink. */
+  --toast-bg: var(--ink);
+  --toast-ink: var(--surface);
+  --toast-sub: #c9cdd8;
+  --toast-link: #8c9bff;
+  --toast-line: #8c9bff;
+  --fig-card: var(--fs-xl);
+  --fig-sec: var(--fs-2xl);
+  --fig-hero: 50px;
+  --fig-amount: 40px;
+  --fig-day: var(--fs-lg);
   color-scheme: light;
   accent-color: var(--accent);
 }
@@ -197,6 +223,9 @@
   --cell-3-ink: #fff;
   --cell-4: color-mix(in srgb, var(--accent-data) 70%, #0a1c40);
   --cell-hi: rgba(255, 255, 255, 0.08);
+  --toast-sub: #4a4f57;
+  --toast-link: #1f4fbf;
+  --toast-line: #1f4fbf;
   color-scheme: dark;
 }
 @media (max-width: 700px) { :root { --gutter: 16px; } }
