@@ -65,7 +65,11 @@ export function IncomeForm({ entry, onDone, draft, onDraft }: { entry?: Entry; o
   // An edited entry's account that was removed stays listed until it is changed.
   const kept = accountId && !banks.some((a) => a.id === accountId) ? accountId : "";
 
+  // A second Save while the first is still being written would add the entry twice.
+  const saving = useRef(false);
   async function save() {
+    if (saving.current) return;
+    saving.current = true;
     setError("");
     try {
       const minor = parseMinor(amount, currency);
@@ -88,6 +92,8 @@ export function IncomeForm({ entry, onDone, draft, onDraft }: { entry?: Entry; o
       onDone?.({ date, message: savedLine({ note, category, amount: minor, currency, date, today: t }), undo: () => deleteEntry(store, monthOf(made.date), made.id), draft: { kind: "Income", fields: { amount, note, date, accountId, category } } });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save");
+    } finally {
+      saving.current = false;
     }
   }
 

@@ -153,7 +153,11 @@ export function AddForm({ entry, onDone, draft, onDraft }: { entry?: Entry; onDo
   const billable = !!card && validDate && entry?.kind !== "income" && (!!entry || kind === "one-off") && !someoneElsePaid && (canBillNext(card, date) || !!entry?.nextBill);
   const nextCut = card && validDate ? nextCutoff(card, cutoffFor(card, date)) : undefined;
 
+  // A second Save while the first is still being written would add the entry twice.
+  const saving = useRef(false);
   async function save() {
+    if (saving.current) return;
+    saving.current = true;
     setError("");
     try {
       const minor = parseMinor(amount, currency);
@@ -230,6 +234,8 @@ export function AddForm({ entry, onDone, draft, onDraft }: { entry?: Entry; onDo
         : { date, message: line, ...undoable });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save");
+    } finally {
+      saving.current = false;
     }
   }
 

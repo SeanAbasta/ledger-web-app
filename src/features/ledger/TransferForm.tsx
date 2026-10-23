@@ -74,11 +74,15 @@ export function TransferForm({ entry, accounts: given, onDone, onOpenSettings, d
     if (creating && !transferTargets(accounts, id).some((a) => a.id === to)) setTo(transferTargets(accounts, id)[0]?.id ?? "");
   }
 
+  // A second Save while the first is still being written would add the entry twice.
+  const saving = useRef(false);
   async function save() {
+    if (saving.current) return;
     setError("");
     const minor = parseMinor(amount, currency);
     if (!minor) return setError("Enter a valid amount");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return setError("Pick a date");
+    saving.current = true;
     try {
       if (entry) {
         await updateEntry(store, entry.date.slice(0, 7), entry.id, { amount: minor, date, accountId: from, toAccountId: to, note: note.trim() || undefined });
@@ -93,6 +97,8 @@ export function TransferForm({ entry, accounts: given, onDone, onOpenSettings, d
       onDone({ date, message: savedLine({ note, category: "Transfer", amount: minor, currency, date, today: t }), undo: () => deleteEntry(store, made.date.slice(0, 7), made.id), draft: { kind: "Transfer", fields: { amount, note, date, from, to } } });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save");
+    } finally {
+      saving.current = false;
     }
   }
 
