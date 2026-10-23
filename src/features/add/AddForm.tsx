@@ -26,6 +26,9 @@ import type { Draft, ExpenseDraft } from "./draft";
 import { recents, type Again } from "./recents";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 
+/** A phone or tablet: its Return key closes the keyboard. */
+const touchScreen = () => typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+
 type Kind = "one-off" | "recurring" | "installment";
 const KINDS = ["one-off", "recurring", "installment"] as const;
 // "Repeats" says what happens; Every, Payments and Ends open under it.
@@ -313,10 +316,10 @@ export function AddForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (sav
         </div>
       )}
       {/* Order: amount, again, note, category, account and when, split, then repeats. Save stays in view. */}
-      {/* Note comes before Category now, so on the Add tab Return closes the keyboard instead of saving
-          before a category is picked. In an edit sheet Return still saves. */}
+      {/* Note comes before Category now, so on a touch screen Return closes the keyboard instead of saving
+          before a category is picked. With a keyboard and mouse, and in an edit sheet, Return saves. */}
       <label className="field stack"><b>Note</b><input className="notefield" value={note} onChange={(e) => setNote(e.target.value)} placeholder="What was it?" enterKeyHint={entry ? undefined : "done"}
-        onKeyDown={(e) => { if (!entry && e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); } }} /></label>
+        onKeyDown={(e) => { if (!entry && e.key === "Enter" && touchScreen()) { e.preventDefault(); e.currentTarget.blur(); } }} /></label>
       <div className="field stack"><b>Category{!entry && (catSource && category === catSource.name ? <span className="catfrom">{category}, {catSource.from}</span> : category === startCat.name && startCat.from && <span className="catfrom">{category}, {startCat.from}</span>)}</b><CategoryChips list={settings.categories} value={category} onChange={setCategory} compact={!entry} /></div>
       </div>
       <div className="slip-r">
