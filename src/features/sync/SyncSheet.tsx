@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { daysLeft } from "../../sync/config";
 import { useLedger } from "../../ui/Ledger";
-import { sinceWords } from "../settings/health";
+import { sinceWords, tokenExpiry } from "../settings/health";
 import { pillOf } from "../../ui/Pill";
 import { Sheet } from "../../ui/Sheet";
 import { useSync } from "../../ui/Sync";
@@ -17,7 +17,7 @@ export function SyncSheet({ onClose, onSetup }: { onClose: () => void; onSetup: 
   useEffect(() => { void store.getMeta<string>("lastExported").then(setExported); }, [store]);
   const days = daysLeft(config);
   // Data health in one sentence: the last saved copy, and the token when it needs renewing.
-  const health = `Last copy saved to this device ${sinceWords(exported, new Date())}.${days !== undefined && days < 0 ? " Your GitHub token has expired." : days !== undefined && days <= 30 ? ` Your GitHub token expires in ${days} ${days === 1 ? "day" : "days"}.` : ""}`;
+  const health = `Last copy saved to this device ${sinceWords(exported, new Date())}.${days !== undefined && days < 0 ? " Your GitHub token has expired." : days !== undefined && days <= 30 ? ` Your GitHub token ${tokenExpiry(days)}.` : ""}`;
   const [result, setResult] = useState<"safe" | "not-safe">();
   const [busy, setBusy] = useState(false);
   const { label } = pillOf(status);

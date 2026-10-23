@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { healthOf, sinceWords, syncedWords } from "../src/features/settings/health";
+import { healthOf, sinceWords, syncedWords, tokenExpiry } from "../src/features/settings/health";
 
 const now = new Date("2026-10-22T13:42:00");
 const daysAgo = (n: number) => new Date(now.getTime() - n * 86400000).toISOString();
@@ -36,6 +36,11 @@ describe("healthOf", () => {
     expect(h.attention).toBe(true);
     expect(healthOf({ ...base, lastSynced: daysAgo(0), tokenDays: 31 }).attention).toBe(false);
   });
+  it("the token warning starts at 30 days and not before", () => {
+    expect(healthOf({ ...base, lastSynced: daysAgo(0), tokenDays: 30 }).state).toBe("expiring");
+    expect(healthOf({ ...base, lastSynced: daysAgo(0), tokenDays: 31 }).state).toBe("healthy");
+    expect(healthOf({ ...base, lastSynced: daysAgo(0), tokenDays: 0 }).state).toBe("expiring");
+  });
   it("token expired, by date or by the engine's error", () => {
     expect(healthOf({ ...base, lastSynced: daysAgo(0), tokenDays: -1 }).state).toBe("expired");
     expect(healthOf({ ...base, syncState: "error", tokenError: true, lastSynced: daysAgo(0) }).state).toBe("expired");
@@ -50,6 +55,11 @@ describe("healthOf", () => {
 });
 
 describe("words", () => {
+  it("says when the token runs out, with today for the last day", () => {
+    expect(tokenExpiry(0)).toBe("expires today");
+    expect(tokenExpiry(1)).toBe("expires in 1 day");
+    expect(tokenExpiry(12)).toBe("expires in 12 days");
+  });
   it("says when it synced", () => {
     expect(syncedWords(new Date("2026-10-22T13:42:00").toISOString(), now)).toMatch(/^today, 1:42/);
     expect(syncedWords(new Date("2026-10-21T09:05:00").toISOString(), now)).toMatch(/^yesterday, 9:05/);

@@ -39,6 +39,9 @@ export function healthOf(h: HealthInput): Health {
   return { state, attention: expired || expiring || (!backedUp && state !== "offline"), backedUp };
 }
 
+/** "expires today", "expires in 1 day", "expires in 12 days": for a token with 0 or more days left. */
+export const tokenExpiry = (days: number) => (days <= 0 ? "expires today" : `expires in ${days} ${days === 1 ? "day" : "days"}`);
+
 const time = (d: Date) => d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }).toLowerCase();
 const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 

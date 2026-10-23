@@ -30,7 +30,7 @@ import { applyTextSize, loadTextSize, saveTextSize, TEXT_SIZES, type TextSize } 
 import { loadShortcutsOn, saveShortcutsOn } from "../../ui/shortcuts";
 import { accountEdit, accountFieldsOf, cardEdit, cardFieldsOf, freshFields, newAccountOf, plain, type AccountFields, type CardFields } from "./accountEdit";
 import { CloseIcon, PrevIcon } from "../../ui/icons";
-import { healthOf, sinceWords, syncedWords, type Health } from "./health";
+import { healthOf, sinceWords, syncedWords, tokenExpiry, type Health } from "./health";
 
 
 /**
@@ -46,7 +46,7 @@ function HealthCard({ h, connected, lastSynced, lastExported, tokenDays, onSync,
   const copyBtn = <button className="btn ghost sm" onClick={onCopy}>Save a copy</button>;
   const [title, body, acts]: [string, string, ReactNode] =
     h.state === "expired" ? ["Your GitHub token has expired.", "", <button className="btn sm" onClick={onSetup}>Replace token</button>]
-    : h.state === "expiring" ? [`Your GitHub token expires in ${tokenDays} ${tokenDays === 1 ? "day" : "days"}. Renew soon.`, "", <button className="btn sm" onClick={onSetup}>Replace token</button>]
+    : h.state === "expiring" ? [`Your GitHub token ${tokenExpiry(tokenDays ?? 0)}. Renew soon.`, "", <button className="btn sm" onClick={onSetup}>Replace token</button>]
     : h.state === "offline" ? ["Offline. Changes stay on this device until you are back online.", "", null]
     : h.state === "healthy" ? (connected
       ? ["Safe on GitHub", `Synced ${synced}. Last copy saved to this device ${copy}.`, <>{syncBtn}{copyBtn}</>]
