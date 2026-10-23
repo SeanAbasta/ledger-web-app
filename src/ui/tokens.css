@@ -347,7 +347,7 @@ option, optgroup { background-color: var(--surface); color: var(--ink); }
 .seg button { all: unset; box-sizing: border-box; position: relative; display: inline-flex; align-items: center; justify-content: center; height: 32px; padding: 0 16px; border-radius: 999px; font: 500 var(--fs-md) var(--font); color: var(--sub); cursor: pointer; white-space: nowrap; }
 .seg button.on { background: var(--ink); color: var(--surface); font-weight: 600; }
 @media (max-width: 400px) { .seg button { padding: 0 11px; } }
-.seg.thumbed::before { content: ""; position: absolute; z-index: -1; top: 3px; bottom: 3px; left: 0; width: var(--thumb-w, 0); transform: translateX(var(--thumb-x, 0)); border-radius: 999px; background: var(--ink); transition: transform 220ms cubic-bezier(0.3, 1.25, 0.5, 1), width 220ms cubic-bezier(0.3, 1.25, 0.5, 1); }
+.seg.thumbed::before { content: ""; position: absolute; z-index: -1; top: 3px; bottom: 3px; left: 0; width: var(--thumb-w, 0); transform: translateX(var(--thumb-x, 0)); border-radius: 999px; background: var(--ink); transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), width 220ms cubic-bezier(0.16, 1, 0.3, 1); }
 .seg.thumbed.still::before { transition: none; }
 .seg.thumbed button.on { background: none; }
 /* Full-width switches (Dashboard Month or Year, Coming up's views, Settle up, the Ledger's view). */
@@ -372,7 +372,7 @@ fieldset:disabled .pick { cursor: default; }
 .chip button { all: unset; cursor: pointer; color: var(--mute); width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
 /* The switch: an edged slot; on, the accent fill with a paper knob. */
 .toggle { all: unset; box-sizing: border-box; position: relative; flex: none; width: 48px; height: 28px; border-radius: 999px; border: 1px solid var(--edge); cursor: pointer; }
-.toggle i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--edge); transition: transform 220ms cubic-bezier(0.3, 1.25, 0.5, 1); }
+.toggle i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--edge); transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1); }
 .toggle.on { background: var(--accent); border-color: var(--accent); }
 .toggle.on i { transform: translateX(20px); background: var(--on-accent); }
 /* Buttons: primary is the accent pill; ghost is edged; an armed Delete is an error outline. */
