@@ -959,7 +959,10 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
 }
 
 /* ---------- desktop (V19) ---------- */
-.docked h3:focus { outline: none; }
+.docked h3:focus, main:focus { outline: none; }
+/* Skip to this room: out of sight until a keyboard reaches it, the first stop on every screen. */
+.skiplink { position: absolute; left: 12px; top: -80px; z-index: calc(var(--z-bar) + 1); padding: 10px 14px; border-radius: 8px; background: var(--surface); color: var(--ink); font: 600 var(--fs-base) var(--font); box-shadow: 0 0 0 1px var(--line-strong); }
+.skiplink:focus { top: 12px; outline: var(--ring); outline-offset: 2px; }
 .dockfoot { padding: var(--sp-3) 0 var(--sp-2); }
 /* Wide screens: the Ledger is a list with its edit sheet docked beside it, and Add reads in two columns. */
 @media (min-width: 1200px) {

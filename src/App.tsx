@@ -153,6 +153,7 @@ function Shell() {
   return (
     <LeaveGuardRef.Provider value={guard}>
     <div className={tab === "Add" ? "win on-add" : "win"}>
+      <a className="skiplink" href="#room" onClick={(e) => { e.preventDefault(); document.getElementById("room")?.focus(); }}>Skip to this room</a>
       <nav className="side" aria-label="Rooms">
         <div className="brand">Ledger</div>
         {ROOMS.map((n) => {
@@ -165,7 +166,7 @@ function Shell() {
         })}
         {actions("baracts topacts")}
       </nav>
-      <main className={READING_TABS.includes(tab) ? "reading" : undefined} data-tab={tab}>
+      <main id="room" tabIndex={-1} className={READING_TABS.includes(tab) ? "reading" : undefined} data-tab={tab}>
         <header className={scrolled ? "bar scrolled" : "bar"}>
           <h1>{tab}</h1>
           {actions("baracts")}

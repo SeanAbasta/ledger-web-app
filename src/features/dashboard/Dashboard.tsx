@@ -275,13 +275,13 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
       <div key={from} className={v.dir === 1 ? "period next" : v.dir === -1 ? "period prev" : "period"}>
       {/* Spent leads; Still due and Last month sit side by side under it on phones, beside it on computers. */}
       <div className="statrow">
-        <div className="card stat hero"><div className="mute">{future ? "Planned" : "Spent"}{acctName && <span className="tag">{acctName}</span>}</div><BigAmount minor={future ? chart.total : cur.total} currency={base} />
+        <div className="card stat hero"><div className="mute" role="heading" aria-level={2}>{future ? "Planned" : "Spent"}{acctName && <span className="tag">{acctName}</span>}</div><BigAmount minor={future ? chart.total : cur.total} currency={base} />
           {!future && prevTotal > 0 && <Compare ratio={cur.total / prevTotal} />}
           <div className="mute small">{future ? "Scheduled payments only" : pace + compared}</div></div>
-        <div className="card stat"><div className="mute">Still due</div><BigAmount minor={stillDue} currency={base} />
+        <div className="card stat"><div className="mute" role="heading" aria-level={2}>Still due</div><BigAmount minor={stillDue} currency={base} />
           <div className="mute small">{isCurrent ? "yours, rest of this month" : "current month only"}</div>
           {onComingUp && <button type="button" className="link golink" onClick={onComingUp}>Coming up<NextIcon /></button>}</div>
-        <div className="card stat"><div className="mute">Last month</div>
+        <div className="card stat"><div className="mute" role="heading" aria-level={2}>Last month</div>
           {/* Nothing to compare (same rule as Spent's "No earlier data"): say so instead of ₱0.00. */}
           {prevTotal > 0 ? <BigAmount minor={prevTotal} currency={base} /> : <BigAmount currency={base} word="No data" className="nodata" />}
           <div className="mute small">{isCurrent ? "same days" : "full month"}</div></div>
@@ -293,7 +293,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
       ) : (
         <div className="grid g2">
           <div ref={catRef} className={pop.open ? "card pad catcard popopen" : "card pad catcard"}>
-            <div className="mute">Categories{future ? <span className="tag">Planned</span> : upcoming && <span className="tag">incl. upcoming</span>}</div>
+            <div className="mute" role="heading" aria-level={2}>Categories{future ? <span className="tag">Planned</span> : upcoming && <span className="tag">incl. upcoming</span>}</div>
             <Strip cats={cats} total={catTotal} base={base} trigger={pop.trigger} />
             <ul className="legend">
               {cats.map((c) => (
@@ -326,7 +326,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
           </div>
           <div className="card pad">
             <div className="dailyhead">
-              <span className="mute">Daily{future ? <span className="tag">Planned</span> : upcoming && <span className="tag">incl. upcoming</span>}</span>
+              <span className="mute" role="heading" aria-level={2}>Daily{future ? <span className="tag">Planned</span> : upcoming && <span className="tag">incl. upcoming</span>}</span>
               {elapsed > 0 && <span className="mute small">{formatMinor(daily.average, base)} a day{isCurrent ? `, ${elapsed} ${elapsed === 1 ? "day" : "days"} in` : ""}</span>}
             </div>
             <Lattice days={chart.byDay} from={from} elapsed={elapsed} todayIdx={todayIdx} base={base} label={dailyLabel} onOpen={onOpenDay} />
@@ -350,7 +350,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
       <div className={`grid ${bottomCards === 3 ? "g3" : "g2"}`}>
         {showAccounts && (
           <div className="card pad">
-            <div className="mute">Accounts</div>
+            <div className="mute" role="heading" aria-level={2}>Accounts</div>
             {balances.accounts.map(({ account, balance }) => (
               <div key={account.id} className="row static"><span>{account.name}</span><span>{formatMinor(balance, account.currency)}</span></div>
             ))}
@@ -374,7 +374,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
         )}
         {showOwed && (
           <div className="card pad">
-            <div className="mute">{owed.net >= 0 ? "Owed to you" : "You owe"}</div>
+            <div className="mute" role="heading" aria-level={2}>{owed.net >= 0 ? "Owed to you" : "You owe"}</div>
             <BigAmount minor={Math.abs(owed.net)} currency={base} />
             <div className="mute small">
               {owed.owedToMe && owed.iOwe ? `${formatMinor(owed.owedToMe, base)} owed to you, ${formatMinor(owed.iOwe, base)} you owe` : "net"}
@@ -392,7 +392,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
           </div>
         )}
         {next && (
-          <div className="card stat"><div className="mute">End of {labelMonth(next.month)}</div><BigAmount minor={next.end} currency={base} /><div className="mute small">{owed.net ? "forecast, after everyone settles up" : "forecast"}</div></div>
+          <div className="card stat"><div className="mute" role="heading" aria-level={2}>End of {labelMonth(next.month)}</div><BigAmount minor={next.end} currency={base} /><div className="mute small">{owed.net ? "forecast, after everyone settles up" : "forecast"}</div></div>
         )}
       </div>
       {chart.unconverted > 0 && <p className="mute small">{chart.unconverted} foreign {chart.unconverted === 1 ? "amount has" : "amounts have"} no rate and {chart.unconverted === 1 ? "is" : "are"} left out.</p>}

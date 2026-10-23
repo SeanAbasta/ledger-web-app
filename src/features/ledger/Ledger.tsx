@@ -239,7 +239,7 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
     return (
     <div key={date}>
       {/* The day stays pinned under the top bar while its rows scroll. */}
-      <div className="grp day day-head" role="heading" aria-level={3} aria-label={labelDay(date)}><span className="dnum" aria-hidden="true">{Number(date.slice(8))}</span><span className="dname" aria-hidden="true">{labelDay(date).replace(/\s*\d+$/, "")}</span><span className="r">{dayTotal(full)}{yours !== full && <span className="dayyours">yours {formatMinor(yours, base)}</span>}</span></div>
+      <div className="grp day day-head" role="heading" aria-level={allScope ? 3 : 2} aria-label={labelDay(date)}><span className="dnum" aria-hidden="true">{Number(date.slice(8))}</span><span className="dname" aria-hidden="true">{labelDay(date).replace(/\s*\d+$/, "")}</span><span className="r">{dayTotal(full)}{yours !== full && <span className="dayyours">yours {formatMinor(yours, base)}</span>}</span></div>
       <div className="card">
         {its.map((it) => {
           const x = it.type === "entry" ? it.entry : it.occ;
