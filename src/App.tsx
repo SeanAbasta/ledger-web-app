@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import { AddForm, type SavedNote } from "./features/add/AddForm";
 import type { Draft } from "./features/add/draft";
 import { FirstRun } from "./features/add/FirstRun";
@@ -21,6 +21,7 @@ import { Segmented } from "./ui/Segmented";
 import { SyncProvider, useSync } from "./ui/Sync";
 import { ToastProvider, useToast } from "./ui/Toast";
 import { useShortcuts } from "./ui/shortcuts";
+import { LeaveGuardRef, type LeaveGuard } from "./ui/leaveGuard";
 
 // Rooms are named for the question they answer. People (was Splits) and Coming up (was Forecast) keep their slots.
 const NAV = ["Add", "Ledger", "Dashboard", "People", "Coming up", "Settings"] as const;
@@ -134,7 +135,12 @@ function Shell() {
   const attention = healthOf({ connected: !!config, syncState: status.state, tokenError: /token/i.test(status.message ?? ""), lastSynced: status.lastSynced ?? stamps.synced, lastExported: stamps.exported, tokenDays: daysLeft(config), now: new Date() }).attention;
   const locked = readOnly && EDIT_TABS.includes(tab);
   // A tab (or the gear) starts its room fresh: nothing carried over from where another screen sent us.
-  const open = (n: Tab) => { setFocusPerson(undefined); setSaved(undefined); setLedgerView(undefined); setFocusTile(undefined); setFocusCard(undefined); setSettingsPage(undefined); setTab(n); };
+  // The Ledger's docked pane may hold typed changes: it can ask before a room change drops them.
+  const guard = useRef<LeaveGuard | undefined>(undefined);
+  const open = (n: Tab) => {
+    const go = () => { setFocusPerson(undefined); setSaved(undefined); setLedgerView(undefined); setFocusTile(undefined); setFocusCard(undefined); setSettingsPage(undefined); setTab(n); };
+    if (!guard.current?.(go)) go();
+  };
 
   // The sync pill and the gear: in the top bar on computers, in each room's header on phones (CSS shows one).
   const actions = (cls: string) => (
@@ -145,6 +151,7 @@ function Shell() {
   );
 
   return (
+    <LeaveGuardRef.Provider value={guard}>
     <div className={tab === "Add" ? "win on-add" : "win"}>
       <nav className="side" aria-label="Rooms">
         <div className="brand">Ledger</div>
@@ -183,6 +190,7 @@ function Shell() {
       {sheet === "sync" && <SyncSheet onClose={() => setSheet(undefined)} onSetup={() => setSheet("setup")} />}
       {sheet === "setup" && <SetupSheet onClose={() => setSheet(undefined)} />}
     </div>
+    </LeaveGuardRef.Provider>
   );
 }
 

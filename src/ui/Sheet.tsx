@@ -110,10 +110,29 @@ export function Dock({ children, onClose, locked }: { children: ReactNode; onClo
     if (!h.id) h.id = `${id}-title`;
     box.current.setAttribute("aria-labelledby", h.id);
   });
+  // Like the phone sheet: focus moves in when it opens, and Escape closes it. The caller puts focus back.
+  useEffect(() => {
+    const h = box.current?.querySelector("h3");
+    if (!h) return;
+    h.tabIndex = -1;
+    h.focus({ preventScroll: true });
+  }, []);
+  const close = useRef(onClose);
+  close.current = onClose;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented || document.querySelector(".scrim")) return;
+      e.preventDefault();
+      close.current();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
   return (
     <section ref={box} className="sheet docked">
       <button type="button" className="close" aria-label="Close" onClick={onClose}><CloseIcon /></button>
       <fieldset className="plain" disabled={!!locked && readOnly}>{children}</fieldset>
+      <div className="dockfoot"><button type="button" className="link" onClick={onClose}>Cancel</button></div>
     </section>
   );
 }

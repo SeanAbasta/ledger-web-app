@@ -959,6 +959,8 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
 }
 
 /* ---------- desktop (V19) ---------- */
+.docked h3:focus { outline: none; }
+.dockfoot { padding: var(--sp-3) 0 var(--sp-2); }
 /* Wide screens: the Ledger is a list with its edit sheet docked beside it, and Add reads in two columns. */
 @media (min-width: 1200px) {
   main[data-tab="Ledger"], main[data-tab="Add"] { --col: var(--content-max); }

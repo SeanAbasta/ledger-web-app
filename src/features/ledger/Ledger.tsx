@@ -25,6 +25,7 @@ import { categoryTone } from "../../ui/categoryColor";
 import { Empty } from "../../ui/Empty";
 import { LedgerIcon, NextIcon, PrevIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
+import { useLeaveGuard } from "../../ui/leaveGuard";
 import { UNDO_FAILED, useToast } from "../../ui/Toast";
 import { useTodayKey } from "../../ui/useTodayKey";
 
@@ -155,14 +156,31 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
     if (!el) return;
     const mark = () => { dirty.current = true; };
     const tap = (e: Event) => { const b = (e.target as HTMLElement).closest("button"); if (b && b.closest("form") && b.getAttribute("type") !== "submit") dirty.current = true; };
+    // Saving is not losing changes: the pane closes itself afterwards without asking.
+    const saved = () => { dirty.current = false; };
     el.addEventListener("input", mark);
     el.addEventListener("change", mark);
     el.addEventListener("click", tap);
-    return () => { el.removeEventListener("input", mark); el.removeEventListener("change", mark); el.removeEventListener("click", tap); };
+    el.addEventListener("submit", saved);
+    return () => { el.removeEventListener("input", mark); el.removeEventListener("change", mark); el.removeEventListener("click", tap); el.removeEventListener("submit", saved); };
   }, [wide]);
+  useEffect(() => { if (!open) dirty.current = false; }, [open]);
   const isOpen = (it: LedgerItem) => (it.type === "entry" ? editing?.id === it.entry.id || paid?.id === it.entry.id : !!occ && occ.ruleId === it.occ.ruleId && occ.date === it.date);
+  // The docked pane asks before it is closed or left (Close, Cancel, Escape, another room) with changes
+  // typed in it, and gives focus back to the row it was opened from.
+  const opener = useRef<HTMLElement | null>(null);
+  const leave = (go: () => void) => {
+    if (!(wide && open && dirty.current)) return false;
+    setDiscard({ go });
+    return true;
+  };
+  useLeaveGuard(leave);
+  const finish = (fn: () => void) => () => { dirty.current = false; fn(); if (wide) opener.current?.focus(); };
+  const close = (fn: () => void) => () => { const done = finish(fn); if (!leave(done)) done(); };
   function openItem(it: LedgerItem) {
+    const from = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const go = () => {
+      opener.current = from;
       dirty.current = false;
       setEditing(undefined); setPaid(undefined); setOcc(undefined); setRefunding(undefined);
       if (it.type === "occurrence") setOcc(it.occ);
@@ -316,24 +334,24 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
   const sheets = (
     <>
       {editing && (
-        <Panel key={editing.id} locked onClose={() => setEditing(undefined)}>
+        <Panel key={editing.id} locked onClose={close(() => setEditing(undefined))}>
           {wide && <p className="mute dmeta">{labelDay(editing.date)}{editing.accountId ? `, ${accountName(editing.accountId)}` : ""}</p>}
           <h3>{editing.refund ? "Edit refund" : editing.kind === "income" ? "Edit income" : "Edit expense"}</h3>
           {/* One-off side income opens its own form; salary entries and refunds open the expense form as before. */}
-          {incomeEditor(editing) === "income" ? <IncomeForm entry={editing} onDone={() => setEditing(undefined)} /> : <AddForm entry={editing} onDone={() => setEditing(undefined)} />}
+          {incomeEditor(editing) === "income" ? <IncomeForm entry={editing} onDone={finish(() => setEditing(undefined))} /> : <AddForm entry={editing} onDone={finish(() => setEditing(undefined))} />}
           {editing.kind === "expense" && onCard(editing) && (
             <div className="actions"><button className="btn ghost" onClick={() => void openRefund(editing)}>Refund</button></div>
           )}
         </Panel>
       )}
       {paid?.kind === "transfer" && (
-        <Panel key={paid.id} locked onClose={() => setPaid(undefined)}>
+        <Panel key={paid.id} locked onClose={close(() => setPaid(undefined))}>
           <h3>{paid.category === "Card payment" ? "Edit card payment" : "Edit transfer"}</h3>
-          <TransferForm entry={paid} accounts={accounts} onDone={() => setPaid(undefined)} />
+          <TransferForm entry={paid} accounts={accounts} onDone={finish(() => setPaid(undefined))} />
         </Panel>
       )}
       {paid && paid.kind !== "transfer" && (
-        <Panel key={paid.id} locked onClose={() => setPaid(undefined)}>
+        <Panel key={paid.id} locked onClose={close(() => setPaid(undefined))}>
           <h3>{paid.note || paid.category || "Transfer"}</h3>
           <p className="mute">
             {labelDay(paid.date)} · {formatMinor(paid.amount, paid.currency)}
@@ -350,7 +368,7 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
         </Panel>
       )}
       {refunding && (
-        <Panel key={refunding.entry.id} locked onClose={() => setRefunding(undefined)}>
+        <Panel key={refunding.entry.id} locked onClose={close(() => setRefunding(undefined))}>
           <h3>Refund</h3>
           <p className="mute">{refunding.entry.note || refunding.entry.category} · {labelDay(refunding.entry.date)} · {formatMinor(refunding.entry.amount, refunding.entry.currency)} on {accountName(refunding.entry.accountId)}</p>
           {refunding.left > 0 ? (
@@ -367,7 +385,7 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
         </Panel>
       )}
       {/* A generated payment: Edit, Skip this one, End series (shared with the Dashboard's Recurring list). */}
-      {occ && <PlanSheet key={occ.ruleId + occ.date} occ={occ} rule={rules.find((r) => r.id === occ.ruleId)} people={people} onClose={() => setOcc(undefined)} docked={wide} />}
+      {occ && <PlanSheet key={occ.ruleId + occ.date} occ={occ} rule={rules.find((r) => r.id === occ.ruleId)} people={people} onClose={close(() => setOcc(undefined))} docked={wide} />}
     </>
   );
 
