@@ -7,6 +7,7 @@ import { addRefund, deleteEntry, loadAllEntries, loadEntries, refundable, restor
 import { formatMinor, parseMinor } from "../../data/money";
 import { ledgerItems, occurrences, type LedgerItem, type Occurrence } from "../../data/rules";
 import { incomeEditor } from "../../data/sideIncome";
+import { indexEntries } from "../../data/summary";
 import { isCard, type Account, type Entry, type Person, type Rule } from "../../data/schema";
 import { AddForm } from "../add/AddForm";
 import { IncomeForm } from "../add/IncomeForm";
@@ -232,10 +233,12 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
 
   // One day: its pinned header with the day total, then its rows. Used by the period and by all months.
   // The total is the full amount paid; "yours" under it is what it cost me, shown when the two differ.
+  // Found once for the whole list: a refund finds its purchase here, and every day head shares it.
+  const entryIndex = useMemo(() => indexEntries(allScope && allData ? allData.entries : entries), [allScope, allData, entries]);
   const dayBlock = (date: string, its: LedgerItem[]) => {
     const full = total(its);
     const happened = its.filter((it) => !upcoming(it));
-    const yours = happened.length ? dayShare(happened, base, allScope && allData ? allData.entries : entries) : 0;
+    const yours = happened.length ? dayShare(happened, base, entryIndex) : 0;
     return (
     <div key={date}>
       {/* The day stays pinned under the top bar while its rows scroll. */}

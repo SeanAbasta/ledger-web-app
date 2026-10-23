@@ -67,7 +67,7 @@ export function matchesAccount(it: LedgerItem, f?: AccountFilter): boolean {
  * used to find the expense a refund belongs to (for my share of a split one). With `filter`, only
  * spending on that account counts (a refund by the account it came back to).
  */
-export function summarize(items: LedgerItem[], base: string, from: IsoDate, to: IsoDate, all: Entry[] = [], filter?: AccountFilter): Summary {
+export function summarize(items: LedgerItem[], base: string, from: IsoDate, to: IsoDate, all: EntryIndex = [], filter?: AccountFilter): Summary {
   return tally(items, base, from, to, all, filter);
 }
 
@@ -76,12 +76,19 @@ export function summarize(items: LedgerItem[], base: string, from: IsoDate, to: 
  * scheduled after `today` (plan payments and future-dated entries; my share of splits, nothing estimated).
  * `planned` is the scheduled part, and those items are marked in the breakdown.
  */
-export function plannedSummary(items: LedgerItem[], base: string, from: IsoDate, to: IsoDate, today: IsoDate, all: Entry[] = [], filter?: AccountFilter): PlannedSummary {
+export function plannedSummary(items: LedgerItem[], base: string, from: IsoDate, to: IsoDate, today: IsoDate, all: EntryIndex = [], filter?: AccountFilter): PlannedSummary {
   return tally(items, base, from, to, all, filter, today) as PlannedSummary;
 }
 
-function tally(items: LedgerItem[], base: string, from: IsoDate, to: IsoDate, all: Entry[], filter?: AccountFilter, today?: IsoDate): Summary | PlannedSummary {
-  const byId = new Map([...all, ...items.flatMap((it) => (it.type === "entry" ? [it.entry] : []))].map((e) => [e.id, e]));
+/** Every entry, to find the purchase a refund belongs to: a list, or the same by id when many calls share it. */
+export type EntryIndex = readonly Entry[] | ReadonlyMap<string, Entry>;
+export const indexEntries = (all: readonly Entry[]): ReadonlyMap<string, Entry> => new Map(all.map((e) => [e.id, e]));
+
+function tally(items: LedgerItem[], base: string, from: IsoDate, to: IsoDate, all: EntryIndex, filter?: AccountFilter, today?: IsoDate): Summary | PlannedSummary {
+  // The items' own entries win over `all`, as when both were put in one map.
+  const index = all instanceof Map ? all : indexEntries(all as readonly Entry[]);
+  const own = new Map(items.flatMap((it) => (it.type === "entry" ? [[it.entry.id, it.entry] as const] : [])));
+  const byId = { get: (id: string) => own.get(id) ?? index.get(id) };
   const byDay: Minor[] = Array(daysBetween(from, to) + 1).fill(0);
   const cats = new Map<string, Minor>();
   const picks = new Map<string, SpendItem[]>();

@@ -12,7 +12,7 @@ export function myShare(amount: Minor, split?: Split): Minor {
  * My part of a refund: the same share I had of the expense it refunds (all of it when that
  * expense was not split, or cannot be found).
  */
-export function myRefund(refund: Pick<Entry, "amount" | "refundOf">, byId?: Map<string, Entry>): Minor {
+export function myRefund(refund: Pick<Entry, "amount" | "refundOf">, byId?: { get(id: string): Entry | undefined }): Minor {
   const orig = refund.refundOf ? byId?.get(refund.refundOf) : undefined;
   if (!orig?.split || orig.amount <= 0) return refund.amount;
   return Math.round((refund.amount * myShare(orig.amount, orig.split)) / orig.amount);

@@ -1,8 +1,7 @@
 import { formatMinor } from "../../data/money";
 import type { LedgerItem } from "../../data/rules";
-import type { Entry } from "../../data/schema";
 import { myShare } from "../../data/splits";
-import { summarize } from "../../data/summary";
+import { summarize, type EntryIndex } from "../../data/summary";
 
 /**
  * The small third line on a split Ledger row: what it cost me ("yours ₱1,500.00"), in the entry's own
@@ -19,7 +18,7 @@ export function shareLine(it: LedgerItem): string | undefined {
  * Dashboard's own `summarize` (my share of splits, refunds at my share, income and transfers left out),
  * so the two screens show the same figure for a day. `all` finds the purchase a refund belongs to.
  */
-export function dayShare(its: LedgerItem[], base: string, all: Entry[]): number {
+export function dayShare(its: LedgerItem[], base: string, all: EntryIndex): number {
   const d = its[0]?.date ?? "";
   return summarize(its, base, d, d, all).total;
 }

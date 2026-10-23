@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildSplit } from "../src/data/splits";
 import { ledgerItems, type LedgerItem } from "../src/data/rules";
 import type { Entry, Rule, Split } from "../src/data/schema";
-import { summarize } from "../src/data/summary";
+import { indexEntries, summarize } from "../src/data/summary";
 import { dayShare, shareLine } from "../src/features/ledger/rowShare";
 
 const entry = (amount: number, split?: Split, currency = "PHP"): LedgerItem => {
@@ -54,6 +54,13 @@ describe("dayShare: the day head's yours figure", () => {
     const buy = e("A", 200000, { date: "2026-10-01", split: buildSplit({ amount: 200000, paidBy: "me", mode: "half", people: ["alex"] }) });
     const back = e("R", 100000, { kind: "income", refund: true, refundOf: "A", category: "Food" });
     expect(dayShare(items([back]), "PHP", [buy, back])).toBe(-50000);
+  });
+  it("a shared index gives the same figure as the list, for a refund whose purchase is in another month", () => {
+    const buy = e("A", 200000, { date: "2026-09-01", split: buildSplit({ amount: 200000, paidBy: "me", mode: "half", people: ["alex"] }) });
+    const back = e("R", 100000, { kind: "income", refund: true, refundOf: "A", category: "Food" });
+    const index = indexEntries([buy, back]);
+    expect(dayShare(items([back]), "PHP", index)).toBe(-50000);
+    expect(dayShare(items([back]), "PHP", index)).toBe(dayShare(items([back]), "PHP", [buy, back]));
   });
   it("income, transfers and settlements are not spending", () => {
     const es = [e("I", 500000, { kind: "income", category: "Sale" }), e("T", 100000, { kind: "transfer", category: "Transfer" }), e("S", 30000, { kind: "settlement", category: "Settlement" })];
