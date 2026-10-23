@@ -2,6 +2,17 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V2.0.2 (2026-10-23)
+
+A small patch for tablets, keyboards and screen readers. Nothing about your data changes, so an older copy keeps working.
+
+- On a tablet-sized screen (701 to 900 px wide) with Large or Larger text, the top bar no longer runs off the edge. The sync pill and the gear stay on screen, and a long pill label ends in an ellipsis.
+- On a computer, the edit pane beside the Ledger takes focus when it opens, closes with Escape or a Cancel link, and gives focus back to its row. Closing it, or changing room, with changes typed in it asks "Discard changes?" first. Saving never asks.
+- Return in the Note field saves when you use a keyboard and mouse. On a phone or tablet it still closes the keyboard.
+- What you typed on Add is kept when you leave Add to look something up, and is there when you come back (one slot for expense, income and transfer). Saving empties it, and a reload clears it.
+- The Dashboard calendar is one tab stop. Arrow keys, Home and End move between days.
+- A "Skip to this room" link is the first stop on every screen, and Dashboard section labels and Ledger day heads are real headings for screen readers.
+
 ## V2.0.1 (2026-10-23)
 
 A small patch after a review of V2.0.0. A new app icon and a few fixes. Nothing about your data changes, so an older copy keeps working.
