@@ -22,7 +22,7 @@ export function Pill({ status, onClick }: { status: SyncStatus; onClick?: () => 
   return (
     <button type="button" className={`pill ${cls}`} onClick={onClick} aria-label={`Sync status: ${label}`}>
       <i />
-      {label}
+      <span className="pt">{label}</span>
     </button>
   );
 }

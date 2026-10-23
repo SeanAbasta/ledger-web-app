@@ -226,6 +226,14 @@ main.reading { --col: var(--reading-max); }
 .side > button.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); }
 .side > button:focus-visible { outline: var(--ring); outline-offset: 4px; border-radius: 4px; }
 .topacts { flex: 1; justify-content: flex-end; align-self: center; }
+/* Between a phone and a wide screen the bar is tight, most of all with larger text: the gaps close up, the
+   wordmark is smaller, and a long pill label ends in an ellipsis, so the gear never leaves the screen. */
+@media (min-width: 701px) and (max-width: 899px) {
+  .side { gap: var(--sp-3); }
+  .brand { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(24px * var(--ts)); }
+  .topacts { flex: none; }
+  .topacts .pill { max-width: 170px; }
+}
 /* Each room's header: its title in Spectral. Computers: a page title (the pill and gear are in the top
    bar). Phones: sticky, with the pill and gear; a hairline appears once the page has scrolled. */
 .bar {
@@ -286,6 +294,7 @@ main.reading { --col: var(--reading-max); }
 }
 /* The sync pill: text always shown, a dot for the state. */
 .pill { all: unset; box-sizing: border-box; position: relative; display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--edge); font: 500 calc(13px * var(--ts)) var(--font); color: var(--ink); white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.pill .pt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pill i { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--good); }
 .pill.syncing i { background: var(--accent-data); }
 .pill.offline i { background: var(--mute); }
