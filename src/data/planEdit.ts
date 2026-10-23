@@ -4,6 +4,9 @@ import { occurrences } from "./rules";
 import type { Frequency, IsoDate, Minor, Rule, SplitShare } from "./schema";
 import { participants, splitForSave } from "./splits";
 
+/** The most payments an installment plan may have (fifty years of monthly payments). */
+export const MAX_PAYMENTS = 600;
+
 /**
  * Edit a whole plan: its start, how often, how many payments and the total (installments), its end
  * (recurring), note, category and account. Payments are never stored, they come from the plan, so a

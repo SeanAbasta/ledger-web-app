@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyPlanEdit, diffLines, diffPlan, patchOf } from "../src/data/planEdit";
+import { applyPlanEdit, diffLines, diffPlan, MAX_PAYMENTS, patchOf } from "../src/data/planEdit";
 import { cardStatus } from "../src/data/cards";
 import { ledgerItems, occurrences } from "../src/data/rules";
 import { buildSplit } from "../src/data/splits";
@@ -121,5 +121,15 @@ describe("diffPlan: what the change does, before it is saved", () => {
     const moved = applyPlanEdit(laptop, { ...patchOf(laptop), start: "2026-10-16" }); // first payment after the cut-off
     const after = st(moved);
     expect([after.statement, after.unbilled]).toEqual([0, 2000 * P]);
+  });
+});
+
+describe("MAX_PAYMENTS", () => {
+  it("a plan at the limit is worked out at once", () => {
+    const rule: Rule = { id: "L", type: "installment", kind: "expense", amount: 1000, total: 1000 * MAX_PAYMENTS, count: MAX_PAYMENTS, currency: "PHP", category: "Shopping", note: "Laptop", frequency: "monthly", start: "2026-10-13", updatedAt: "x" };
+    const t = Date.now();
+    const next = applyPlanEdit(rule, { start: "2026-10-20", frequency: "monthly", count: MAX_PAYMENTS, total: 1000 * MAX_PAYMENTS });
+    expect(diffPlan(rule, next, "2026-10-23").unchanged).toBe(false);
+    expect(Date.now() - t).toBeLessThan(2000);
   });
 });

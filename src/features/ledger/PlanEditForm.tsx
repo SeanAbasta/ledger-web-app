@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getSettings, listAll, upsert } from "../../data/collections";
 import { today } from "../../data/dates";
 import { formatMinor, parseMinor } from "../../data/money";
-import { applyPlanEdit, diffLines, diffPlan, patchOf } from "../../data/planEdit";
+import { applyPlanEdit, diffLines, diffPlan, MAX_PAYMENTS, patchOf } from "../../data/planEdit";
 import { isCard, type Account, type Frequency, type Rule } from "../../data/schema";
 import { AccountOptions } from "../../ui/AccountOptions";
 import { MoneyInput } from "../../ui/MoneyInput";
@@ -47,6 +47,7 @@ export function PlanEditForm({ rule, onDone }: { rule: Rule; onDone: () => void 
   const minor = installment ? parseMinor(total, rule.currency) : null;
   const problem = !isDate(start) ? "Pick a start date"
     : installment && (!Number.isInteger(n) || n < 2) ? "Payments must be a whole number, 2 or more"
+    : installment && n > MAX_PAYMENTS ? `Payments can be ${MAX_PAYMENTS} at most`
     : installment && !minor ? "Total must be above zero"
     : !installment && end && !isDate(end) ? "Pick an end date or leave it empty"
     : !installment && end && end < start ? "Ends cannot be before Starts"

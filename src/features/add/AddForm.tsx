@@ -22,6 +22,7 @@ import { useLedger } from "../../ui/Ledger";
 import { useKeyboardInset } from "../../ui/useKeyboardInset";
 import { UNDO_FAILED, useToast } from "../../ui/Toast";
 import { myShare } from "../../data/splits";
+import { MAX_PAYMENTS } from "../../data/planEdit";
 import type { Draft, ExpenseDraft } from "./draft";
 import { isBlank } from "./unsaved";
 import { recents, type Again } from "./recents";
@@ -162,6 +163,7 @@ export function AddForm({ entry, onDone, draft, onDraft }: { entry?: Entry; onDo
       if (foreign && !/^\d+(\.\d+)?$/.test(rate)) return setError(`Enter the ${currency} to ${settings.baseCurrency} rate`);
       const n = kind === "installment" ? Number(count) : 0;
       if (kind === "installment" && (!Number.isInteger(n) || n < 2)) return setError("Payments must be 2 or more");
+      if (kind === "installment" && n > MAX_PAYMENTS) return setError(`Payments can be ${MAX_PAYMENTS} at most`);
       const perPayment = kind === "installment" ? splitEvenly(minor, n)[0]! : minor;
 
       let splitVal;
