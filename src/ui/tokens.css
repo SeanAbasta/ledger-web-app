@@ -123,7 +123,7 @@
 }
 /* Bigger figures on wider screens. */
 @media (min-width: 701px) { :root { --fig-hero: calc(120px * var(--hero-scale)); --fig-day: calc(52px * var(--ts)); } }
-@media (min-width: 1200px) { :root { --gutter: 56px; --fig-hero: calc(190px * var(--hero-scale)); --fig-sec: calc(44px * var(--ts)); --fig-amount: calc(150px * var(--hero-scale)); } }
+@media (min-width: 1200px) { :root { --gutter: 56px; --fig-hero: calc(190px * var(--hero-scale)); --fig-sec: calc(44px * var(--ts)); --fig-amount: calc(84px * var(--hero-scale)); } }
 /* Dark is opt-in (Settings, Appearance). public/theme.js sets data-theme before first paint. No pure black. */
 :root[data-theme="dark"] {
   --bg: #0d0f14;
