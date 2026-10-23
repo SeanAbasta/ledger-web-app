@@ -83,18 +83,18 @@ describe("ledgerItems", () => {
 
 describe("buildSplit", () => {
   it("they-owe divides the whole amount among the people", () => {
-    const s = buildSplit({ amount: 1001, paidBy: "me", mode: "they-owe", people: ["maya", "jon"] });
-    expect(s.shares).toEqual([{ personId: "maya", amount: 501 }, { personId: "jon", amount: 500 }]);
+    const s = buildSplit({ amount: 1001, paidBy: "me", mode: "they-owe", people: ["pat", "jon"] });
+    expect(s.shares).toEqual([{ personId: "pat", amount: 501 }, { personId: "jon", amount: 500 }]);
   });
   it("i-owe makes me owe the payer everything", () => {
-    expect(buildSplit({ amount: 5000, paidBy: "maya", mode: "i-owe", people: ["maya"] }).shares).toEqual([{ personId: "me", amount: 5000 }]);
+    expect(buildSplit({ amount: 5000, paidBy: "pat", mode: "i-owe", people: ["pat"] }).shares).toEqual([{ personId: "me", amount: 5000 }]);
   });
   it("half: payer owes nothing, others owe an equal part, shares plus payer part = amount", () => {
-    const s = buildSplit({ amount: 125000, paidBy: "me", mode: "half", people: ["maya"] });
-    expect(s.shares).toEqual([{ personId: "maya", amount: 62500 }]);
+    const s = buildSplit({ amount: 125000, paidBy: "me", mode: "half", people: ["pat"] });
+    expect(s.shares).toEqual([{ personId: "pat", amount: 62500 }]);
     const t = buildSplit({ amount: 100, paidBy: "me", mode: "half", people: ["a", "b"] });
     expect(t.shares.map((x) => x.amount)).toEqual([33, 33]);
-    const p = buildSplit({ amount: 100, paidBy: "maya", mode: "half", people: ["maya"] });
+    const p = buildSplit({ amount: 100, paidBy: "pat", mode: "half", people: ["pat"] });
     expect(p.shares).toEqual([{ personId: "me", amount: 50 }]);
   });
   it("custom validates", () => {

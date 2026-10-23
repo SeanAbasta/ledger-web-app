@@ -166,9 +166,9 @@ describe("money owed to me in the forecast", () => {
   });
   it("does not double count when someone pays me back", async () => {
     const { owedSummary } = await import("../src/data/balances");
-    const people = [{ id: "maya", name: "Sam", updatedAt: "x" }];
-    const lent = e("2026-10-02", 50000, { id: "L", accountId: "A", split: { paidBy: "me", mode: "they-owe", shares: [{ personId: "maya", amount: 50000 }] } });
-    const paid = e("2026-10-05", 50000, { id: "P", kind: "settlement", personId: "maya", direction: "in", accountId: "A" });
+    const people = [{ id: "pat", name: "Sam", updatedAt: "x" }];
+    const lent = e("2026-10-02", 50000, { id: "L", accountId: "A", split: { paidBy: "me", mode: "they-owe", shares: [{ personId: "pat", amount: 50000 }] } });
+    const paid = e("2026-10-05", 50000, { id: "P", kind: "settlement", personId: "pat", direction: "in", accountId: "A" });
     const project = (entries: Entry[]) => {
       const its = items(entries, [], "2026-10-10");
       const start = accountBalances([acct({})], its, "PHP").totalBase;

@@ -44,18 +44,18 @@ describe("what refers to a person", () => {
 describe("what refers to an account", () => {
   it("counts entries from or into it and plans, including later changes to a plan", () => {
     const entries = [
-      entry({ id: "a", accountId: "bpi" }),
-      entry({ id: "b", kind: "transfer", accountId: "bpi", toAccountId: "card" }),
-      entry({ id: "c", kind: "transfer", accountId: "gcash", toAccountId: "bpi" }),
-      entry({ id: "d", accountId: "bpi", deleted: true }),
-      entry({ id: "e", accountId: "gcash" }),
+      entry({ id: "a", accountId: "bank-a" }),
+      entry({ id: "b", kind: "transfer", accountId: "bank-a", toAccountId: "card" }),
+      entry({ id: "c", kind: "transfer", accountId: "bank-b", toAccountId: "bank-a" }),
+      entry({ id: "d", accountId: "bank-a", deleted: true }),
+      entry({ id: "e", accountId: "bank-b" }),
     ];
     const rules = [
-      rule({ id: "r1", accountId: "bpi" }),
-      rule({ id: "r2", accountId: "gcash", revisions: [{ from: "2026-10-01", accountId: "bpi" }] }),
-      rule({ id: "r3", accountId: "bpi", deleted: true }),
+      rule({ id: "r1", accountId: "bank-a" }),
+      rule({ id: "r2", accountId: "bank-b", revisions: [{ from: "2026-10-01", accountId: "bank-a" }] }),
+      rule({ id: "r3", accountId: "bank-a", deleted: true }),
     ];
-    expect(accountUsage("bpi", entries, rules)).toEqual({ entries: 3, plans: 2 });
+    expect(accountUsage("bank-a", entries, rules)).toEqual({ entries: 3, plans: 2 });
     expect(accountUsage("other", entries, rules)).toEqual({ entries: 0, plans: 0 });
   });
 });
