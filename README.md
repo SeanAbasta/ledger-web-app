@@ -5,7 +5,7 @@
 **A quiet, local-first expense tracker.**
 Log it, split it, see what is coming, and where the month and the year went.
 
-![Version](https://img.shields.io/badge/version-2.0.2-1A34E8?style=flat-square)
+![Version](https://img.shields.io/badge/version-2.0.3-1A34E8?style=flat-square)
 ![Status](https://img.shields.io/badge/status-feature%20complete-10B981?style=flat-square)
 ![React](https://img.shields.io/badge/React-TypeScript-3B82F6?style=flat-square)
 ![Local first](https://img.shields.io/badge/data-local--first-10B981?style=flat-square)
@@ -210,7 +210,7 @@ No. Your copy is your own repo on your own account, so its site size, bandwidth 
 | What you see | What it means | What to do |
 |---|---|---|
 | **Token expired** | The token reached its expiry date, or was revoked. The Data health card in Settings warns you ahead of time. | Create a new token (step 2), then the gear, Settings, **Replace token**, on each computer. Your data is safe on the device meanwhile. |
-| **Two versions of your ledger** | Both computers changed since they last synced. Nothing is lost. | Choose **Merge** (recommended), Keep this device, or Keep GitHub's version. The version you do not keep is saved to your Downloads first. |
+| **Two versions of your ledger** | Both computers changed since they last synced. Nothing is lost. | Choose **Merge** (recommended), Keep this device, or Keep GitHub's version. What you do not keep is saved to your Downloads first (Merge saves both versions). |
 | **Offline, read-only** | No connection. Ledger holds back edits so your other computer's data stays safe. | Reconnect and press Retry, or choose Edit offline if you are sure. |
 | **Needs sync** that does not clear | A push failed (rate limit, network). | Click the pill, then Sync now. It retries by itself too. |
 | **No access to the data repo** | The token cannot reach that repo. | Check the repo name, and that the token is limited to that repo with Contents read and write. |
@@ -237,13 +237,14 @@ Back up now and then with the gear, Settings, **Backup file**. The data repo's h
 
 ## Status
 
-Ledger is deployed and in daily use. Sync between a Mac and a Windows PC has been confirmed against a real GitHub repo. The latest version is **V2.0.2**. It is still a personal project, so keep a backup.
+Ledger is deployed and in daily use. Sync between a Mac and a Windows PC has been confirmed against a real GitHub repo. The latest version is **V2.0.3**. It is still a personal project, so keep a backup.
 
 **Ledger is feature complete as of V2.0.0.** It does what it set out to do, and no new features are planned. Later releases will be patches: bug fixes and small quality of life improvements.
 
 | Version | Highlights |
 |---|---|
-| **V2.0.2** | Tablet top bar, a keyboard-friendly edit pane, Add keeps what you typed, skip link and headings |
+| **V2.0.3** | A smaller amount field on a computer, honest Data health words, High Contrast support |
+| V2.0.2 | Tablet top bar, a keyboard-friendly edit pane, Add keeps what you typed, skip link and headings |
 | V2.0.1 | A new icon, Undo no longer refills Add later, clearer wording |
 | V2.0.0 | Ledger 2: People and Coming up (what leaves your bank next), Undo, part settle, Again chips, Edit plan, Data health, the Folio look, text size, a two-pane layout and shortcuts on a computer |
 | V1.4.1 | A new look, Anodized: silver and space black, a ring gauge around Spent, a calendar of days, drawn icons |

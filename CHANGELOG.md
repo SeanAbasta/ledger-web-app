@@ -2,6 +2,20 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V2.0.3 (2026-10-23)
+
+A small patch about honest words, large numbers and Windows High Contrast. Nothing about your data changes, so an older copy keeps working.
+
+- **The amount you type** is 84 px on a computer, not 150 px. It is the size it already had on a phone.
+- Data health no longer says "Safe on GitHub" while changes are waiting or a push is failing. It says "Changes are waiting to sync", or "Sync is not working" (with the dot on the gear) and that your changes are safe on this device.
+- The sync status now carries a real reason for a bad token, instead of the screens guessing from the message wording.
+- The conflict screen says Merge saves both versions to Downloads.
+- Installment payments are capped at 600. Edit plan froze for seconds on very large numbers.
+- Pressing Save twice in the same instant no longer adds the entry twice.
+- Search all months does less work on each key when you have years of entries.
+- In Windows High Contrast the picked segment, chip and switch, the Save button, the sync dot and the open room's mark show up again, and the category strip, calendar and card faces keep their colours.
+- The three fonts the first screen uses are asked for at the start, so the big figures do not jump on a slow first visit. The switch and the segmented key no longer overshoot.
+
 ## V2.0.2 (2026-10-23)
 
 A small patch for tablets, keyboards and screen readers. Nothing about your data changes, so an older copy keeps working.
