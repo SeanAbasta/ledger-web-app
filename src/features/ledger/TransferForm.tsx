@@ -11,7 +11,7 @@ import { MoneyInput } from "../../ui/MoneyInput";
 import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
-import { useToast } from "../../ui/Toast";
+import { UNDO_FAILED, useToast } from "../../ui/Toast";
 import type { TransferDraft } from "../add/draft";
 
 const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[^\d.]/g, "");
@@ -90,7 +90,7 @@ export function TransferForm({ entry, accounts: given, onDone, onOpenSettings, d
     await deleteEntry(store, entry.date.slice(0, 7), entry.id);
     changed();
     onDone();
-    show({ message: `Deleted: ${entry.note || entry.category || "Transfer"} ${formatMinor(entry.amount, entry.currency)}`, undo: async () => { await restoreEntry(store, entry.date.slice(0, 7), entry.id); } });
+    show({ message: `Deleted: ${entry.note || entry.category || "Transfer"} ${formatMinor(entry.amount, entry.currency)}`, undo: async () => { await restoreEntry(store, entry.date.slice(0, 7), entry.id); }, failed: UNDO_FAILED.delete });
   }
 
   if (creating && loaded && fromList.length === 0) {

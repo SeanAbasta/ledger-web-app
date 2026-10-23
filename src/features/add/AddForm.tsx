@@ -20,7 +20,7 @@ import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
 import { useKeyboardInset } from "../../ui/useKeyboardInset";
-import { useToast } from "../../ui/Toast";
+import { UNDO_FAILED, useToast } from "../../ui/Toast";
 import { myShare } from "../../data/splits";
 import type { Draft, ExpenseDraft } from "./draft";
 import { recents, type Again } from "./recents";
@@ -221,7 +221,7 @@ export function AddForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (sav
     await deleteEntry(store, monthOf(entry.date), entry.id);
     changed();
     onDone?.();
-    show({ message: `Deleted: ${entry.note || entry.category || "Expense"} ${formatMinor(entry.amount, entry.currency)}`, undo: async () => { await restoreEntry(store, monthOf(entry.date), entry.id); } });
+    show({ message: `Deleted: ${entry.note || entry.category || "Expense"} ${formatMinor(entry.amount, entry.currency)}`, undo: async () => { await restoreEntry(store, monthOf(entry.date), entry.id); }, failed: UNDO_FAILED.delete });
   }
 
   // Picked names as [key, shown name], spelled as the live person when there is one.

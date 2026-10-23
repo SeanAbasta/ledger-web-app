@@ -11,7 +11,7 @@ import { CategoryChips } from "../../ui/CategoryChips";
 import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
-import { useToast } from "../../ui/Toast";
+import { UNDO_FAILED, useToast } from "../../ui/Toast";
 import type { IncomeDraft } from "./draft";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 import type { SavedNote } from "./AddForm";
@@ -85,7 +85,7 @@ export function IncomeForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (
     await deleteEntry(store, monthOf(entry.date), entry.id);
     changed();
     onDone?.();
-    show({ message: `Deleted: ${entry.note || entry.category || "Income"} ${formatMinor(entry.amount, entry.currency)}`, undo: async () => { await restoreEntry(store, monthOf(entry.date), entry.id); } });
+    show({ message: `Deleted: ${entry.note || entry.category || "Income"} ${formatMinor(entry.amount, entry.currency)}`, undo: async () => { await restoreEntry(store, monthOf(entry.date), entry.id); }, failed: UNDO_FAILED.delete });
   }
 
   return (

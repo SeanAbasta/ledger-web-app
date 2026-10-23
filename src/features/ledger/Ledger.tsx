@@ -25,7 +25,7 @@ import { categoryTone } from "../../ui/categoryColor";
 import { Empty } from "../../ui/Empty";
 import { LedgerIcon, NextIcon, PrevIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
-import { useToast } from "../../ui/Toast";
+import { UNDO_FAILED, useToast } from "../../ui/Toast";
 import { useTodayKey } from "../../ui/useTodayKey";
 
 const VIEWS = ["Day", "Week", "Month"] as const;
@@ -299,7 +299,7 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
       <div key={`${shown.from}/${shown.to}`} className={shown.dir === 1 ? "period next" : shown.dir === -1 ? "period prev" : "period"}>
       {showPointer && onComingUp && (
         <button type="button" className="pointer" onClick={onComingUp}>
-          <span>Coming up: {due.length} in the next 30 days</span><span className="go">View<NextIcon /></span>
+          <span>Coming up: {due.length} plan {due.length === 1 ? "payment" : "payments"} in the next 30 days</span><span className="go">View<NextIcon /></span>
         </button>
       )}
 
@@ -344,7 +344,7 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
               await deleteEntry(store, gone.date.slice(0, 7), gone.id);
               setPaid(undefined);
               changed();
-              show({ message: `Deleted: ${gone.note || gone.category || "Settlement"} ${formatMinor(gone.amount, gone.currency)}`, undo: async () => { await restoreEntry(store, gone.date.slice(0, 7), gone.id); } });
+              show({ message: `Deleted: ${gone.note || gone.category || "Settlement"} ${formatMinor(gone.amount, gone.currency)}`, undo: async () => { await restoreEntry(store, gone.date.slice(0, 7), gone.id); }, failed: UNDO_FAILED.delete });
             }} />
           </div>
         </Panel>

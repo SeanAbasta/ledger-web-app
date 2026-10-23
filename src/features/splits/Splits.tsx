@@ -12,7 +12,7 @@ import { Sheet } from "../../ui/Sheet";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
 import { useLedger } from "../../ui/Ledger";
-import { useToast } from "../../ui/Toast";
+import { UNDO_FAILED, useToast } from "../../ui/Toast";
 import { modeLabel } from "../../ui/splitLabels";
 import { copyImage, downloadImage, renderStatement } from "./snapshot";
 import { partCheck } from "./settle";
@@ -93,7 +93,7 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
     setSettle(undefined);
     changed();
     // Undo takes the settlement entries back out (the same tombstone as Delete).
-    show({ message: `Recorded: ${theyPaid ? `${r.person.name} paid` : `You paid ${r.person.name}`} ${said.join(" and ")}`, undo: async () => { for (const m of made) await deleteEntry(store, m.month, m.id); } });
+    show({ message: `Recorded: ${theyPaid ? `${r.person.name} paid` : `You paid ${r.person.name}`} ${said.join(" and ")}`, undo: async () => { for (const m of made) await deleteEntry(store, m.month, m.id); }, failed: UNDO_FAILED.settle });
   }
 
   if (!loaded) return null;

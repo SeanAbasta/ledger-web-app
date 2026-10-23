@@ -8,12 +8,19 @@ import { loadKeepUndo } from "./undoPref";
 export interface ToastSpec {
   message: string;
   sub?: string;
-  /** Puts things back. A throw shows "Could not undo..." instead. */
+  /** Puts things back. A throw shows `failed` (else the Save wording) instead. */
   undo?: () => Promise<void>;
+  failed?: string;
 }
 
+/** What is left when an Undo throws, said for each kind of Undo. */
+export const UNDO_FAILED = {
+  save: "Could not undo. The entry is still in your Ledger.",
+  delete: "Could not undo. The entry is still deleted.",
+  settle: "Could not undo. The payment is still recorded.",
+} as const;
+
 const MS = 8000;
-const FAILED = "Could not undo. The entry is still in your Ledger.";
 
 const C = createContext<{ show: (t: ToastSpec) => void; clear: () => void }>({ show: () => {}, clear: () => {} });
 export const useToast = () => useContext(C);
@@ -59,12 +66,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   async function undo() {
     if (!t?.undo) return;
     const run = t.undo;
+    const failed = t.failed ?? UNDO_FAILED.save;
     clear();
     try {
       await run();
       changed();
     } catch {
-      show({ message: FAILED });
+      show({ message: failed });
     }
   }
 
