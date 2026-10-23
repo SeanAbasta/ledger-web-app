@@ -22,7 +22,7 @@ export function Gate() {
         <div className="glasscard sheet center gate">
           <h3>Two versions of your ledger</h3>
           {/* The safe thing first, then the choices, Merge recommended. The choices themselves are unchanged. */}
-          <p className="mute">Nothing is lost: the version you do not keep is saved to Downloads first.</p>
+          <p className="mute">Nothing is lost: what you do not keep is saved to Downloads first. Merge saves both versions.</p>
           <button className="choice rec" onClick={() => void engine.resolve("merge")}>Merge, recommended<small>Combine by entry, newest edit wins</small></button>
           <button className="choice" onClick={() => void engine.resolve("local")}>Keep this device<small>Replace GitHub with what is here</small></button>
           <button className="choice" onClick={() => void engine.resolve("remote")}>Keep GitHub's version<small>Replace this device with GitHub</small></button>
