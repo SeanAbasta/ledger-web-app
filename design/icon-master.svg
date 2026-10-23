@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <title>Ledger</title>
+  <!-- Ink ground, a paper L with Spectral's serifs, and a point on the baseline (the decimal point of 0.00).
+       Everything sits inside the central circle (80% of the width), so any maskable shape keeps all of it. -->
+  <rect width="1024" height="1024" fill="#0b0c0f"/>
+  <g transform="translate(-21 27)">
+    <path d="M312 236h144v22h-44v420h204v-52h28v108H356V258h-44z" fill="#f9fafb"/>
+    <circle cx="716" cy="696" r="38" fill="#8c9bff"/>
+  </g>
+</svg>

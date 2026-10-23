@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <title>Ledger</title>
+  <!-- The small-size cut of design/icon-master.svg for browser tabs: a heavier L without serifs, a bigger point. -->
+  <rect width="1024" height="1024" rx="224" fill="#0b0c0f"/>
+  <g transform="translate(-46 22)">
+    <path d="M340 220h110v430h190v110H340z" fill="#f9fafb"/>
+    <circle cx="722" cy="706" r="54" fill="#8c9bff"/>
+  </g>
+</svg>
