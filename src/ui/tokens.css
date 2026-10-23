@@ -942,6 +942,21 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
 @media (forced-colors: active) {
   .amt input:focus, input:focus { outline: 2px solid; }
   .lattice .now { outline: 2px solid; }
+  /* The picked segment, chip and switch say so with a fill, which this mode replaces: use the system's highlight. */
+  .seg.thumbed::before { display: none; }
+  .seg button.on, .seg.thumbed button.on, .pick.on, .again-chip.on, .toggle.on { background: Highlight; }
+  .seg button.on, .pick.on, .again-chip.on { color: HighlightText; }
+  .btn { border: 1px solid ButtonText; }
+  .btn:disabled { border-color: GrayText; }
+  .pill i { forced-color-adjust: none; }
+  .side > button.on::after { background: Highlight; }
+  .toggle.on { border-color: Highlight; }
+  .toggle i { background: ButtonText; }
+  .toggle.on i { background: HighlightText; }
+  .row.picked { outline: 2px solid Highlight; outline-offset: -2px; }
+  /* Colour that is the message (the category strip, the calendar's steps, the compare line, a card's face)
+     keeps its own colours, which were chosen for contrast. */
+  .strip .part, .legend i, .pick .dot, .lattice .cell, .compare i, .cardhead { forced-color-adjust: none; }
 }
 /* Phones: 44 px tap areas without moving anything, never past half the gap to a neighbour. */
 @media (max-width: 700px) {
