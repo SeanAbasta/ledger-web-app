@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LedgerStore } from "../src/data/db";
 import { addEntry, deleteEntry, listMonth, restoreEntry } from "../src/data/months";
 import type { Entry } from "../src/data/schema";
@@ -9,6 +9,7 @@ let n = 0;
 beforeEach(async () => {
   store = await LedgerStore.open(`restore-${n++}`);
 });
+afterEach(() => vi.useRealTimers());
 const base = { kind: "expense" as const, currency: "PHP", category: "Food", note: "Dinner" };
 const raw = async (m: string) => (await store.get<{ entries: Entry[] }>(`months/${m}.json`))!.entries;
 
@@ -32,6 +33,18 @@ describe("restoreEntry (Undo of Delete)", () => {
     const tomb = (await raw("2026-10"))[0]!;
     await restoreEntry(store, "2026-10", e.id);
     const after = (await raw("2026-10"))[0]!;
+    expect(after.updatedAt > tomb.updatedAt).toBe(true);
+  });
+
+  it("the edit time moves past the tombstone even when the clock has not moved at all", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-22T10:00:00.000Z"));
+    const e = await addEntry(store, { ...base, date: "2026-10-07", amount: 100 });
+    await deleteEntry(store, "2026-10", e.id);
+    const tomb = (await raw("2026-10"))[0]!;
+    await restoreEntry(store, "2026-10", e.id);
+    const after = (await raw("2026-10"))[0]!;
+    expect(after.updatedAt).toBe("2026-10-22T10:00:00.001Z");
     expect(after.updatedAt > tomb.updatedAt).toBe(true);
   });
 

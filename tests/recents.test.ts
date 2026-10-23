@@ -19,6 +19,12 @@ describe("recents: the Again chips", () => {
     const es = [e("2026-09-01", "Lunch"), e("2026-10-05", "Lunch"), e("2026-10-06", "Lunch", { deleted: true }), e("2026-10-07", "Lunch", { kind: "income" }), e("2026-10-08", "Lunch")];
     expect(recents(es, TODAY)).toEqual([]);
   });
+  it("the window starts 30 days back, that day included", () => {
+    const inside = [e("2026-09-22", "Lunch"), e("2026-10-01", "Lunch"), e("2026-10-05", "Lunch")];
+    expect(recents(inside, TODAY).map((a) => a.note)).toEqual(["Lunch"]);
+    const outside = [e("2026-09-21", "Lunch"), e("2026-10-01", "Lunch"), e("2026-10-05", "Lunch")];
+    expect(recents(outside, TODAY)).toEqual([]);
+  });
   it("most used first, then most recent; at most four", () => {
     const notes = ["A", "B", "C", "D", "E"];
     const es = notes.flatMap((x, i) => Array.from({ length: 3 + (i === 2 ? 2 : 0) }, (_, k) => e(`2026-10-${String(10 + k + i).padStart(2, "0")}`, x)));

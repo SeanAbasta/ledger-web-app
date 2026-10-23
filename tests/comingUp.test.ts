@@ -98,4 +98,34 @@ describe("comingUp: what leaves the bank, and when", () => {
     const c = run();
     expect(c.charges.find((x) => x.key === "Taxi")).toMatchObject({ amount: 400 * P, yours: 400 * P, billDue: "2026-12-05", date: "2026-11-02" });
   });
+
+  it("a split payment from a bank counts at my share in Bills in 30 days, and shows its full price", () => {
+    const gym: Rule = { id: "G", type: "recurring", kind: "expense", amount: 1000 * P, currency: "PHP", category: "Fun", note: "Gym", accountId: "B", frequency: "monthly", start: "2026-10-30", split: half(1000), updatedAt: "x" };
+    const base = run();
+    const withGym = run({ rules: [...rules, gym] });
+    const row = withGym.bills.find((b) => b.kind === "pay" && b.key === "G@2026-10-30");
+    expect(row).toMatchObject({ amount: 1000 * P, yours: 500 * P });
+    expect(withGym.total - base.total).toBe(500 * P);
+  });
+
+  it("the Paid line is still there on the due date and leaves the day after", () => {
+    const paid = e("Pay", "2026-10-18", 300, { kind: "transfer", accountId: "B", toAccountId: "C", category: "Card payment" });
+    expect(run({ entries: [...entries, paid], today: "2026-11-04" }).paid).toEqual([{ cardId: "C", amount: 300 * P, due: "2026-11-04" }]);
+    expect(run({ entries: [...entries, paid], today: "2026-11-05" }).paid).toEqual([]);
+  });
+
+  it("a bill stops being an estimate on its cut-off day, and not a day before", () => {
+    const due = (today: string) => run({ today }).cardBills.find((b) => b.due === "2026-12-05")!;
+    expect(due("2026-11-14").estimate).toBe(true);
+    expect(due("2026-11-15").estimate).toBe(false);
+  });
+
+  it("a bill due on the last day of the window is in it, and one a day later is not", () => {
+    const c = run({ today: "2026-10-05" }); // the window ends Nov 4, the Oct 15 statement's due date
+    expect(c.until).toBe("2026-11-04");
+    expect(c.bills.some((b) => b.kind === "bill" && b.due === "2026-11-04")).toBe(true);
+    const next = run({ today: "2026-10-04" }); // the window ends Nov 3
+    expect(next.bills.some((b) => b.kind === "bill" && b.due === "2026-11-04")).toBe(false);
+    expect(next.next).toMatchObject({ due: "2026-11-04" });
+  });
 });
