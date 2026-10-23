@@ -29,6 +29,7 @@ import { balanceNote } from "./balanceNote";
 import { CardTile } from "./CardTile";
 import { CardView } from "./CardView";
 import { FixSheet } from "./FixSheet";
+import { roveTo } from "./rove";
 import { YearView } from "./YearView";
 
 interface View {
@@ -97,8 +98,20 @@ const WEEK = ["M", "T", "W", "T", "F", "S", "S"];
 function Lattice({ days, from, elapsed, todayIdx, base, label, onOpen }: { days: number[]; from: string; elapsed: number; todayIdx: number; base: string; label: string; onOpen?: (date: string) => void }) {
   const max = Math.max(...days, 1);
   const lead = weekday(from);
+  // One tab stop for the whole calendar; the arrow keys move between the days that are buttons.
+  const box = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState<number>();
+  const isButton = (i: number) => !!onOpen && (i < elapsed || (days[i] ?? 0) > 0);
+  const stop = active !== undefined && isButton(active) ? active : isButton(todayIdx) ? todayIdx : Math.max(0, Math.min(elapsed - 1, days.length - 1));
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const to = roveTo(e.key, stop, days.length, isButton);
+    if (to === undefined) return;
+    e.preventDefault();
+    setActive(to);
+    box.current?.querySelector<HTMLElement>(`[data-i="${to}"]`)?.focus();
+  };
   return (
-    <div className="lattice" role="group" aria-label={label}>
+    <div ref={box} className="lattice" role="group" aria-label={label} onKeyDown={onKeyDown}>
       {WEEK.map((w, i) => <span key={`w${i}`} className="wk" aria-hidden="true">{w}</span>)}
       {Array.from({ length: lead }, (_, i) => <span key={`b${i}`} className="cell blank" />)}
       {days.map((v, i) => {
@@ -113,7 +126,7 @@ function Lattice({ days, from, elapsed, todayIdx, base, label, onOpen }: { days:
         if (!onOpen || (!past && v <= 0)) return <span key={i} className={className} title={title}>{i + 1}</span>;
         const what = !past ? `planned ${formatMinor(v, base)}` : v ? `spent ${formatMinor(v, base)}` : "nothing spent";
         return (
-          <button key={i} type="button" className={className} title={title} aria-label={`${labelShort(date)}${i === todayIdx ? ", today" : ""}, ${what}, open in the Ledger`} onClick={() => onOpen(date)}>
+          <button key={i} type="button" data-i={i} tabIndex={i === stop ? 0 : -1} onFocus={() => setActive(i)} className={className} title={title} aria-label={`${labelShort(date)}${i === todayIdx ? ", today" : ""}, ${what}, open in the Ledger`} onClick={() => onOpen(date)}>
             {i + 1}
           </button>
         );
