@@ -2,6 +2,17 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V2.0.1 (2026-10-23)
+
+A small patch after a review of V2.0.0. A new app icon and a few fixes. Nothing about your data changes, so an older copy keeps working.
+
+- **New icon**: a paper L and a small blue point on an ink tile. The point is the decimal point of 0.00. The browser tab has a sharper version. An iPhone keeps the old home screen icon until you remove the app and add it to the home screen again. The offline copy of the app refreshes once after the update.
+- Undo of Save no longer refills the Add form every time you come back to it. The values come back once, right after you press Undo.
+- If an Undo ever fails, the message says what is true: after a delete, the entry is still deleted.
+- The token warning says "expires today" on the last day instead of "expires in 0 days".
+- The line at the top of the Ledger says how many plan payments are coming in the next 30 days, which is what it counts.
+- Tests: more of the date edges in Coming up, Again chips and Data health are covered, and test data uses made-up account and person ids only.
+
 ## V2.0.0 (2026-10-23)
 
 Ledger 2. Five rooms, each named for the question it answers, the controls that were missing (Undo, settling part of a balance, repeat chips, editing a whole plan), a list of what leaves your bank next, and a new look called Folio, with a proper layout on a computer.
