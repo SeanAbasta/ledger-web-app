@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getSettings, listAll, nameOf } from "../../data/collections";
 import { startAccount } from "../../data/defaults";
 import { today } from "../../data/dates";
@@ -13,6 +13,7 @@ import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
 import { UNDO_FAILED, useToast } from "../../ui/Toast";
 import type { IncomeDraft } from "./draft";
+import { isBlank } from "./unsaved";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 import type { SavedNote } from "./AddForm";
 import { afterSave, savedLine } from "./afterSave";
@@ -23,7 +24,7 @@ const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[
  * New one-off income from another source (a gift, interest, a sale), or edit one (pass `entry`). Paid into
  * a bank account, in that account's currency. Salary is set in Coming up, never here.
  */
-export function IncomeForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (saved?: SavedNote) => void; draft?: IncomeDraft }) {
+export function IncomeForm({ entry, onDone, draft, onDraft }: { entry?: Entry; onDone?: (saved?: SavedNote) => void; draft?: IncomeDraft; onDraft?: (d?: IncomeDraft) => void }) {
   const { show } = useToast();
   const d = entry ? undefined : draft;
   const { store, changed } = useLedger();
@@ -35,6 +36,16 @@ export function IncomeForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (
   const [date, setDate] = useState(entry?.date ?? d?.date ?? today());
   const [accountId, setAccountId] = useState(entry?.accountId ?? d?.accountId ?? "");
   const [error, setError] = useState("");
+  // What is typed, for the Add tab to keep while another room is open.
+  const reported = useRef("");
+  useEffect(() => {
+    if (entry || !onDraft) return;
+    const fields: IncomeDraft = { amount, note, date, accountId, category };
+    const json = isBlank(fields) ? "" : JSON.stringify(fields);
+    if (json === reported.current) return;
+    reported.current = json;
+    onDraft(json ? fields : undefined);
+  });
 
   useEffect(() => {
     (async () => {

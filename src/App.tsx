@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type MutableRefObject, type ReactElement } from "react";
 import { AddForm, type SavedNote } from "./features/add/AddForm";
 import type { Draft } from "./features/add/draft";
+import { draftOf, keep, noUnsaved, resume, type Unsaved } from "./features/add/unsaved";
 import { FirstRun } from "./features/add/FirstRun";
 import { IncomeForm } from "./features/add/IncomeForm";
 import { TransferForm } from "./features/ledger/TransferForm";
@@ -52,9 +53,9 @@ type AddKind = (typeof ADD_KINDS)[number];
  * only a plan that starts later opens the Ledger at once (`open`). Undo takes the item back out and
  * returns its values to the form (`refill`, also after a tab change).
  */
-function AddTab({ onView, onOpenSettings, onSetup, onSalary, refill, onRefill, onTaken }: { onView: (s: SavedNote) => void; onOpenSettings: () => void; onSetup: () => void; onSalary: () => void; refill?: Refill; onRefill: (d: Draft) => void; onTaken: () => void }) {
-  // The refill is used once, by the forms this mount creates: a later return to Add starts empty.
-  const [pending, setPending] = useState(() => (refill && !refill.taken ? refill.draft : undefined));
+function AddTab({ onView, onOpenSettings, onSetup, onSalary, refill, onRefill, onTaken, unsaved }: { onView: (s: SavedNote) => void; onOpenSettings: () => void; onSetup: () => void; onSalary: () => void; refill?: Refill; onRefill: (d: Draft) => void; onTaken: () => void; unsaved: MutableRefObject<Unsaved> }) {
+  // Undo puts its values back once. Otherwise Add opens with what was typed and not saved when it was left.
+  const [pending, setPending] = useState(() => (refill && !refill.taken ? refill.draft : resume(unsaved.current)));
   useEffect(() => {
     if (!pending) return;
     onTaken();
@@ -70,22 +71,22 @@ function AddTab({ onView, onOpenSettings, onSetup, onSalary, refill, onRefill, o
     const { undo, draft } = s;
     show({ message: s.toast ?? s.message, sub: s.sub, undo: undo && draft ? async () => { await undo(); onRefill(draft); } : undefined });
   };
-  const draft = pending?.kind === kind ? pending : undefined;
+  const draft = pending?.kind === kind ? pending : draftOf(unsaved.current, kind);
   return (
     <>
     <FirstRun onAccount={onOpenSettings} onSync={onSetup} onSalary={onSalary} />
     <div className="glasscard addcard">
       <div className="addkind"><Segmented label="Kind of entry" value={kind} options={ADD_KINDS} onChange={setKind} /></div>
-      {kind === "Expense" ? <AddForm key={`e${refill?.n ?? 0}`} onDone={done} draft={draft?.kind === "Expense" ? draft.fields : undefined} />
-        : kind === "Income" ? <IncomeForm key={`i${refill?.n ?? 0}`} onDone={done} draft={draft?.kind === "Income" ? draft.fields : undefined} />
-        : <TransferForm key={`t${refill?.n ?? 0}`} onDone={done} onOpenSettings={onOpenSettings} draft={draft?.kind === "Transfer" ? draft.fields : undefined} />}
+      {kind === "Expense" ? <AddForm key={`e${refill?.n ?? 0}`} onDone={done} draft={draft?.kind === "Expense" ? draft.fields : undefined} onDraft={(f) => { unsaved.current = keep(unsaved.current, { kind: "Expense", fields: f }); }} />
+        : kind === "Income" ? <IncomeForm key={`i${refill?.n ?? 0}`} onDone={done} draft={draft?.kind === "Income" ? draft.fields : undefined} onDraft={(f) => { unsaved.current = keep(unsaved.current, { kind: "Income", fields: f }); }} />
+        : <TransferForm key={`t${refill?.n ?? 0}`} onDone={done} onOpenSettings={onOpenSettings} draft={draft?.kind === "Transfer" ? draft.fields : undefined} onDraft={(f) => { unsaved.current = keep(unsaved.current, { kind: "Transfer", fields: f }); }} />}
     </div>
     </>
   );
 }
 
-function Screen({ refill, onRefill, onTaken, tab, go, setup, focusPerson, openPerson, saved, onSaved, ledgerView, setLedgerView, focusCard, openCard, focusTile, openTile, settingsPage, openSettings }: { refill?: Refill; onRefill: (d: Draft) => void; onTaken: () => void; tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; ledgerView?: LedgerView; setLedgerView: (v?: LedgerView) => void; focusCard?: string; openCard: (id: string) => void; focusTile?: string; openTile: (id: string) => void; settingsPage?: SettingsPage; openSettings: (p: SettingsPage) => void }) {
-  if (tab === "Add") return <AddTab key={refill?.n ?? 0} refill={refill} onRefill={onRefill} onTaken={onTaken} onView={(s) => { onSaved(s); go("Ledger"); }} onOpenSettings={() => openSettings("accounts")} onSetup={setup} onSalary={() => { try { localStorage.setItem("ledger.comingUp", "12 months"); } catch { /* storage blocked */ } go("Coming up"); }} />;
+function Screen({ refill, onRefill, onTaken, unsaved, tab, go, setup, focusPerson, openPerson, saved, onSaved, ledgerView, setLedgerView, focusCard, openCard, focusTile, openTile, settingsPage, openSettings }: { refill?: Refill; onRefill: (d: Draft) => void; onTaken: () => void; unsaved: MutableRefObject<Unsaved>; tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; ledgerView?: LedgerView; setLedgerView: (v?: LedgerView) => void; focusCard?: string; openCard: (id: string) => void; focusTile?: string; openTile: (id: string) => void; settingsPage?: SettingsPage; openSettings: (p: SettingsPage) => void }) {
+  if (tab === "Add") return <AddTab key={refill?.n ?? 0} refill={refill} onRefill={onRefill} onTaken={onTaken} unsaved={unsaved} onView={(s) => { onSaved(s); go("Ledger"); }} onOpenSettings={() => openSettings("accounts")} onSetup={setup} onSalary={() => { try { localStorage.setItem("ledger.comingUp", "12 months"); } catch { /* storage blocked */ } go("Coming up"); }} />;
   if (tab === "Ledger") return <Ledger key={`${saved?.date ?? ""}/${ledgerView ?? ""}`} initialDate={saved?.date} initialView={ledgerView} notice={saved?.message} onAdd={() => go("Add")} onComingUp={() => go("Coming up")} />;
   if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); setLedgerView(undefined); go("Ledger"); }} onOpenDay={(date) => { onSaved({ date, message: "" }); setLedgerView("Day"); go("Ledger"); }} onOpenCardSettings={openCard} onAdd={() => go("Add")} onComingUp={() => go("Coming up")} focusTile={focusTile} />;
   if (tab === "People") return <Splits key={focusPerson ?? ""} initialPerson={focusPerson} />;
@@ -102,6 +103,8 @@ function Shell() {
   const [saved, setSaved] = useState<SavedNote>();
   // Undo of a save: the values go back into the Add form (the toast can outlive the Add tab).
   const [refill, setRefill] = useState<Refill>();
+  // What was typed on Add and not saved, kept while another room is open.
+  const unsaved = useRef<Unsaved>(noUnsaved());
   // Set when the Dashboard calendar opens one day, so the Ledger starts in Day view.
   const [ledgerView, setLedgerView] = useState<LedgerView>();
   // Set when a Coming up bill opens its card, so the Dashboard scrolls to that card's tile (where Pay is).
@@ -182,7 +185,7 @@ function Shell() {
           <fieldset className="plain" disabled={locked}>
             {/* Keyed on the tab so the new screen fades in (screens already remount on a tab change). */}
             <div key={tab} className="tabfade">
-            <Screen refill={refill} onTaken={() => setRefill((r) => (r ? { ...r, taken: true } : r))} onRefill={(draft) => { setRefill((r) => ({ draft, n: (r?.n ?? 0) + 1 })); setTab("Add"); }} tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("People"); }} saved={saved} onSaved={setSaved} ledgerView={ledgerView} setLedgerView={setLedgerView} focusTile={focusTile} openTile={(id) => { setFocusTile(id); setTab("Dashboard"); }} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} settingsPage={settingsPage} openSettings={(p) => { setSettingsPage(p); setTab("Settings"); }} />
+            <Screen refill={refill} unsaved={unsaved} onTaken={() => setRefill((r) => (r ? { ...r, taken: true } : r))} onRefill={(draft) => { setRefill((r) => ({ draft, n: (r?.n ?? 0) + 1 })); setTab("Add"); }} tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("People"); }} saved={saved} onSaved={setSaved} ledgerView={ledgerView} setLedgerView={setLedgerView} focusTile={focusTile} openTile={(id) => { setFocusTile(id); setTab("Dashboard"); }} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} settingsPage={settingsPage} openSettings={(p) => { setSettingsPage(p); setTab("Settings"); }} />
             </div>
           </fieldset>
         </section>

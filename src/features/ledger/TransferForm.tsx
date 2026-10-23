@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { listAll, nameOf } from "../../data/collections";
 import { today } from "../../data/dates";
 import { addEntry, deleteEntry, restoreEntry, updateEntry } from "../../data/months";
@@ -13,6 +13,7 @@ import { confirmLabel } from "../../ui/confirm";
 import { useLedger } from "../../ui/Ledger";
 import { UNDO_FAILED, useToast } from "../../ui/Toast";
 import type { TransferDraft } from "../add/draft";
+import { isBlank } from "../add/unsaved";
 
 const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[^\d.]/g, "");
 
@@ -24,7 +25,7 @@ const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[
  * Without `entry` (the Add tab): a new transfer between two of my bank accounts in the same currency. Cards
  * are not offered (paying a card is the Pay button on Dashboard).
  */
-export function TransferForm({ entry, accounts: given, onDone, onOpenSettings, draft }: { entry?: Entry; accounts?: (Account & { deleted?: true })[]; onDone: (saved?: SavedNote) => void; onOpenSettings?: () => void; draft?: TransferDraft }) {
+export function TransferForm({ entry, accounts: given, onDone, onOpenSettings, draft, onDraft }: { entry?: Entry; accounts?: (Account & { deleted?: true })[]; onDone: (saved?: SavedNote) => void; onOpenSettings?: () => void; draft?: TransferDraft; onDraft?: (d?: TransferDraft) => void }) {
   const { show } = useToast();
   const d = entry ? undefined : draft;
   const { store, changed } = useLedger();
@@ -35,6 +36,16 @@ export function TransferForm({ entry, accounts: given, onDone, onOpenSettings, d
   const [date, setDate] = useState(entry?.date ?? d?.date ?? today());
   const [note, setNote] = useState(entry?.note ?? d?.note ?? "");
   const [error, setError] = useState("");
+  // What is typed, for the Add tab to keep while another room is open.
+  const reported = useRef("");
+  useEffect(() => {
+    if (entry || !onDraft) return;
+    const fields: TransferDraft = { amount, note, date, from, to };
+    const json = isBlank(fields) ? "" : JSON.stringify(fields);
+    if (json === reported.current) return;
+    reported.current = json;
+    onDraft(json ? fields : undefined);
+  });
 
   // The Add tab passes no accounts, so the form loads them (removed ones too, for names).
   useEffect(() => {

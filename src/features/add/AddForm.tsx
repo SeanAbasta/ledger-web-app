@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getSettings, list, listAll, remove as removeItem, upsert } from "../../data/collections";
 import { canBillNext, cutoffFor, dueFor, nextCutoff } from "../../data/cards";
 import { CURRENCIES } from "../../data/currencies";
@@ -23,6 +23,7 @@ import { useKeyboardInset } from "../../ui/useKeyboardInset";
 import { UNDO_FAILED, useToast } from "../../ui/Toast";
 import { myShare } from "../../data/splits";
 import type { Draft, ExpenseDraft } from "./draft";
+import { isBlank } from "./unsaved";
 import { recents, type Again } from "./recents";
 import { loadLastUsed, rememberUsed } from "../../ui/lastUsed";
 
@@ -53,7 +54,7 @@ export interface SavedNote {
 }
 
 /** New expense, or edit an existing one (pass `entry`). `draft` starts a new one from values put back by Undo. */
-export function AddForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (saved?: SavedNote) => void; draft?: ExpenseDraft }) {
+export function AddForm({ entry, onDone, draft, onDraft }: { entry?: Entry; onDone?: (saved?: SavedNote) => void; draft?: ExpenseDraft; onDraft?: (d?: ExpenseDraft) => void }) {
   const { store, rev, changed } = useLedger();
   const { show } = useToast();
   const d = entry ? undefined : draft;
@@ -128,6 +129,17 @@ export function AddForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (sav
 
   // The Add tab (not an edit sheet): Save rides above the tab bar, and on the keyboard while typing.
   useKeyboardInset(!entry);
+  // What is typed, for Undo and for the Add tab to keep while another room is open.
+  const snapshot = (): ExpenseDraft => ({ amount, note, date, accountId, category, type: kind, freq, count, end, nextBill, split, names, newName, mode, paidBy, custom, kept, currency, rate });
+  const reported = useRef("");
+  useEffect(() => {
+    if (entry || !onDraft) return;
+    const fields = snapshot();
+    const json = isBlank(fields) ? "" : JSON.stringify(fields);
+    if (json === reported.current) return;
+    reported.current = json;
+    onDraft(json ? fields : undefined);
+  });
   const foreign = currency !== settings.baseCurrency;
   const nameList = namesOf(names);
   // When someone else paid a split, none of my money moved, so no account is needed.
@@ -200,7 +212,7 @@ export function AddForm({ entry, onDone, draft }: { entry?: Entry; onDone?: (sav
       // The toast's second line: my share and who owes whom, the same words as the preview.
       const owes = preview && !("error" in preview) ? preview.lines : [];
       const sub = splitVal ? [`yours ${formatMinor(myShare(perPayment, splitVal), currency)}`, ...owes].join(", ") : undefined;
-      const draftNow: ExpenseDraft = { amount, note, date, accountId, category, type: kind, freq, count, end, nextBill, split, names, newName, mode, paidBy, custom, kept, currency, rate };
+      const draftNow = snapshot();
       rememberUsed({ expense: someoneElsePaid ? undefined : accountId, category });
       // Stay on Add for the next one: clear what belongs to this item, keep account and category.
       const t = today();
