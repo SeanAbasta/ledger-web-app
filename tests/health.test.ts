@@ -41,6 +41,19 @@ describe("healthOf", () => {
     expect(healthOf({ ...base, lastSynced: daysAgo(0), tokenDays: 31 }).state).toBe("healthy");
     expect(healthOf({ ...base, lastSynced: daysAgo(0), tokenDays: 0 }).state).toBe("expiring");
   });
+  it("Safe on GitHub only while the sync is up to date: changes waiting say so", () => {
+    const h = healthOf({ ...base, syncState: "needs-sync", lastSynced: daysAgo(3), tokenDays: 200 });
+    expect(h.state).toBe("waiting");
+    expect(h.attention).toBe(false);
+    expect(healthOf({ ...base, syncState: "syncing", lastSynced: daysAgo(3), tokenDays: 200 }).state).toBe("healthy");
+    expect(healthOf({ ...base, syncState: "conflict", lastSynced: daysAgo(3), tokenDays: 200 }).state).toBe("waiting");
+  });
+  it("a failing push is a problem with the dot, even when the last sync was recent", () => {
+    const h = healthOf({ ...base, syncState: "error", lastSynced: daysAgo(3), tokenDays: 200 });
+    expect(h.state).toBe("problem");
+    expect(h.attention).toBe(true);
+    expect(healthOf({ ...base, connected: false, syncState: "error", lastExported: daysAgo(1) }).state).toBe("healthy"); // sync is off: a saved copy is what counts
+  });
   it("token expired, by date or by the engine's error", () => {
     expect(healthOf({ ...base, lastSynced: daysAgo(0), tokenDays: -1 }).state).toBe("expired");
     expect(healthOf({ ...base, syncState: "error", tokenError: true, lastSynced: daysAgo(0) }).state).toBe("expired");

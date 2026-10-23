@@ -48,13 +48,15 @@ function HealthCard({ h, connected, lastSynced, lastExported, tokenDays, onSync,
     h.state === "expired" ? ["Your GitHub token has expired.", "", <button className="btn sm" onClick={onSetup}>Replace token</button>]
     : h.state === "expiring" ? [`Your GitHub token ${tokenExpiry(tokenDays ?? 0)}. Renew soon.`, "", <button className="btn sm" onClick={onSetup}>Replace token</button>]
     : h.state === "offline" ? ["Offline. Changes stay on this device until you are back online.", "", null]
+    : h.state === "problem" ? ["Sync is not working", `Your changes are safe on this device. Last synced ${synced}.`, <>{syncBtn}{copyBtn}</>]
+    : h.state === "waiting" ? ["Changes are waiting to sync", `Last synced ${synced}. Last copy saved to this device ${copy}.`, <>{syncBtn}{copyBtn}</>]
     : h.state === "healthy" ? (connected
       ? ["Safe on GitHub", `Synced ${synced}. Last copy saved to this device ${copy}.`, <>{syncBtn}{copyBtn}</>]
       : ["Copy saved", `Sync is off. Last copy saved to this device ${copy}.`, <>{syncBtn}{copyBtn}</>])
     : connected
       ? ["Not backed up lately", `Last synced ${synced}. Last copy saved: ${copy}.`, <>{syncBtn}{copyBtn}</>]
       : ["Not backed up yet", `Sync is off, so your data is only on this device. Last copy saved: ${copy}.`, <>{syncBtn}{copyBtn}</>];
-  const tone = h.state === "offline" ? "health offline" : h.state === "healthy" ? "health" : "health warn";
+  const tone = h.state === "offline" ? "health offline" : h.state === "healthy" || h.state === "waiting" ? "health" : "health warn";
   return (
     <div className={tone} role="status">
       <div className="health-head"><i className="health-dot" aria-hidden="true" /><b>{title}</b></div>

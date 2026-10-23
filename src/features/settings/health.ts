@@ -3,9 +3,10 @@ import type { SyncState } from "../../sync/engine";
 /**
  * The Data health card at the top of Settings and the dot on the gear. Read-only: it only looks at the
  * sync state, when this device last synced, when a copy was last saved (Export) and the token's expiry.
- * Backed up means synced in the last 14 days, or a copy saved in the last 14 days.
+ * Backed up means synced in the last 14 days, or a copy saved in the last 14 days. Safe on GitHub is only
+ * said while the sync is up to date: with changes waiting, or a push failing, it says so instead.
  */
-export type HealthState = "healthy" | "unbacked" | "expiring" | "expired" | "offline";
+export type HealthState = "healthy" | "waiting" | "problem" | "unbacked" | "expiring" | "expired" | "offline";
 
 export interface HealthInput {
   connected: boolean;
@@ -21,7 +22,7 @@ export interface HealthInput {
 
 export interface Health {
   state: HealthState;
-  /** Show the dot on the gear: the token is expired or expires within 30 days, or nothing is backed up. */
+  /** Show the dot on the gear: the token is expired or expires within 30 days, a push is failing, or nothing is backed up. */
   attention: boolean;
   backedUp: boolean;
 }
@@ -35,8 +36,10 @@ export function healthOf(h: HealthInput): Health {
   const backedUp = (h.connected && within(h.lastSynced, BACKUP_DAYS, h.now)) || within(h.lastExported, BACKUP_DAYS, h.now);
   const expired = h.connected && ((h.tokenDays !== undefined && h.tokenDays < 0) || (h.syncState === "error" && !!h.tokenError));
   const expiring = h.connected && !expired && h.tokenDays !== undefined && h.tokenDays <= TOKEN_WARN_DAYS;
-  const state: HealthState = expired ? "expired" : expiring ? "expiring" : h.syncState === "offline" ? "offline" : backedUp ? "healthy" : "unbacked";
-  return { state, attention: expired || expiring || (!backedUp && state !== "offline"), backedUp };
+  const problem = h.connected && h.syncState === "error";
+  const waiting = h.connected && backedUp && (h.syncState === "needs-sync" || h.syncState === "conflict");
+  const state: HealthState = expired ? "expired" : expiring ? "expiring" : h.syncState === "offline" ? "offline" : problem ? "problem" : waiting ? "waiting" : backedUp ? "healthy" : "unbacked";
+  return { state, attention: expired || expiring || problem || (!backedUp && state !== "offline"), backedUp };
 }
 
 /** "expires today", "expires in 1 day", "expires in 12 days": for a token with 0 or more days left. */
