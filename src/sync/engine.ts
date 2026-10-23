@@ -13,6 +13,8 @@ export interface SyncStatus {
   lastSynced?: string;
   /** When a rate-limited call will be retried (epoch ms). */
   retryAt?: number;
+  /** Why the state is an error, when the screens must tell it apart: the token is bad or has expired. */
+  reason?: "token";
 }
 
 export interface EngineOptions {
@@ -96,7 +98,7 @@ export class SyncEngine {
         this.schedule(Math.max((e.retryAt ?? 0) - (this.o.now ?? Date.now)(), 1000), () => void this.flush());
         return this.set({ state: "needs-sync", message: "Sync paused, will retry", retryAt: e.retryAt });
       }
-      if (e.kind === "auth") return this.set({ state: "error", message: "Token expired. Replace it in Settings" });
+      if (e.kind === "auth") return this.set({ state: "error", message: "Token expired. Replace it in Settings", reason: "token" });
       if (e.kind === "forbidden" || e.kind === "notfound") return this.set({ state: "error", message: "No access to the data repo" });
       return this.set({ state: "error", message: e.message });
     }

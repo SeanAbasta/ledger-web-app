@@ -12,7 +12,7 @@ export function pillOf(s: SyncStatus): { cls: PillClass; label: string } {
     case "needs-sync": return { cls: "needs-sync", label: "Needs sync" };
     case "offline": return { cls: "offline", label: s.lastSynced ? `Offline · synced ${when(s.lastSynced)}` : "Offline" };
     case "conflict": return { cls: "needs-sync", label: "Conflict" };
-    case "error": return { cls: "needs-sync", label: /token/i.test(s.message ?? "") ? "Token expired" : "Sync problem" };
+    case "error": return { cls: "needs-sync", label: s.reason === "token" ? "Token expired" : "Sync problem" };
     default: return { cls: "offline", label: "Set up sync" };
   }
 }

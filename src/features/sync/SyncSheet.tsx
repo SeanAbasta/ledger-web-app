@@ -57,7 +57,7 @@ export function SyncSheet({ onClose, onSetup }: { onClose: () => void; onSetup: 
         </>
       )}
       <div className="actions">
-        {status.state === "error" && /token/i.test(status.message ?? "") && <button className="btn ghost" onClick={() => { onClose(); onSetup(); }}>Replace token</button>}
+        {status.state === "error" && status.reason === "token" && <button className="btn ghost" onClick={() => { onClose(); onSetup(); }}>Replace token</button>}
         {status.state === "offline" && readOnly && <button className="btn ghost" onClick={() => { editOffline(); onClose(); }}>Edit offline</button>}
         {(status.state === "offline" || status.state === "error") && <button className="btn ghost" onClick={() => void engine.open()}>Retry</button>}
         <button className="btn ghost" onClick={onClose}>Close</button>

@@ -135,7 +135,7 @@ function Shell() {
     window.addEventListener("scroll", on, { passive: true });
     return () => window.removeEventListener("scroll", on);
   }, []);
-  const attention = healthOf({ connected: !!config, syncState: status.state, tokenError: /token/i.test(status.message ?? ""), lastSynced: status.lastSynced ?? stamps.synced, lastExported: stamps.exported, tokenDays: daysLeft(config), now: new Date() }).attention;
+  const attention = healthOf({ connected: !!config, syncState: status.state, tokenError: status.reason === "token", lastSynced: status.lastSynced ?? stamps.synced, lastExported: stamps.exported, tokenDays: daysLeft(config), now: new Date() }).attention;
   const locked = readOnly && EDIT_TABS.includes(tab);
   // A tab (or the gear) starts its room fresh: nothing carried over from where another screen sent us.
   // The Ledger's docked pane may hold typed changes: it can ask before a room change drops them.

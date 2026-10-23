@@ -416,7 +416,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
 
   const tokenDays = daysLeft(config);
   const synced = status.lastSynced ?? lastSynced;
-  const health = healthOf({ connected: !!config, syncState: status.state, tokenError: /token/i.test(status.message ?? ""), lastSynced: synced, lastExported, tokenDays, now: new Date() });
+  const health = healthOf({ connected: !!config, syncState: status.state, tokenError: status.reason === "token", lastSynced: synced, lastExported, tokenDays, now: new Date() });
   if (!page) {
     return (
       <div className="stack">

@@ -107,8 +107,17 @@ describe("SyncEngine", () => {
     const a = await mk("a", "bad");
     await addEntry(a.store, { ...exp, date: "2026-10-01", amount: 1 });
     await a.e.open();
-    expect(a.e.status).toMatchObject({ state: "error", message: expect.stringMatching(/Token/) });
+    expect(a.e.status).toMatchObject({ state: "error", message: expect.stringMatching(/Token/), reason: "token" });
     expect(a.e.hasUnsynced).toBe(true);
+  });
+
+  it("an error that is not about the token carries no token reason", async () => {
+    const a = await mk("a");
+    await addEntry(a.store, { ...exp, date: "2026-10-01", amount: 1 });
+    gh.fail = { match: /GET/, status: 404, times: 1 };
+    await a.e.open();
+    expect(a.e.status.state).toBe("error");
+    expect(a.e.status.reason).toBeUndefined();
   });
 
   it("conflict blocks syncing until resolved, then pushes", async () => {
