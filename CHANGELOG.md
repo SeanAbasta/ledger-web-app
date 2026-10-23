@@ -4,7 +4,7 @@ What changed in each version, newest first. To get a new version into your own c
 
 ## V2.0.3 (2026-10-23)
 
-A small patch about honest words, large numbers and Windows High Contrast. Nothing about your data changes, so an older copy keeps working.
+A small patch about clearer words, large numbers and Windows High Contrast. Nothing about your data changes, so an older copy keeps working.
 
 - **The amount you type** is 84 px on a computer, not 150 px. It is the size it already had on a phone.
 - Data health no longer says "Safe on GitHub" while changes are waiting or a push is failing. It says "Changes are waiting to sync", or "Sync is not working" (with the dot on the gear) and that your changes are safe on this device.
@@ -40,7 +40,7 @@ A small patch after a review of V2.0.0. A new app icon and a few fixes. Nothing 
 
 ## V2.0.0 (2026-10-23)
 
-Ledger 2. Five rooms, each named for the question it answers, the controls that were missing (Undo, settling part of a balance, repeat chips, editing a whole plan), a list of what leaves your bank next, and a new look called Folio, with a proper layout on a computer.
+Ledger 2. Five screens named for the question each answers, four missing controls (Undo, settling part of a balance, repeat chips, editing a whole plan), a list of what leaves your bank next, and a new look called Folio with a two-pane layout on a computer.
 
 No new kinds of data are stored and nothing about your data files changes, so an older copy keeps working with everything you save here. Update both computers so they show the same screens. The app's colour in the phone's status bar changed, so the offline copy of the app refreshes once after the update.
 
