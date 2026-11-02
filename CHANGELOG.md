@@ -2,6 +2,26 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V2.1.0 (2026-11-02)
+
+**Travel.** A trip gets its own ledger, so its expenses can be gathered and finalised before they reach your real Ledger. A trip can have several currencies and several card statements, and the foreign fee only shows up on the statement. Until you conclude a trip, none of it touches your balances, Dashboard, Forecast or People.
+
+- **A sixth screen, Travel.** Your trips, open ones first. Add > Trip makes a new one: name, start, days, an overall budget in PHP, the card new expenses start on, and an estimated rate for each foreign currency. A trip's dates are a guide, not a limit, so a flight booked in August still belongs to a September trip.
+- **Inside a trip**, an Expenses list works like the Ledger, with the same expense form: any currency, category, note, card or account, and a split with people. Refunds are supported. Each expense shows its amount in the local currency and an estimate in PHP, marked "est." until it is final.
+- **The statement step.** On the Cards tab, pick a card and type the PHP amount the statement shows for each foreign expense, with the fee already in it. Typing it makes the expense final. Return moves to the next line. Cash withdrawals work the same way. You can also type the statement's total for the trip to check the lines.
+- **Conclude trip** is available when every foreign expense is final. Until then it says why, for example "3 still need a statement figure: Card A 2, Bank A 1", and each card name opens that card's list. When it is ready, the second tap shows what it will do: how many entries, which dates, the total and who owes whom. Concluding adds one Ledger entry per expense, on the day it was spent, in PHP with the statement amount, and keeps the local price under it. Splits are worked out again on the final PHP, so people owe you their share of the fee too. Undo for eight seconds puts it all back and reopens the trip.
+- **After concluding**, each entry carries a trip label next to its category. Open the entry and tap "Part of ... trip" to see the trip's record: what it cost, by card and by category. "Show in Ledger" lists only that trip's entries, with a chip you can remove.
+- **Open trips stay out of the numbers**, but the Dashboard and each card say how much is not in your Ledger yet. Once a trip's last day has passed the line moves to the top of the Dashboard. A card bill you pay while a trip is open can show as "Paid ahead" until you conclude it.
+- Removing a card or a person that an open trip uses asks first and can move the trip's expenses, like it does for the Ledger.
+
+Things to know before you update:
+
+- **Update every device before you make your first trip.** Open the new version on your Mac, your Windows PC and your phone. An older copy does not know the trips file. If it syncs first it leaves the file out of the list, and this version then brings the trips back from the repo, but it is safest to update everywhere first.
+- An older copy refuses a backup file that contains trips ("not a Ledger file").
+- Concluding in a later month than the trip changes the earlier months: their Dashboard, Year report and past card statements now include the trip.
+- The statement step covers PHP cards and bank accounts. A trip expense on a bank account in another currency cannot be concluded yet; move it to a PHP account.
+- Nothing is ever concluded for you, and the app does not look up exchange rates. The rate on a trip is only the estimate until you type the statement amount.
+
 ## V2.0.3 (2026-10-23)
 
 A small patch about clearer words, large numbers and Windows High Contrast. Nothing about your data changes, so an older copy keeps working.
