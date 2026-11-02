@@ -36,9 +36,10 @@ const ROOMS = NAV.filter((n): n is Exclude<Tab, "Settings"> => n !== "Settings")
 const ICON: Record<Exclude<Tab, "Settings">, () => ReactElement> = { Add: AddIcon, Ledger: LedgerIcon, Travel: TravelIcon, Dashboard: DashboardIcon, People: PeopleIcon, "Coming up": CalendarIcon };
 
 /** The screens that are all about editing are locked as a whole while offline and read-only. */
-// Coming up locks its own Salary block and plan sheets, so its views and rows still open offline; Settings
+// Coming up and Travel lock their own edit controls, so their views and rows still open offline (a trip can be read
+// while roaming); Settings
 // locks its own edit controls so Export still works offline.
-const EDIT_TABS: Tab[] = ["Add", "Travel"];
+const EDIT_TABS: Tab[] = ["Add"];
 
 /** Lists read better in a narrower column on big screens; Dashboard and Coming up use the full one. */
 const READING_TABS: Tab[] = ["Add", "Ledger", "Travel", "People", "Settings"];

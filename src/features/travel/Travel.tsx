@@ -4,7 +4,7 @@ import { formatMinor } from "../../data/money";
 import type { Trip } from "../../data/schema";
 import { budgetLeft, concludedTotal, tripEnd, tripTotals } from "../../data/tripMath";
 import { Empty } from "../../ui/Empty";
-import { TravelIcon } from "../../ui/icons";
+import { CheckIcon, TravelIcon } from "../../ui/icons";
 import { TripView } from "./TripView";
 import { useTravelData, type TravelData } from "./travelData";
 
@@ -52,10 +52,10 @@ function TripRow({ trip, data, onOpen }: { trip: Trip; data: TravelData; onOpen:
     return (
       <button className="row item" onClick={onOpen}>
         <span className="main">
-          <span className="l1">{trip.name}</span>
+          <span className="l1 tripname">{trip.name}</span>
           <span className="l2"><span>{dates(trip)}</span><span className="tag">{data.posted.filter((e) => e.tripId === trip.id).length} in Ledger</span></span>
         </span>
-        <span className="money"><span>{formatMinor(total, data.base)}</span></span>
+        <span className="money"><span className="set"><CheckIcon />{formatMinor(total, data.base)}</span></span>
       </button>
     );
   }
@@ -63,8 +63,9 @@ function TripRow({ trip, data, onOpen }: { trip: Trip; data: TravelData; onOpen:
   return (
     <button className="row item" onClick={onOpen}>
       <span className="main">
-        <span className="l1">{trip.name}</span>
+        <span className="l1 tripname">{trip.name}</span>
         <span className="l2"><span>{dates(trip)}</span><span className="tag">{t.final} of {t.count} final</span></span>
+        {t.count > 0 && <span className="tripprog" role="meter" aria-label="Final expenses" aria-valuemin={0} aria-valuemax={t.count} aria-valuenow={t.final} aria-valuetext={`${t.final} of ${t.count} final`}><i style={{ width: `${(t.final / t.count) * 100}%` }} /></span>}
       </span>
       <span className="money">
         <span>{formatMinor(t.mine, data.base)}</span>

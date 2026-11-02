@@ -52,7 +52,7 @@ export function CardView({ card, st, bd, banks, items, accounts, onOpenLedger, o
     <div className="cardview">
       <h2 className="cvtitle">{card.name}</h2>
       <Segmented label="Card view" value={tab} options={TABS} onChange={setTab} />
-      {tab !== "Plans" && trips?.map((t) => <p key={t.tripId} className="mute small"><button type="button" className="textlink quiet" onClick={() => onOpenTrip?.(t.tripId)}>{t.text}</button></p>)}
+      {tab !== "Plans" && trips?.map((t) => <p key={t.tripId} className="mute small"><button type="button" className="textlink quiet" onClick={() => onOpenTrip?.(t.tripId)}><i className="tripdot" aria-hidden="true" />{t.text}</button></p>)}
 
       {tab === "Statement" && (
         <>

@@ -13,7 +13,7 @@ function reduce(cur: Acting, e: ConfirmEvent): Acting {
  * label, the second tap runs `onConfirm`. Waiting, or tapping anywhere else, puts it back.
  * Always `type="button"`, so it never submits the form it sits in.
  */
-export function ConfirmButton({ label, ask, onConfirm, danger }: { label: string; ask: string; onConfirm: () => void; danger?: boolean }) {
+export function ConfirmButton({ label, ask, onConfirm, danger, primary }: { label: string; ask: string; onConfirm: () => void; danger?: boolean; primary?: boolean }) {
   const [s, send] = useReducer(reduce, { state: IDLE, act: 0 });
   const btn = useRef<HTMLButtonElement>(null);
   const run = useRef(onConfirm);
@@ -31,7 +31,7 @@ export function ConfirmButton({ label, ask, onConfirm, danger }: { label: string
 
   const armed = s.state.armed;
   return (
-    <button ref={btn} type="button" className={`btn ${armed ? "armed" : "ghost"}${danger ? " danger" : ""}`}
+    <button ref={btn} type="button" className={`btn ${armed ? "armed" : primary ? "" : "ghost"}${danger ? " danger" : ""}`}
       onClick={() => send({ type: "tap", now: performance.now() })} onBlur={() => send({ type: "blur" })}>
       <span aria-live="polite">{armed ? ask : label}</span>
     </button>

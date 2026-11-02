@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Account, Trip, TripItem } from "../src/data/schema";
 import { buildSplit } from "../src/data/splits";
-import { baseOf, budgetLeft, concludePlan, concludeSummary, daysLeft, isFinal, owedLines, perDay, rebuildSplit, tripEnd, tripTotals, waitingText } from "../src/data/tripMath";
+import { againstEstimate, baseOf, budgetLeft, concludedByCard, concludePlan, concludeSummary, dayRail, daysLeft, isFinal, owedLines, perDay, phaseText, rebuildSplit, tripEnd, tripPhase, tripTotals, waitingText } from "../src/data/tripMath";
 
 const T = "2026-10-01T00:00:00.000Z";
 const trip: Trip = { id: "t1", name: "Trip A", start: "2026-09-28", days: 7, budget: 5000000, rates: { JPY: "0.37" }, status: "open", updatedAt: T };
@@ -163,5 +163,47 @@ describe("what People will show", () => {
   it("words who owes whom", () => {
     const fmt = (n: number) => `P${n / 100}`;
     expect(owedLines([{ personId: "a", amount: 25000 }, { personId: "b", amount: -1000 }], [{ id: "a", name: "Alex" }, { id: "b", name: "Sam" }], fmt)).toEqual(["Alex owes you P250", "You owe Sam P10"]);
+  });
+});
+
+describe("the trip header", () => {
+  it("says where today falls", () => {
+    expect(tripPhase(trip, "2026-09-26")).toEqual({ kind: "before", days: 2 });
+    expect(tripPhase(trip, "2026-09-28")).toEqual({ kind: "during", day: 1 });
+    expect(tripPhase(trip, "2026-10-04")).toEqual({ kind: "during", day: 7 });
+    expect(tripPhase(trip, "2026-10-05")).toEqual({ kind: "after" });
+    expect(phaseText(trip, "2026-09-27")).toBe("Starts tomorrow");
+    expect(phaseText(trip, "2026-09-20")).toBe("Starts in 8 days");
+    expect(phaseText(trip, "2026-09-30")).toBe("Day 3 of 7");
+    expect(phaseText(trip, "2026-11-01")).toBe("Ended Oct 4");
+  });
+
+  it("shades one cell per day by spending against the highest day, and marks today", () => {
+    const items = [
+      item({ date: "2026-09-28", amount: 10000, final: 400000 }),
+      item({ date: "2026-09-29", amount: 10000, final: 100000 }),
+      item({ date: "2026-09-29", refund: true, refundOf: "x", amount: 1000, final: 10000 }),
+      item({ date: "2026-09-30", currency: "PHP", amount: 5000 }),
+      item({ date: "2026-09-28", amount: 10000, final: 999, deleted: true }),
+    ];
+    const rail = dayRail(trip, items, "PHP", "2026-09-30");
+    expect(rail).toHaveLength(7);
+    expect(rail.map((c) => c.level)).toEqual([4, 2, 1, 0, 0, 0, 0]);
+    expect(rail.map((c) => c.state)).toEqual(["past", "past", "today", "later", "later", "later", "later"]);
+    expect(rail[0]!.date).toBe("2026-09-28");
+    expect(dayRail(trip, [], "PHP", "2026-09-30").every((c) => c.level === 0)).toBe(true);
+  });
+
+  it("adds up a concluded trip per card, refunds taken off", () => {
+    const rows = concludedByCard([{ amount: 500, accountId: "a" }, { amount: 200, accountId: "b" }, { amount: 100, refund: true, accountId: "a" }, { amount: 50 }]);
+    expect(rows).toEqual([{ accountId: "a", paid: 400, count: 2 }, { accountId: "b", paid: 200, count: 1 }, { accountId: "none", paid: 50, count: 1 }]);
+  });
+
+  it("words a typed figure against its estimate", () => {
+    const fmt = (n: number) => `P${n / 100}`;
+    expect(againstEstimate(460050, 456765, fmt)).toBe("P32.85 more than the estimate");
+    expect(againstEstimate(450000, 456765, fmt)).toBe("P67.65 less than the estimate");
+    expect(againstEstimate(456765, 456765, fmt)).toBe("Same as the estimate");
+    expect(againstEstimate(100, undefined, fmt)).toBe("");
   });
 });

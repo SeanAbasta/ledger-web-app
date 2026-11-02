@@ -13,6 +13,10 @@ import { useKeyboardInset } from "../../ui/useKeyboardInset";
 
 type Row = { currency: string; rate: string };
 
+// What was typed on Add > Trip and not planned yet, kept while another room is open (like the other kinds).
+// Nothing is stored: it lasts until the trip is planned or the page is reloaded.
+let kept: { name: string; start: string; days: string; budget: string; accountId: string; currency: string; rows: Row[] } | undefined;
+
 /**
  * Plan a trip (Add > Trip) or edit an open one (a sheet inside the trip). A trip is a name, a start and a
  * number of days, an overall budget in the base currency, the card new expenses start on, and an estimated
@@ -22,13 +26,13 @@ export function TripForm({ trip, onDone }: { trip?: Trip; onDone: (t: Trip) => v
   const { store, changed } = useLedger();
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [name, setName] = useState(trip?.name ?? "");
-  const [start, setStart] = useState(trip?.start ?? today());
-  const [days, setDays] = useState(String(trip?.days ?? 7));
-  const [budget, setBudget] = useState("");
-  const [accountId, setAccountId] = useState(trip?.accountId ?? "");
-  const [rows, setRows] = useState<Row[]>(trip ? Object.entries(trip.rates).map(([currency, rate]) => ({ currency, rate })) : []);
-  const [currency, setCurrency] = useState(trip?.currency ?? "");
+  const [name, setName] = useState(trip?.name ?? kept?.name ?? "");
+  const [start, setStart] = useState(trip?.start ?? kept?.start ?? today());
+  const [days, setDays] = useState(String(trip?.days ?? kept?.days ?? 7));
+  const [budget, setBudget] = useState(trip ? "" : kept?.budget ?? "");
+  const [accountId, setAccountId] = useState(trip?.accountId ?? kept?.accountId ?? "");
+  const [rows, setRows] = useState<Row[]>(trip ? Object.entries(trip.rates).map(([currency, rate]) => ({ currency, rate })) : kept?.rows ?? []);
+  const [currency, setCurrency] = useState(trip?.currency ?? kept?.currency ?? "");
   const [error, setError] = useState("");
   const saving = useRef(false);
 
@@ -42,6 +46,10 @@ export function TripForm({ trip, onDone }: { trip?: Trip; onDone: (t: Trip) => v
   }, [store, trip]);
 
   useKeyboardInset(!trip);
+  useEffect(() => {
+    if (trip) return;
+    kept = name.trim() || budget.trim() ? { name, start, days, budget, accountId, currency, rows } : undefined;
+  });
   const base = settings.baseCurrency;
   const foreign = [...new Set(CURRENCIES.filter((c) => c !== base))];
   // The trip's own currency leads the rate list; more can be added.
@@ -77,6 +85,7 @@ export function TripForm({ trip, onDone }: { trip?: Trip; onDone: (t: Trip) => v
       const input = { name, start, days: n, budget: cap, accountId: accountId || undefined, currency: currency || undefined, rates };
       const saved = trip ? await updateTrip(store, trip.id, input) : await addTrip(store, input);
       changed();
+      if (!trip) kept = undefined;
       onDone(saved);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save");
@@ -97,19 +106,19 @@ export function TripForm({ trip, onDone }: { trip?: Trip; onDone: (t: Trip) => v
       </div>
       <div className="slip-r">
         {accounts.length > 0 && (
-          <label className="field"><b>Card<span className="mute small sub">new expenses start here</span></b>
+          <label className="field"><b>Home card<span className="mute small sub">new expenses start here</span></b>
             <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>
               <option value="">None</option>
               <AccountOptions accounts={accounts} />
             </select></label>
         )}
-        <label className="field"><b>Money you spend there<span className="mute small sub">new expenses start in this currency</span></b>
+        <label className="field"><b>Main currency<span className="mute small sub">new expenses start in this one</span></b>
           <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
-            <option value="">{base}</option>
+            <option value="">{base} (home)</option>
             {foreign.map((c) => <option key={c}>{c}</option>)}
           </select></label>
         {rateRows.length > 0 && (
-          <div className="field stack"><b>Estimated rates<span className="mute small sub">{base} per 1 unit. The statement figure replaces these.</span></b>
+          <div className="field stack"><b>Estimated rates<span className="mute small sub">{base} per 1 unit, typed by hand. The statement figure replaces them.</span></b>
             {rateRows.map((r) => (
               <div className="raterow" key={r.currency}>
                 <select aria-label="Currency" value={r.currency} onChange={(e) => pickRowCurrency(r.currency, e.target.value)}>

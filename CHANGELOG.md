@@ -2,6 +2,19 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V2.1.1 (2026-11-02)
+
+A patch for Travel: a look of its own, and fixes found in a review of V2.1.0. Nothing about your data changes, so a copy on V2.1.0 keeps working.
+
+- **A trip is readable offline.** While you are roaming and Ledger is read-only, you can still open a trip, read its expenses and see its summary. Only what changes it (Add expense, the statement amounts, Conclude, Edit and Delete) is locked until you choose to edit offline. Before, the whole Travel screen was dead offline.
+- **A look for trips.** Under the trip's name, a row of small cells shows each day of the trip, shaded by what you spent, with today ringed. The line under it says "Day 3 of 7". The budget is a bar whose ticks are the trip's days, so money used and time used sit side by side. Section rules on the Travel screens are dashed. A small teal dot marks anything that belongs to a trip: its label on a Ledger row, the filter chip, the progress rule under a trip and the reminder lines. The trip label itself is now ink, not blue, so it no longer looks like a link.
+- **Estimated or final, without relying on colour.** An estimate is light and starts with a wavy equals ("≈ ₱4,567.65"). A final figure is firm, with a tick. On the Cards tab, a line you have typed says "final" and how far it is from the estimate ("₱32.85 more than the estimate"). Each card shows a thin bar of how many amounts are typed.
+- **Add expense is at the bottom**, above the tab bar, like Save on Add, where the thumb reaches it.
+- **The summary leads with the job.** What is left to do, then Conclude trip as a full-width button (blue when it is ready, outlined when something is missing), then the figures. Edit trip and Delete trip sit in a quiet row at the bottom.
+- **A concluded trip shows its record only**, worked out from the entries in your Ledger: what it cost, your share, budget against actual with the bar, the cards it went on and the categories. Its old expense list is gone, so it can no longer disagree with the Ledger after you edit an entry.
+- Add > Trip has clearer labels ("Home card", "Main currency", "PHP (home)") and says the estimated rate is typed by hand and replaced by the statement. What you have typed there is kept if you leave Add and come back.
+- Deleting a trip with a long name no longer pushes its confirm button off the screen.
+
 ## V2.1.0 (2026-11-02)
 
 **Travel.** A trip gets its own ledger, so its expenses can be gathered and finalised before they reach your real Ledger. A trip can have several currencies and several card statements, and the foreign fee only shows up on the statement. Until you conclude a trip, none of it touches your balances, Dashboard, Forecast or People.

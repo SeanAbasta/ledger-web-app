@@ -3,9 +3,9 @@ import { labelShort } from "../../data/dates";
 import { formatMinor, parseMinor } from "../../data/money";
 import { NO_ACCOUNT } from "../../data/summary";
 import type { Trip, TripItem } from "../../data/schema";
-import { baseOf, isFinal, needsFigure, statementOrder } from "../../data/tripMath";
+import { againstEstimate, baseOf, isFinal, needsFigure, statementOrder } from "../../data/tripMath";
 import { updateTripItem } from "../../data/tripOps";
-import { PrevIcon } from "../../ui/icons";
+import { CheckIcon, PrevIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { accountLabel, type TravelData } from "./travelData";
@@ -15,13 +15,13 @@ import { accountLabel, type TravelData } from "./travelData";
  * shows (the foreign fee is already inside that figure). Typing it makes the expense final; clearing it
  * makes it an estimate again. Return moves to the next field.
  */
-export function Statement({ trip, data, items, card, onCard, open }: { trip: Trip; data: TravelData; items: TripItem[]; card?: string; onCard: (id?: string) => void; open: boolean }) {
+export function Statement({ trip, data, items, card, onCard, open, locked }: { trip: Trip; data: TravelData; items: TripItem[]; card?: string; onCard: (id?: string) => void; open: boolean; locked: boolean }) {
   const base = data.base;
   if (!items.length) return <p className="mute emptyline">{open ? "Nothing logged on this trip yet." : "This trip had no expenses."}</p>;
   if (!open) return <p className="mute emptyline">This trip is concluded. Its expenses are in your Ledger.</p>;
 
   const cards = [...new Set(items.map((i) => i.accountId ?? NO_ACCOUNT))];
-  if (card && cards.includes(card)) return <CardStatement trip={trip} data={data} items={items.filter((i) => (i.accountId ?? NO_ACCOUNT) === card)} card={card} onBack={() => onCard(undefined)} />;
+  if (card && cards.includes(card)) return <CardStatement trip={trip} data={data} items={items.filter((i) => (i.accountId ?? NO_ACCOUNT) === card)} card={card} locked={locked} onBack={() => onCard(undefined)} />;
 
   return (
     <>
@@ -34,7 +34,9 @@ export function Statement({ trip, data, items, card, onCard, open }: { trip: Tri
           const paid = its.reduce((n, i) => n + (baseOf(i, trip, base) ?? 0) * (i.refund ? -1 : 1), 0);
           return (
             <button key={id} className="row" onClick={() => onCard(id)}>
-              <span>{accountLabel(data.accounts, id === NO_ACCOUNT ? undefined : id)}<span className="sub mute small">{need.length ? `${done} of ${need.length} statement amounts typed` : `${its.length} in ${base}, nothing to type`}</span></span>
+              <span>{accountLabel(data.accounts, id === NO_ACCOUNT ? undefined : id)}<span className="sub mute small">{need.length ? `${done} of ${need.length} statement amounts typed` : `${its.length} in ${base}, nothing to type`}</span>
+                {need.length > 0 && <span className="tripprog" role="meter" aria-label="Statement amounts typed" aria-valuemin={0} aria-valuemax={need.length} aria-valuenow={done} aria-valuetext={`${done} of ${need.length} typed`}><i style={{ width: `${(done / need.length) * 100}%` }} /></span>}
+              </span>
               <span>{formatMinor(paid, base)}</span>
             </button>
           );
@@ -44,7 +46,7 @@ export function Statement({ trip, data, items, card, onCard, open }: { trip: Tri
   );
 }
 
-function CardStatement({ trip, data, items, card, onBack }: { trip: Trip; data: TravelData; items: TripItem[]; card: string; onBack: () => void }) {
+function CardStatement({ trip, data, items, card, locked, onBack }: { trip: Trip; data: TravelData; items: TripItem[]; card: string; locked: boolean; onBack: () => void }) {
   const base = data.base;
   const name = accountLabel(data.accounts, card === NO_ACCOUNT ? undefined : card);
   const list = useRef<HTMLDivElement>(null);
@@ -67,12 +69,14 @@ function CardStatement({ trip, data, items, card, onBack }: { trip: Trip; data: 
       <div className="toolrow"><span className="nav"><button className="title back" onClick={onBack}><PrevIcon />Cards</button></span></div>
       <h3 className="cvtitle">{name}</h3>
       <p className="mute stmtprogress" aria-live="polite">{need.length ? `${done} of ${need.length} statement amounts typed` : `Everything on ${name} is already in ${base}.`}</p>
-      <div className="card" ref={list}>
-        {ordered.map((i) => <StatementRow key={i.id} item={i} trip={trip} base={base} onNext={next} />)}
-      </div>
-      <label className="field stack stmttotal"><b>Statement total for this trip<span className="mute small sub">Optional. Type what the statement says these charges add up to, to check the lines.</span></b>
-        <MoneyInput value={total} onChange={setTotal} currency={base} placeholder="0.00" />
-      </label>
+      <fieldset className="plain" disabled={locked}>
+        <div className="card" ref={list}>
+          {ordered.map((i) => <StatementRow key={i.id} item={i} trip={trip} base={base} onNext={next} />)}
+        </div>
+        <label className="field stack stmttotal"><b>Statement total for this trip<span className="mute small sub">Optional. Type what the statement says these charges add up to, to check the lines.</span></b>
+          <MoneyInput value={total} onChange={setTotal} currency={base} placeholder="0.00" />
+        </label>
+      </fieldset>
       {diff !== undefined && (
         <p className="mute stmtcheck" aria-live="polite">
           {diff === 0 ? `Matches the lines: ${formatMinor(lines, base)}.` : `The statement is ${formatMinor(Math.abs(diff), base)} ${diff > 0 ? "more" : "less"} than the lines (${formatMinor(lines, base)}).`}
@@ -105,7 +109,12 @@ function StatementRow({ item, trip, base, onNext }: { item: TripItem; trip: Trip
     <div className={needs ? "stmtrow" : "stmtrow done"}>
       <span className="main">
         <span className="l1">{item.note || item.category || "Expense"}{item.refund && <span className="tag">refund</span>}</span>
-        <span className="l2"><span>{labelShort(item.date)}</span><span>{formatMinor(item.amount, item.currency)}</span>{needs && est !== undefined && <span>≈ {formatMinor(est, base)} est.</span>}</span>
+        <span className="l2">
+          <span>{labelShort(item.date)}</span><span>{formatMinor(item.amount, item.currency)}</span>
+          {needs && item.final === undefined && est !== undefined && <span className="wet">≈ {formatMinor(est, base)}</span>}
+          {needs && item.final !== undefined && <span className="set"><CheckIcon />final<span className="visually-hidden">, {againstEstimate(item.final, est, (n) => formatMinor(n, base)) || "typed"}</span></span>}
+        </span>
+        {needs && item.final !== undefined && est !== undefined && <span className="mute small stmtdiff">{againstEstimate(item.final, est, (n) => formatMinor(n, base))}</span>}
       </span>
       {needs ? (
         <span className="stmtfield">

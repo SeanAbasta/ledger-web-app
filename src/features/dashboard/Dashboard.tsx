@@ -350,7 +350,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
         </div>
       )}
       {note && <p className="mute small hint balnote">{note}</p>}
-      {quiet.map((r) => <p key={r.tripId} className="mute small hint balnote"><button type="button" className="textlink quiet" onClick={() => onOpenTrip?.(r.tripId)}>{reminderLine(r, (n) => formatMinor(n, base))}</button></p>)}
+      {quiet.map((r) => <p key={r.tripId} className="mute small hint balnote"><button type="button" className="textlink quiet" onClick={() => onOpenTrip?.(r.tripId)}><i className="tripdot" aria-hidden="true" />{reminderLine(r, (n) => formatMinor(n, base))}</button></p>)}
       {cards.length > 0 && (
         <div className={`grid ${cards.length % 3 === 0 ? "g3" : "g2"}`}>
           {cards.map(({ card, st }) => <CardTile key={card.id} trips={cardReminders(v.reminders, card.id, (n) => formatMinor(n, base))} onOpenTrip={onOpenTrip} focused={card.id === focusTile} card={card} color={cardColor(card, accounts)} st={st} banks={banks} defaultBank={salaryAccount} defaults={defaults} onOpen={() => setOpenCard(card.id)} />)}

@@ -2,19 +2,21 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { labelDay, labelShort, today } from "../../data/dates";
 import { formatMinor, parseMinor } from "../../data/money";
 import type { Trip, TripItem } from "../../data/schema";
-import { baseOf, budgetLeft, concludePlan, concludedTotals, concludeSummary, daysLeft, isFinal, owedLines, perDay, tripEnd, tripTotals, waitingText } from "../../data/tripMath";
+import { baseOf, budgetLeft, concludedByCard, concludePlan, concludedTotals, concludeSummary, daysLeft, isFinal, owedLines, perDay, phaseText, tripEnd, tripPhase, tripTotals, waitingText } from "../../data/tripMath";
 import { addTripItem, concludeTrip, deleteTrip, deleteTripItem, restoreTrip, restoreTripItems, undoConclude } from "../../data/tripOps";
 import { categoryTone } from "../../ui/categoryColor";
 import { ConfirmButton } from "../../ui/ConfirmButton";
-import { PrevIcon } from "../../ui/icons";
+import { CheckIcon, PrevIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
 import { MoneyInput } from "../../ui/MoneyInput";
 import { Segmented } from "../../ui/Segmented";
+import { useSync } from "../../ui/Sync";
 import { Dock, Sheet } from "../../ui/Sheet";
 import { UNDO_FAILED, useToast } from "../../ui/Toast";
 import { useWide } from "../../ui/useWide";
 import { AddForm } from "../add/AddForm";
 import { Statement } from "./Statement";
+import { BudgetMeter, DayRail } from "./TripHeader";
 import { accountLabel, type TravelData } from "./travelData";
 import { TripForm } from "./TripForm";
 
@@ -38,6 +40,8 @@ export function TripView({ trip, data, onBack, onShowInLedger }: { trip: Trip; d
   const [adding, setAdding] = useState(false);
   const [card, setCard] = useState<string>();
   const { show } = useToast();
+  // Offline and read-only: the trip can still be opened and read; only what changes it is locked.
+  const { readOnly } = useSync();
   const open = trip.status === "open";
   const items = useMemo(() => data.items.filter((i) => i.tripId === trip.id), [data.items, trip.id]);
   const totals = useMemo(() => tripTotals(trip, items, data.base), [trip, items, data.base]);
@@ -52,11 +56,11 @@ export function TripView({ trip, data, onBack, onShowInLedger }: { trip: Trip; d
     );
   }
 
-  return <Body trip={trip} data={data} items={items} totals={totals} tab={tab} setTab={setTab} card={card} setCard={setCard} onBack={onBack} onAdd={() => setAdding(true)} open={open} onShowInLedger={onShowInLedger} />;
+  return <Body trip={trip} data={data} items={items} totals={totals} tab={tab} setTab={setTab} card={card} setCard={setCard} onBack={onBack} onAdd={() => setAdding(true)} open={open} locked={readOnly} onShowInLedger={onShowInLedger} />;
 }
 
-function Body({ trip, data, items, totals, tab, setTab, card, setCard, onBack, onAdd, open, onShowInLedger }: {
-  onShowInLedger: (tripId: string) => void;
+function Body({ trip, data, items, totals, tab, setTab, card, setCard, onBack, onAdd, open, locked, onShowInLedger }: {
+  locked: boolean; onShowInLedger: (tripId: string) => void;
   trip: Trip; data: TravelData; items: TripItem[]; totals: ReturnType<typeof tripTotals>; tab: Tab; setTab: (t: Tab) => void;
   card?: string; setCard: (c?: string) => void; onBack: () => void; onAdd: () => void; open: boolean;
 }) {
@@ -65,32 +69,39 @@ function Body({ trip, data, items, totals, tab, setTab, card, setCard, onBack, o
   const left = budgetLeft(trip, totals);
   const day = perDay(trip, totals, t);
   const left_days = daysLeft(trip, t);
+  const fmt = (n: number) => formatMinor(n, base);
+  const range = `${labelShort(trip.start)}${trip.days > 1 ? ` to ${labelShort(tripEnd(trip))}` : ""}`;
+  const budgetWords = trip.budget === undefined ? "" : left! >= 0
+    ? `${fmt(left!)} left of ${fmt(trip.budget)}`
+    : `${fmt(-left!)} over the ${fmt(trip.budget)} budget`;
   return (
     <div className="tripview">
       <div className="toolrow"><span className="nav"><button className="title back" onClick={onBack}><PrevIcon />Travel</button></span></div>
       <h2 className="cvtitle">{trip.name}</h2>
+      {open && <DayRail trip={trip} items={items} base={base} today={t} />}
       <p className="mute tripline">
-        {labelShort(trip.start)}{trip.days > 1 ? ` to ${labelShort(tripEnd(trip))}` : ""}
-        {open ? ` · ${totals.final} of ${totals.count} final` : " · concluded"}
+        {open ? `${tripPhase(trip, t).kind === "after" ? "Ended" : phaseText(trip, t)} · ${range} · ${totals.final} of ${totals.count} final` : `Concluded · ${range}`}
       </p>
       {open && trip.budget !== undefined && (
-        <p className="tripbudget" aria-live="polite">
-          {left! >= 0
-            ? <>{formatMinor(left!, base)} left of {formatMinor(trip.budget, base)}{day !== undefined && left_days > 0 ? <span className="mute"> · {formatMinor(day, base)} a day for {left_days} {left_days === 1 ? "day" : "days"}</span> : null}</>
-            : <>{formatMinor(-left!, base)} over the {formatMinor(trip.budget, base)} budget</>}
-        </p>
+        <>
+          <p className="tripbudget" aria-live="polite">
+            {budgetWords}
+            {left! >= 0 && day !== undefined && left_days > 0 ? <span className="mute"> · {fmt(day)} a day for {left_days} {left_days === 1 ? "day" : "days"}</span> : null}
+          </p>
+          <BudgetMeter budget={trip.budget} mine={totals.mine} days={trip.days} label={budgetWords} />
+        </>
       )}
-      <Segmented label="Trip view" value={tab} options={TABS} onChange={(v) => { setCard(undefined); setTab(v); }} />
-      {tab === "Expenses" && <Expenses trip={trip} data={data} items={items} onAdd={onAdd} open={open} />}
-      {tab === "Cards" && <Statement trip={trip} data={data} items={items} card={card} onCard={setCard} open={open} />}
-      {tab === "Summary" && <Summary trip={trip} data={data} items={items} totals={totals} onCard={(id) => { setCard(id); setTab("Cards"); }} onBack={onBack} onShowInLedger={onShowInLedger} />}
+      {open && <Segmented label="Trip view" value={tab} options={TABS} onChange={(v) => { setCard(undefined); setTab(v); }} />}
+      {open && tab === "Expenses" && <Expenses trip={trip} data={data} items={items} onAdd={onAdd} locked={locked} />}
+      {open && tab === "Cards" && <Statement trip={trip} data={data} items={items} card={card} onCard={setCard} open={open} locked={locked} />}
+      {(!open || tab === "Summary") && <Summary trip={trip} data={data} items={items} totals={totals} locked={locked} onCard={(id) => { setCard(id); setTab("Cards"); }} onBack={onBack} onShowInLedger={onShowInLedger} />}
     </div>
   );
 }
 
 // ---- Expenses --------------------------------------------------------------------------------
 
-function Expenses({ trip, data, items, onAdd, open }: { trip: Trip; data: TravelData; items: TripItem[]; onAdd: () => void; open: boolean }) {
+function Expenses({ trip, data, items, onAdd, locked }: { trip: Trip; data: TravelData; items: TripItem[]; onAdd: () => void; locked: boolean }) {
   const base = data.base;
   const [editing, setEditing] = useState<TripItem>();
   const wide = useWide();
@@ -105,9 +116,8 @@ function Expenses({ trip, data, items, onAdd, open }: { trip: Trip; data: Travel
 
   return (
     <>
-      {open && <div className="toolrow"><span /><button type="button" className="btn sm" onClick={onAdd}>Add expense</button></div>}
       {!items.length ? (
-        <p className="mute emptyline">{open ? "Nothing logged on this trip yet." : "This trip had no expenses."}</p>
+        <p className="mute emptyline">Nothing logged on this trip yet.</p>
       ) : days.map(([date, its]) => {
         const sum = its.reduce((n, i) => n + (baseOf(i, trip, base) ?? 0) * (i.refund ? -1 : 1), 0);
         const est = its.some((i) => !isFinal(i, base));
@@ -119,28 +129,30 @@ function Expenses({ trip, data, items, onAdd, open }: { trip: Trip; data: Travel
               <span className="r">{sum > 0 ? `${est ? "≈ " : ""}${formatMinor(sum, base)}` : sum < 0 ? <span className="in">+{est ? "≈ " : ""}{formatMinor(-sum, base)}</span> : ""}</span>
             </div>
             <div className="card">
-              {its.map((i) => <ItemRow key={i.id} item={i} trip={trip} data={data} onOpen={() => open && setEditing(i)} locked={!open} />)}
+              {its.map((i) => <ItemRow key={i.id} item={i} trip={trip} data={data} onOpen={() => setEditing(i)} />)}
             </div>
           </div>
         );
       })}
+      {/* Add expense rides above the tab bar, like Save on the Add tab: the thumb reaches it. */}
+      <div className="savebar addbar"><button type="button" className="btn" disabled={locked} onClick={onAdd}>Add expense</button></div>
       {current && (wide ? (
-        <Dock onClose={() => setEditing(undefined)} locked={!open}><ItemSheet item={current} trip={trip} data={data} onClose={() => setEditing(undefined)} /></Dock>
+        <Dock onClose={() => setEditing(undefined)} locked><ItemSheet item={current} trip={trip} data={data} onClose={() => setEditing(undefined)} /></Dock>
       ) : (
-        <Sheet onClose={() => setEditing(undefined)} locked={!open}><ItemSheet item={current} trip={trip} data={data} onClose={() => setEditing(undefined)} /></Sheet>
+        <Sheet onClose={() => setEditing(undefined)} locked><ItemSheet item={current} trip={trip} data={data} onClose={() => setEditing(undefined)} /></Sheet>
       ))}
     </>
   );
 }
 
-function ItemRow({ item, trip, data, onOpen, locked }: { item: TripItem; trip: Trip; data: TravelData; onOpen: () => void; locked: boolean }) {
+function ItemRow({ item, trip, data, onOpen }: { item: TripItem; trip: Trip; data: TravelData; onOpen: () => void }) {
   const base = data.base;
   const b = baseOf(item, trip, base);
   const final = isFinal(item, base);
   const foreign = item.currency !== base;
-  const Tag = locked ? "div" : "button";
+  const fmt = (n: number) => formatMinor(n, base);
   return (
-    <Tag className={locked ? "row item static" : "row item"} onClick={locked ? undefined : onOpen} title={locked ? undefined : "Edit"}>
+    <button className="row item" onClick={onOpen} title="Edit">
       <span className="main">
         <span className="l1">{item.note || item.category || "Expense"}</span>
         <span className="l2">
@@ -148,15 +160,17 @@ function ItemRow({ item, trip, data, onOpen, locked }: { item: TripItem; trip: T
           <span>{item.category || "Other"}</span>
           {item.split && <span className="tag">split</span>}
           {item.refund && <span className="tag">refund</span>}
-          <span className={final ? "tag" : "tag est"}><span aria-hidden="true">{final ? "final" : "est."}</span><span className="visually-hidden">{final ? "final amount" : "estimated amount"}</span></span>
           <span className="acct">{accountLabel(data.accounts, item.accountId)}</span>
         </span>
       </span>
       <span className={item.refund ? "money in" : "money"}>
         <span>{item.refund ? "+" : ""}{formatMinor(item.amount, item.currency)}</span>
-        {foreign && (b !== undefined ? <span className="approx">{final ? "" : "≈ "}{formatMinor(b, base)}</span> : <span className="approx">no rate</span>)}
+        {/* Wet or set: an estimate is light and starts with a wavy equals; a final figure is firm and ticked. */}
+        {foreign && (b === undefined ? <span className="approx">no rate</span> : final
+          ? <span className="approx set"><CheckIcon />{fmt(b)}<span className="visually-hidden"> final</span></span>
+          : <span className="approx wet">≈ {fmt(b)}<span className="visually-hidden"> estimated</span></span>)}
       </span>
-    </Tag>
+    </button>
   );
 }
 
@@ -224,19 +238,21 @@ function RefundOnly({ item, onClose }: { item: TripItem; onClose: () => void }) 
   );
 }
 
-// ---- Summary and Conclude --------------------------------------------------------------------
+// ---- Summary, the record and Conclude --------------------------------------------------------
 
-function Summary({ trip, data, items, totals, onCard, onBack, onShowInLedger }: { onShowInLedger: (tripId: string) => void; trip: Trip; data: TravelData; items: TripItem[]; totals: ReturnType<typeof tripTotals>; onCard: (id: string) => void; onBack: () => void }) {
+function Summary({ trip, data, items, totals, locked, onCard, onBack, onShowInLedger }: { locked: boolean; onShowInLedger: (tripId: string) => void; trip: Trip; data: TravelData; items: TripItem[]; totals: ReturnType<typeof tripTotals>; onCard: (id: string) => void; onBack: () => void }) {
   const base = data.base;
   const { store, changed } = useLedger();
   const { show } = useToast();
   const [editing, setEditing] = useState(false);
   const open = trip.status === "open";
+  const fmt = (n: number) => formatMinor(n, base);
   const plan = useMemo(() => (open ? concludePlan(trip, items, data.accounts, base) : undefined), [open, trip, items, data.accounts, base]);
   const summary = plan && !plan.problems.length ? concludeSummary(plan.entries) : undefined;
   const reasons = useRef<HTMLParagraphElement>(null);
-  const posted = data.posted.filter((e) => e.tripId === trip.id);
+  const posted = useMemo(() => data.posted.filter((e) => e.tripId === trip.id), [data.posted, trip.id]);
   const record = useMemo(() => concludedTotals(posted), [posted]);
+  const byCardPosted = useMemo(() => concludedByCard(posted), [posted]);
 
   async function conclude() {
     try {
@@ -254,84 +270,92 @@ function Summary({ trip, data, items, totals, onCard, onBack, onShowInLedger }: 
     show({ message: `Deleted: ${trip.name}`, undo: async () => { await restoreTrip(store, trip.id, stamp); }, failed: "Could not undo. The trip is still deleted." });
   }
 
-  const byCard = open ? totals.byCard : [];
+  const cardName = (id: string) => accountLabel(data.accounts, id === "none" ? undefined : id);
+  const categories = open ? totals.byCategory : record.byCategory;
+  const mine = open ? totals.mine : record.mine;
+  const paid = open ? totals.paid : record.paid;
+  const left = budgetLeft(trip, { mine });
+
   return (
     <>
-      {open ? (
-        <div className="card">
-          <div className="row static"><span>Paid</span><span>{formatMinor(totals.paid, base)}</span></div>
-          {totals.mine !== totals.paid && <div className="row static"><span>Your share</span><span>{formatMinor(totals.mine, base)}</span></div>}
-          {trip.budget !== undefined && <div className="row static"><span>Budget</span><span>{formatMinor(trip.budget, base)}</span></div>}
-          {totals.unrated > 0 && <p className="mute small hint">{totals.unrated} {totals.unrated === 1 ? "expense has" : "expenses have"} no rate and {totals.unrated === 1 ? "is" : "are"} left out. Add a rate under Edit trip.</p>}
-        </div>
-      ) : (
-        <div className="card">
-          <div className="row static"><span>In your Ledger</span><span>{formatMinor(record.paid, base)}</span></div>
-          {record.mine !== record.paid && <div className="row static"><span>Your share</span><span>{formatMinor(record.mine, base)}</span></div>}
-          <div className="row static"><span>Entries</span><span>{posted.length}</span></div>
-        </div>
-      )}
-
-      {byCard.length > 0 && (
-        <>
-          <div className="grp" role="heading" aria-level={2}>By card</div>
-          <div className="card">
-            {byCard.map((c) => (
-              <button key={c.accountId} className="row" onClick={() => onCard(c.accountId)}>
-                <span>{accountLabel(data.accounts, c.accountId === "none" ? undefined : c.accountId)}<span className="sub mute small">{c.final} of {c.count} final</span></span>
-                <span>{formatMinor(c.paid, base)}</span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-      {(open ? totals.byCategory : record.byCategory).length > 0 && (
-        <>
-          <div className="grp" role="heading" aria-level={2}>By category</div>
-          <div className="card">
-            {(open ? totals.byCategory : record.byCategory).map((c) => (
-              <div key={c.category} className="row static"><span><i className={`dot tone-${categoryTone(c.category)}`} aria-hidden="true" /> {c.category}</span><span>{formatMinor(c.paid, base)}</span></div>
-            ))}
-          </div>
-        </>
-      )}
-
+      {/* The job first: what is left to do, then Conclude, then the figures. */}
       {open && plan && (
         <div className="concludebox">
           {summary ? (
             <p className="concludesum" aria-live="polite">
-              Adds {summary.count} {summary.count === 1 ? "entry" : "entries"} to your Ledger{summary.from === summary.to ? ` on ${labelShort(summary.from)}` : ` from ${labelShort(summary.from)} to ${labelShort(summary.to)}`}, {formatMinor(summary.paid, base)}.
-              {owedLines(summary.owed, data.people, (n) => formatMinor(n, base)).map((l) => ` ${l}.`).join("")}
+              Adds {summary.count} {summary.count === 1 ? "entry" : "entries"} to your Ledger{summary.from === summary.to ? ` on ${labelShort(summary.from)}` : ` from ${labelShort(summary.from)} to ${labelShort(summary.to)}`}, {fmt(summary.paid)}.
+              {owedLines(summary.owed, data.people, fmt).map((l) => ` ${l}.`).join("")}
             </p>
           ) : (
             <p className="concludewhy" ref={reasons} tabIndex={-1} aria-live="polite">
               {plan.problems.map((p, i) => <span key={i} className="why">{plan.waiting.length && p.startsWith(waitingText(plan.waiting, data.accounts)) ? (
                 <>{plan.waiting.reduce((n, w) => n + w.count, 0)} still need{plan.waiting.reduce((n, w) => n + w.count, 0) === 1 ? "s" : ""} a statement figure: {plan.waiting.map((w, k) => (
-                  <span key={w.accountId}>{k > 0 && ", "}<button type="button" className="textlink" onClick={() => onCard(w.accountId)}>{accountLabel(data.accounts, w.accountId === "none" ? undefined : w.accountId)} {w.count}</button></span>
+                  <span key={w.accountId}>{k > 0 && ", "}<button type="button" className="textlink" onClick={() => onCard(w.accountId)}>{cardName(w.accountId)} {w.count}</button></span>
                 ))}</>
               ) : p}</span>)}
             </p>
           )}
-          {summary
-            ? <ConfirmButton label="Conclude trip" ask={`Conclude ${summary.count} ${summary.count === 1 ? "entry" : "entries"}?`} onConfirm={() => void conclude()} />
-            : <button type="button" className="btn" aria-disabled="true" onClick={() => reasons.current?.focus()}>Conclude trip</button>}
+          <fieldset className="plain" disabled={locked}>
+            {summary
+              ? <ConfirmButton primary label="Conclude trip" ask={`Conclude ${summary.count} ${summary.count === 1 ? "entry" : "entries"}?`} onConfirm={() => void conclude()} />
+              : <button type="button" className="btn ghost" aria-disabled="true" onClick={() => reasons.current?.focus()}>Conclude trip</button>}
+          </fieldset>
+        </div>
+      )}
+      {!open && posted.length > 0 && (
+        <div className="concludebox">
+          <button type="button" className="btn" onClick={() => onShowInLedger(trip.id)}>Show in Ledger</button>
         </div>
       )}
 
-      {open && (
-        <div className="actions tripactions">
-          <button type="button" className="btn ghost" onClick={() => setEditing(true)}>Edit trip</button>
-          <ConfirmButton danger label="Delete trip" ask={`Delete ${trip.name} and its ${items.length} ${items.length === 1 ? "expense" : "expenses"}?`} onConfirm={() => void remove()} />
-        </div>
+      <div className="card tripfigures">
+        {open ? <div className="row static"><span>Paid</span><span>{fmt(paid)}</span></div>
+          : <div className="row static"><span>In your Ledger</span><span className="set"><CheckIcon />{fmt(paid)}</span></div>}
+        {mine !== paid && <div className="row static"><span>Your share</span><span>{fmt(mine)}</span></div>}
+        {trip.budget !== undefined && <div className="row static"><span>Budget</span><span>{fmt(trip.budget)}</span></div>}
+        {trip.budget !== undefined && left !== undefined && (left >= 0 ? <div className="row static"><span>{open ? "Left" : "Under budget by"}</span><span>{fmt(left)}</span></div> : <div className="row static"><span>Over budget by</span><span>{fmt(-left)}</span></div>)}
+        {!open && <div className="row static"><span>Entries</span><span>{posted.length}</span></div>}
+      </div>
+      {open && totals.unrated > 0 && <p className="mute small hint">{totals.unrated} {totals.unrated === 1 ? "expense has" : "expenses have"} no rate and {totals.unrated === 1 ? "is" : "are"} left out. Add a rate under Edit trip.</p>}
+      {!open && trip.budget !== undefined && <BudgetMeter budget={trip.budget} mine={mine} days={trip.days} label={left! >= 0 ? `${fmt(left!)} under the ${fmt(trip.budget)} budget` : `${fmt(-left!)} over the ${fmt(trip.budget)} budget`} />}
+
+      {(open ? totals.byCard.length : byCardPosted.length) > 0 && (
+        <>
+          <div className="grp" role="heading" aria-level={2}>By card</div>
+          <div className="card">
+            {open
+              ? totals.byCard.map((c) => (
+                <button key={c.accountId} className="row" onClick={() => onCard(c.accountId)}>
+                  <span>{cardName(c.accountId)}<span className="sub mute small">{c.final} of {c.count} final</span></span>
+                  <span>{fmt(c.paid)}</span>
+                </button>
+              ))
+              : byCardPosted.map((c) => (
+                <div key={c.accountId} className="row static"><span>{cardName(c.accountId)}<span className="sub mute small">{c.count} {c.count === 1 ? "entry" : "entries"}</span></span><span>{fmt(c.paid)}</span></div>
+              ))}
+          </div>
+        </>
       )}
-      {!open && (
-        <div className="actions tripactions">
-          {posted.length > 0 && <button type="button" className="btn ghost" onClick={() => onShowInLedger(trip.id)}>Show in Ledger</button>}
-          <ConfirmButton danger label="Delete trip record" ask={`Delete the ${trip.name} record? Its ${posted.length} entries stay.`} onConfirm={() => void remove()} />
-        </div>
+      {categories.length > 0 && (
+        <>
+          <div className="grp" role="heading" aria-level={2}>By category</div>
+          <div className="card">
+            {categories.map((c) => (
+              <div key={c.category} className="row static"><span><i className={`dot tone-${categoryTone(c.category)}`} aria-hidden="true" /> {c.category}</span><span>{fmt(c.paid)}</span></div>
+            ))}
+          </div>
+        </>
       )}
+
+      {/* Quiet footer: editing and deleting never compete with Conclude. */}
+      <fieldset className="plain" disabled={locked}>
+        <div className="tripfoot">
+          {open && <button type="button" className="btn ghost" onClick={() => setEditing(true)}>Edit trip</button>}
+          <ConfirmButton danger label={open ? "Delete trip" : "Delete record"} ask={open ? `Delete ${trip.name} and its ${items.length} ${items.length === 1 ? "expense" : "expenses"}?` : `Delete the ${trip.name} record? Its ${posted.length} entries stay.`} onConfirm={() => void remove()} />
+        </div>
+      </fieldset>
       {editing && (
-        <Sheet onClose={() => setEditing(false)}>
+        <Sheet onClose={() => setEditing(false)} locked>
           <h3>Edit trip</h3>
           <TripForm trip={trip} onDone={() => setEditing(false)} />
         </Sheet>

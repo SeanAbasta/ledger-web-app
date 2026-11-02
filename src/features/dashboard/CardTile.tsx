@@ -124,7 +124,7 @@ export function CardTile({ card, color, st, banks, defaultBank, defaults, onOpen
           ))}
         </>
       )}
-      {trips?.map((t) => <p key={t.tripId} className="mute small"><button type="button" className="textlink quiet" onClick={() => onOpenTrip?.(t.tripId)}>{t.text}</button></p>)}
+      {trips?.map((t) => <p key={t.tripId} className="mute small"><button type="button" className="textlink quiet" onClick={() => onOpenTrip?.(t.tripId)}><i className="tripdot" aria-hidden="true" />{t.text}</button></p>)}
       {st.skipped > 0 && <p className="mute small">{st.skipped} foreign {st.skipped === 1 ? "amount has" : "amounts have"} no rate and {st.skipped === 1 ? "is" : "are"} left out.</p>}
       {st.remaining > 0 && <div className="actions"><button className="btn sm" onClick={() => open("pay")}>Pay</button></div>}
       {payAhead && <div className="actions"><button className="btn sm ghost" onClick={() => open("pay")}>Pay ahead</button></div>}

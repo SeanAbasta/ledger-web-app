@@ -1,6 +1,6 @@
 // Pure trip math: no storage, no React. A trip's expenses are estimates until the statement figure is
 // typed in; Conclude turns them into ordinary entries in the base currency.
-import { addDays, daysBetween } from "./dates";
+import { addDays, daysBetween, labelShort } from "./dates";
 import { convertMinor } from "./money";
 import { NO_ACCOUNT } from "./summary";
 import { buildSplit, myShare, participants } from "./splits";
@@ -269,4 +269,68 @@ export function concludedTotals(posted: Entry[]): { paid: Minor; mine: Minor; by
     cat.set(c, (cat.get(c) ?? 0) + sign * share);
   }
   return { paid: concludedTotal(posted), mine, byCategory: [...cat].map(([category, paid]) => ({ category, paid })).sort((a, z) => z.paid - a.paid || (a.category < z.category ? -1 : 1)) };
+}
+
+// ---- the trip header ---------------------------------------------------------------------------
+
+export type TripPhase = { kind: "before"; days: number } | { kind: "during"; day: number } | { kind: "after" };
+
+/** Where today falls against the trip: not started, on a given day of it, or over. */
+export function tripPhase(t: Pick<Trip, "start" | "days">, today: string): TripPhase {
+  if (today < t.start) return { kind: "before", days: daysBetween(today, t.start) };
+  if (today > tripEnd(t)) return { kind: "after" };
+  return { kind: "during", day: daysBetween(t.start, today) + 1 };
+}
+
+/** "Starts in 4 days", "Day 3 of 7", "Ended Nov 3". */
+export function phaseText(t: Pick<Trip, "start" | "days">, today: string): string {
+  const p = tripPhase(t, today);
+  if (p.kind === "before") return `Starts ${p.days === 1 ? "tomorrow" : `in ${p.days} days`}`;
+  if (p.kind === "during") return `Day ${p.day} of ${t.days}`;
+  return `Ended ${labelShort(tripEnd(t))}`;
+}
+
+export interface RailCell {
+  date: string;
+  /** 0 nothing spent, 1 to 4 how much against the highest day (the Dashboard calendar's steps). */
+  level: 0 | 1 | 2 | 3 | 4;
+  state: "past" | "today" | "later";
+}
+
+/** One cell per day of the trip, shaded by what was spent that day (refunds taken off, estimates included). */
+export function dayRail(t: Trip, items: TripItem[], base: string, today: string): RailCell[] {
+  const spent = new Map<string, Minor>();
+  for (const i of items) {
+    if (i.deleted || i.tripId !== t.id) continue;
+    const b = baseOf(i, t, base);
+    if (b !== undefined) spent.set(i.date, (spent.get(i.date) ?? 0) + (i.refund ? -b : b));
+  }
+  const dates = Array.from({ length: t.days }, (_, n) => addDays(t.start, n));
+  const max = Math.max(0, ...dates.map((d) => spent.get(d) ?? 0));
+  return dates.map((date) => {
+    const v = spent.get(date) ?? 0;
+    const lit = v <= 0 || max <= 0 ? 0 : Math.sqrt(v / max);
+    const level = (lit === 0 ? 0 : lit > 0.75 ? 4 : lit > 0.5 ? 3 : lit > 0.25 ? 2 : 1) as RailCell["level"];
+    return { date, level, state: date < today ? "past" : date === today ? "today" : "later" };
+  });
+}
+
+/** What a concluded trip put on each card or account, from the entries it posted (refunds taken off). */
+export function concludedByCard(posted: Pick<Entry, "amount" | "refund" | "accountId">[]): { accountId: string; paid: Minor; count: number }[] {
+  const m = new Map<string, { accountId: string; paid: Minor; count: number }>();
+  for (const e of posted) {
+    const k = e.accountId ?? "none";
+    const row = m.get(k) ?? { accountId: k, paid: 0, count: 0 };
+    row.paid += e.refund ? -e.amount : e.amount;
+    row.count++;
+    m.set(k, row);
+  }
+  return [...m.values()].sort((a, z) => z.paid - a.paid || (a.accountId < z.accountId ? -1 : 1));
+}
+
+/** "₱32.85 more than the estimate", for the line under a typed statement figure. */
+export function againstEstimate(final: Minor, estimate: Minor | undefined, fmt: (n: Minor) => string): string {
+  if (estimate === undefined) return "";
+  const d = final - estimate;
+  return d === 0 ? "Same as the estimate" : `${fmt(Math.abs(d))} ${d > 0 ? "more" : "less"} than the estimate`;
 }
