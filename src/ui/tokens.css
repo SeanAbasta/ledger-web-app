@@ -394,6 +394,7 @@ button.link:hover { text-decoration: underline; text-underline-offset: 3px; }
 /* Tags: small edged labels. A warning tag ("No income set") is amber; Estimate stays neutral. */
 .tag { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; margin-left: 8px; border: 1px solid var(--edge); border-radius: var(--r-tag); font: 500 calc(11.5px * var(--ts)) var(--font); color: var(--sub); white-space: nowrap; vertical-align: 2px; }
 .tag.warn { color: var(--warn-ink); border-color: var(--warn-ink); margin: 0; }
+.tag.trip { color: var(--accent-ink); border-color: var(--accent-ink); }
 .x { all: unset; position: relative; cursor: pointer; color: var(--mute); padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; }
 .x .icon, .chip button .icon, .sheet .close .icon { width: 14px; height: 14px; }
 .x:hover { background: var(--fill); }

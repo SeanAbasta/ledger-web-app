@@ -14,6 +14,8 @@ import { IncomeForm } from "../add/IncomeForm";
 import { PlanSheet } from "./PlanSheet";
 import { dayShare, shareLine } from "./rowShare";
 import { cardVisible } from "./nextCard";
+import { itemTags, tripTag } from "./rowTags";
+import { tripNames } from "../../data/trips";
 import { allTimeRange, emptyAction, groupByDay, groupByMonth } from "./allTime";
 import { TransferForm } from "./TransferForm";
 import { MoneyInput } from "../../ui/MoneyInput";
@@ -67,6 +69,7 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
   const [occ, setOcc] = useState<Occurrence>();
   const [paid, setPaid] = useState<Entry>();
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [trips, setTrips] = useState<Map<string, string>>(new Map());
   const [refunding, setRefunding] = useState<{ entry: Entry; left: number }>();
   const [refundAmt, setRefundAmt] = useState("");
   const [refundDate, setRefundDate] = useState(today());
@@ -84,8 +87,9 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
   useEffect(() => {
     let stale = false; // a slower load for a period already left must not overwrite a newer one
     (async () => {
-      const [e, r, p, a, s] = await Promise.all([loadEntries(store, from, to), list(store, "rules"), listAll(store, "people"), listAll(store, "accounts"), getSettings(store)]);
+      const [e, r, p, a, s, tn] = await Promise.all([loadEntries(store, from, to), list(store, "rules"), listAll(store, "people"), listAll(store, "accounts"), getSettings(store), tripNames(store)]);
       if (stale) return;
+      setTrips(tn);
       setEntries(e);
       setRules(r);
       setPeople(p);
@@ -258,16 +262,14 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
                 <span className="l2">
                   <i className={`dot tone-${categoryTone(x.category)}`} aria-hidden="true" />
                   <span>{transfer ? `${accountName(it.entry.accountId)} to ${accountName(it.entry.toAccountId)}` : x.category || "Other"}</span>
-                  {x.split && <span className="tag">split</span>}
-                  {it.type === "entry" && it.entry.refund && <span className="tag">refund</span>}
-                  {it.type === "entry" && it.entry.nextBill && <span className="tag">next bill</span>}
-                  {it.type === "occurrence" && <span className="tag">{it.occ.type === "installment" ? `${it.occ.index} of ${it.occ.count}` : "recurring"}</span>}
-                  {later && <span className="tag">upcoming</span>}
+                  {tripTag(it, trips) && <span className="tag trip">{tripTag(it, trips)}</span>}
+                  {itemTags(it, { upcoming: later }).map((t) => <span key={t} className="tag">{t}</span>)}
                 </span>
               </span>
               <span className={later ? "money later" : moneyIn(x) ? "money in" : "money"}>
                 <span>{moneyIn(x) ? "+" : ""}{formatMinor(x.amount, x.currency)}</span>
                 {x.currency !== base && b !== undefined && <span className="approx">≈ {formatMinor(b, base)}</span>}
+                {it.type === "entry" && it.entry.local && <span className="approx">{formatMinor(it.entry.local.amount, it.entry.local.currency)}</span>}
                 {share && <span className="share">{share}</span>}
               </span>
             </button>

@@ -6,6 +6,7 @@ import { formatMinor } from "../../data/money";
 import type { Account } from "../../data/schema";
 import { BigAmount } from "../../ui/Amount";
 import { Segmented } from "../../ui/Segmented";
+import { itemTags } from "../ledger/rowTags";
 import { ReconcileSheet } from "./ReconcileSheet";
 
 const TABS = ["Statement", "Unbilled", "Plans"] as const;
@@ -38,10 +39,7 @@ export function CardView({ card, st, bd, banks, items, accounts, onOpenLedger, o
           {label}
           {l.kind === "start" && <span className="mute"> &nbsp;before Ledger</span>}
           {from && <span className="mute"> &nbsp;from {from}</span>}
-          {it?.type === "occurrence" && <span className="tag">{it.occ.type === "installment" ? `${it.occ.index} of ${it.occ.count}` : "recurring"}</span>}
-          {it?.type === "entry" && it.entry.refund && <span className="tag">refund</span>}
-          {it?.type === "entry" && it.entry.nextBill && <span className="tag">next bill</span>}
-          {x?.split && <span className="tag">split</span>}
+          {it && itemTags(it).map((t) => <span key={t} className="tag">{t}</span>)}
           {l.date && l.kind !== "carried" && l.kind !== "credit" && <span className="mute small"> &nbsp;{labelShort(l.date)}</span>}
         </span>
         <span>{fmt(l.amount)}</span>
