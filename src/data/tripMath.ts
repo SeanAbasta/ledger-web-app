@@ -56,7 +56,7 @@ export function tripTotals(t: Trip, items: TripItem[], base: string): TripTotals
     if (f) { row.final++; final++; }
     if (b === undefined) { unrated++; card.set(key, row); continue; }
     const sign = i.refund ? -1 : 1;
-    const share = i.refund ? refundShare(i, b, byId) : shareOf(i, b);
+    const share = i.refund ? refundShare(i, b, byId, t, base) : shareOf(i, b);
     paid += sign * b;
     mine += sign * share;
     row.paid += sign * b;
@@ -71,14 +71,15 @@ export function tripTotals(t: Trip, items: TripItem[], base: string): TripTotals
   };
 }
 
-/** My part of an item's base amount: the split's proportion of the amount the split was built on. */
-const shareOf = (i: TripItem, b: Minor): Minor => (i.split && i.amount > 0 ? Math.round((b * myShare(i.amount, i.split)) / i.amount) : b);
+/** My part of an item's base amount, from the split Conclude will post (rebuilt for the final amount). */
+const shareOf = (i: TripItem, b: Minor): Minor => (i.split && i.amount > 0 && b > 0 ? myShare(b, rebuildSplit(i.split, i.amount, b)) : b);
 
-/** My part of a refund: the same proportion I had of the expense it refunds. */
-function refundShare(r: TripItem, b: Minor, byId: Map<string, TripItem>): Minor {
+/** My part of a refund: the same proportion I will have of the expense it refunds. */
+function refundShare(r: TripItem, b: Minor, byId: Map<string, TripItem>, t: Pick<Trip, "rates">, base: string): Minor {
   const orig = r.refundOf ? byId.get(r.refundOf) : undefined;
-  if (!orig?.split || orig.amount <= 0) return b;
-  return Math.round((b * myShare(orig.amount, orig.split)) / orig.amount);
+  const ob = orig && baseOf(orig, t, base);
+  if (!orig?.split || !ob) return b;
+  return Math.round((b * shareOf(orig, ob)) / ob);
 }
 
 /** How much of the budget is left (negative when over), or undefined without a budget. */
@@ -250,3 +251,22 @@ export const itemAsEntry = (i: TripItem): Entry => ({
 
 /** Today when it falls inside the trip, else the first day. */
 export const defaultTripDate = (t: Pick<Trip, "start" | "days">, today: string): string => (today >= t.start && today <= tripEnd(t) ? today : t.start);
+
+/** What a concluded trip cost: the entries it posted, refunds taken off. */
+export const concludedTotal = (posted: Pick<Entry, "amount" | "refund">[]): Minor => posted.reduce((n, e) => n + (e.refund ? -e.amount : e.amount), 0);
+
+/** A concluded trip's figures, worked out from the entries it posted (never stored): paid, my share, by category. */
+export function concludedTotals(posted: Entry[]): { paid: Minor; mine: Minor; byCategory: { category: string; paid: Minor }[] } {
+  const byId = new Map(posted.map((e) => [e.id, e]));
+  const cat = new Map<string, Minor>();
+  let mine = 0;
+  for (const e of posted) {
+    const orig = e.refund && e.refundOf ? byId.get(e.refundOf) : undefined;
+    const share = e.refund ? (orig?.split && orig.amount > 0 ? Math.round((e.amount * myShare(orig.amount, orig.split)) / orig.amount) : e.amount) : myShare(e.amount, e.split);
+    const sign = e.refund ? -1 : 1;
+    mine += sign * share;
+    const c = e.category || "Other";
+    cat.set(c, (cat.get(c) ?? 0) + sign * share);
+  }
+  return { paid: concludedTotal(posted), mine, byCategory: [...cat].map(([category, paid]) => ({ category, paid })).sort((a, z) => z.paid - a.paid || (a.category < z.category ? -1 : 1)) };
+}

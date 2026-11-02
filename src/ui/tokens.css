@@ -263,7 +263,7 @@ main.reading { --col: var(--reading-max); }
     z-index: var(--z-tabs);
     height: var(--tabs-total);
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 0;
     padding: 0 max(4px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
     border-bottom: 0;
@@ -1001,3 +1001,34 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
 /* The open row: a filled band and its note in 600. */
 .row.item.picked { background: var(--fill); box-shadow: -8px 0 0 var(--fill), 8px 0 0 var(--fill); }
 .row.item.picked .l1 { font-weight: 600; }
+
+/* ---------- Travel ---------- */
+.tripview .cvtitle { font: 300 var(--fs-2xl)/1.15 var(--fig); letter-spacing: -0.015em; margin: var(--sp-3) 0 var(--sp-1); }
+.tripview .seg { margin: var(--sp-3) 0; }
+.tripline { margin: 0 0 var(--sp-2); font-size: var(--fs-md); }
+.tripbudget { margin: 0 0 var(--sp-2); font-size: var(--fs-md); font-weight: 500; color: var(--ink); }
+.emptyline { margin: var(--sp-5) 0; }
+.tag.est { color: var(--warn-ink); border-color: var(--warn-ink); }
+.row.item .l2 .acct { margin-left: 8px; color: var(--mute); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.raterow { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; gap: var(--sp-2); align-items: center; }
+.tripform .raterow + .raterow { margin-top: var(--sp-2); }
+.refundbtn { margin-top: var(--sp-3); }
+.tripactions { margin-top: var(--sp-5); flex-wrap: wrap; }
+.concludebox { margin-top: var(--sp-5); display: grid; gap: var(--sp-3); justify-items: start; }
+.concludesum, .concludewhy { margin: 0; font-size: var(--fs-md); color: var(--ink); }
+.concludewhy { color: var(--sub); }
+.concludewhy:focus-visible { outline: var(--ring); outline-offset: 4px; }
+.btn[aria-disabled="true"] { background: var(--fill); color: var(--mute); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.textlink { all: unset; cursor: pointer; color: var(--accent-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.textlink:focus-visible { outline: var(--ring); outline-offset: 2px; }
+.stmtprogress { margin: 0 0 var(--sp-2); font-size: var(--fs-md); }
+.stmtrow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: 64px; padding: var(--sp-3) 0; border-bottom: 1px solid var(--line); }
+.stmtrow:last-child { border-bottom: 0; }
+.stmtrow .main { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.stmtrow .l1 { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stmtrow .l2 { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: var(--fs-sm); color: var(--mute); }
+.stmtfield { flex: none; width: 136px; display: grid; gap: 2px; }
+.stmtfield input { width: 100%; text-align: right; }
+.stmttotal { margin-top: var(--sp-5); }
+.stmttotal b, .stmttotal b .sub { display: block; }
+.stmtcheck { margin: var(--sp-2) 0 0; font-size: var(--fs-md); }
