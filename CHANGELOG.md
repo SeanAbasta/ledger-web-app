@@ -2,6 +2,22 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V2.1.2 (2026-11-02)
+
+A patch for Travel, from a second review of its screens and words. Nothing about your data changes, so an older copy keeps working.
+
+- **One word for each thing.** The amount a card statement shows is the "statement amount" everywhere (it was also "figure"). An expense is "final" once it is confirmed, on the list, the Statements tab and the summary alike. The trip form's button is "Plan trip" on both screens. "Home card" is now "Paid with", because it also lists bank accounts. The Cards tab is now **Statements**, because it lists bank accounts too.
+- **Shorter hints and plainer errors.** "Enter a budget amount", "Enter an estimated rate for JPY", "1 expense has no card or account", "A refund belongs to an expense that is no longer in the trip". An expense with no rate says "Add a rate". The empty Travel screen reads "Log a trip's expenses here, in any currency, before they go into your Ledger."
+- **The statement step on an iPhone.** The number pad has no Return key, so a tap anywhere on a line now puts the cursor in its field, and the amount saves when you move on.
+- **The Travel list shows what state a trip is in.** An open trip past its last day says "Ended". The thin bar under each trip is gone, because it looked like a budget and meant something else.
+- **Travel opens the trip that is running.** When exactly one open trip includes today, the Travel tab goes straight into it. Back still goes to the list.
+- **Conclude trip is quiet while a trip runs** and says "The trip runs to Nov 5". It turns blue once the last day has passed. Each trip remembers its own tab on this device, so a different trip never opens on Summary by accident.
+- **A fuller record for a concluded trip.** It lists each expense with its card, its date, the PHP amount and the local price. The entry count now sits next to the total, and the budget bar sits under the budget rows.
+- **A quieter day row.** It appears once a trip has three expenses, the darkest cell is lighter, and today is underlined, not ringed. The trip line under the name no longer repeats the final count.
+- **The trip marker is a small diamond**, so it no longer looks like a category dot (Bills is also teal).
+- **Bigger tap areas on a phone** for the back link, the "Part of ... trip" link and the Dashboard trip lines. Edit trip and Delete trip are 44 px high.
+- The Dashboard and card lines drop "about" when every figure in the trip is final. The Dashboard's ended-trip note is underlined like a link. The Ledger edit sheet for a posted entry shows the local price ("Spent as ¥1,200"). A screen reader reads each day's total in the day heading, and the blocked Conclude button points to its reason.
+
 ## V2.1.1 (2026-11-02)
 
 A patch for Travel: a look of its own, and fixes found in a review of V2.1.0. Nothing about your data changes, so a copy on V2.1.0 keeps working.

@@ -397,7 +397,7 @@ button.link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .tag { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; margin-left: 8px; border: 1px solid var(--edge); border-radius: var(--r-tag); font: 500 calc(11.5px * var(--ts)) var(--font); color: var(--sub); white-space: nowrap; vertical-align: 2px; }
 .tag.warn { color: var(--warn-ink); border-color: var(--warn-ink); margin: 0; }
 .tag.trip { color: var(--ink); border-color: var(--line-strong); background: var(--fill); }
-.tag.trip::before { content: ""; flex: none; width: 6px; height: 6px; margin-right: 5px; border-radius: 50%; background: var(--trip); }
+.tag.trip::before { content: ""; flex: none; width: 6px; height: 6px; margin-right: 6px; border-radius: 1px; transform: rotate(45deg); background: var(--trip); }
 .x { all: unset; position: relative; cursor: pointer; color: var(--mute); padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; }
 .x .icon, .chip button .icon, .sheet .close .icon { width: 14px; height: 14px; }
 .x:hover { background: var(--fill); }
@@ -965,7 +965,7 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
 /* Phones: 44 px tap areas without moving anything, never past half the gap to a neighbour. */
 @media (max-width: 700px) {
   .nav { gap: 14px; }
-  .nav button:not(.title)::before, .x::before { content: ""; position: absolute; left: 50%; top: 50%; width: var(--hit); height: var(--hit); min-width: 100%; min-height: 100%; transform: translate(-50%, -50%); }
+  .nav button:not(.title)::before, .nav button.title.back::before, .x::before { content: ""; position: absolute; left: 50%; top: 50%; width: var(--hit); height: var(--hit); min-width: 100%; min-height: 100%; transform: translate(-50%, -50%); }
   .seg button::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: var(--hit); max-height: calc(100% + 18px); transform: translateY(-50%); }
   .toggle::before { content: ""; position: absolute; inset: -9px -4px; }
   .pick::before { content: ""; position: absolute; inset: -4px 0; }
@@ -1020,7 +1020,7 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
 .concludewhy { color: var(--sub); }
 .concludewhy:focus-visible { outline: var(--ring); outline-offset: 4px; }
 .btn[aria-disabled="true"] { background: var(--fill); color: var(--mute); box-shadow: inset 0 0 0 1px var(--line-strong); }
-.textlink { all: unset; cursor: pointer; color: var(--accent-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.textlink { all: unset; position: relative; cursor: pointer; color: var(--accent-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .textlink:focus-visible { outline: var(--ring); outline-offset: 2px; }
 .stmtprogress { margin: 0 0 var(--sp-2); font-size: var(--fs-md); }
 .stmtrow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: 64px; padding: var(--sp-3) 0; border-bottom: 1px solid var(--line); }
@@ -1035,12 +1035,12 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
 .stmtcheck { margin: var(--sp-2) 0 0; font-size: var(--fs-md); }
 .tripnotes { margin: 0 0 var(--sp-3); display: grid; gap: var(--sp-2); }
 .tripnotes p { margin: 0; font-size: var(--fs-md); }
-.tripnotes.late .textlink { text-decoration: none; font-weight: 500; color: var(--ink); }
+.tripnotes.late .textlink { font-weight: 500; color: var(--ink); }
 .tripnotes.late { padding: var(--sp-3) var(--sp-4); border: 1px solid var(--warn-ink); border-radius: var(--r-slip); }
 .textlink.quiet { color: var(--sub); font-weight: 400; text-decoration: underline; text-underline-offset: 3px; text-align: left; }
 .tripchipline { margin: var(--sp-2) 0 0; }
 .tag.chipbtn { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; margin: 0; border: 1px solid var(--accent-ink); border-radius: var(--r-tag); background: transparent; font: 500 calc(13px * var(--ts)) var(--font); color: var(--accent-ink); cursor: pointer; }
-.tag.chipbtn::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--trip); }
+.tag.chipbtn::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 1px; transform: rotate(45deg); background: var(--trip); }
 .tag.chipbtn .icon { width: 13px; height: 13px; }
 .tag.chipbtn:focus-visible { outline: var(--ring); outline-offset: 2px; }
 
@@ -1051,7 +1051,7 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
 .tripview .cvtitle { margin-bottom: var(--sp-3); }
 /* The day rail: the Dashboard calendar's cells, one per day of the trip. */
 .dayrail { margin: 0 0 var(--sp-3); }
-.dayrail .cell { aspect-ratio: auto; height: 30px; align-items: center; justify-content: center; padding: 0; font-size: calc(11px * var(--ts)); }
+.dayrail .cell { aspect-ratio: auto; height: 26px; align-items: center; justify-content: center; padding: 0; font-size: calc(11px * var(--ts)); }
 .tripline { margin: 0 0 var(--sp-2); }
 .tripmeter { flex: none; width: 100%; margin: var(--sp-1) 0 var(--sp-3); }
 .tripbudget { margin: 0; }
@@ -1064,10 +1064,10 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
 .tripprog { display: block; position: relative; height: 3px; margin-top: var(--sp-2); border-radius: 2px; background: var(--line); overflow: hidden; }
 .tripprog i { display: block; height: 100%; background: var(--trip); }
 .tripname { font: 300 var(--fs-xl)/1.15 var(--fig); letter-spacing: -0.01em; }
-.tripdot { display: inline-block; flex: none; width: 7px; height: 7px; margin-right: 8px; border-radius: 50%; background: var(--trip); vertical-align: 1px; }
+.tripdot { display: inline-block; flex: none; width: 7px; height: 7px; margin-right: 9px; border-radius: 1px; transform: rotate(45deg); background: var(--trip); vertical-align: 1px; }
 .addbar { margin-top: var(--sp-5); }
 .tripfoot { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-5); }
-.tripfoot .btn { min-height: 40px; height: auto; padding: 8px 16px; font-size: var(--fs-md); white-space: normal; text-align: center; }
+.tripfoot .btn { min-height: 44px; height: auto; padding: 8px 16px; font-size: var(--fs-md); white-space: normal; text-align: center; }
 .concludebox { margin: 0 0 var(--sp-4); }
 .concludebox fieldset { margin: 0; padding: 0; border: 0; }
 @media (max-width: 700px) {
@@ -1080,3 +1080,12 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
   .tripprog, .tripmeter { background: GrayText; }
   .tripdot, .tag.trip::before, .tag.chipbtn::before { background: CanvasText; }
 }
+/* Light rail: no ink-black cell, and today is an underline (a ring looks like keyboard focus). */
+.dayrail .l4 { background: var(--day-3); color: var(--day-3-ink); }
+.dayrail .now { box-shadow: none; border-bottom: 2px solid var(--accent-data); border-radius: var(--r-tag) var(--r-tag) 0 0; }
+/* Small inline links get a 44 px tap area on a phone without moving anything. */
+@media (max-width: 700px) {
+  .textlink::before, .golink::before { content: ""; position: absolute; left: -4px; right: -4px; top: 50%; height: var(--hit); transform: translateY(-50%); }
+  .golink { position: relative; }
+}
+.tag.warn { margin: 0; }

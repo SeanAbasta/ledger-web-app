@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { labelDay, labelShort, today } from "../../data/dates";
 import { formatMinor, parseMinor } from "../../data/money";
 import type { Trip, TripItem } from "../../data/schema";
@@ -20,23 +20,24 @@ import { BudgetMeter, DayRail } from "./TripHeader";
 import { accountLabel, type TravelData } from "./travelData";
 import { TripForm } from "./TripForm";
 
-const TABS = ["Expenses", "Cards", "Summary"] as const;
+const TABS = ["Expenses", "Statements", "Summary"] as const;
 type Tab = (typeof TABS)[number];
-const KEY = "ledger.trip";
-function loadTab(): Tab {
+// The view is remembered per trip on this device, so a different trip never opens on Summary by accident.
+const keyOf = (tripId: string) => `ledger.trip.${tripId}`;
+function loadTab(tripId: string): Tab {
   try {
-    const v = globalThis.localStorage?.getItem(KEY);
+    const v = globalThis.localStorage?.getItem(keyOf(tripId));
     return (TABS as readonly string[]).includes(v ?? "") ? (v as Tab) : "Expenses";
   } catch { return "Expenses"; }
 }
-function saveTab(v: Tab) {
-  try { globalThis.localStorage?.setItem(KEY, v); } catch { /* storage blocked: the choice lasts until reload */ }
+function saveTab(tripId: string, v: Tab) {
+  try { globalThis.localStorage?.setItem(keyOf(tripId), v); } catch { /* storage blocked: the choice lasts until reload */ }
 }
 
 /** One trip: its expenses, the statement step per card, and the summary with Conclude. */
 export function TripView({ trip, data, onBack, onShowInLedger }: { trip: Trip; data: TravelData; onBack: () => void; onShowInLedger: (tripId: string) => void }) {
-  const [tab, setTabState] = useState<Tab>(loadTab);
-  const setTab = (t: Tab) => { saveTab(t); setTabState(t); };
+  const [tab, setTabState] = useState<Tab>(() => loadTab(trip.id));
+  const setTab = (t: Tab) => { saveTab(trip.id, t); setTabState(t); };
   const [adding, setAdding] = useState(false);
   const [card, setCard] = useState<string>();
   const { show } = useToast();
@@ -78,9 +79,10 @@ function Body({ trip, data, items, totals, tab, setTab, card, setCard, onBack, o
     <div className="tripview">
       <div className="toolrow"><span className="nav"><button className="title back" onClick={onBack}><PrevIcon />Travel</button></span></div>
       <h2 className="cvtitle">{trip.name}</h2>
-      {open && <DayRail trip={trip} items={items} base={base} today={t} />}
+      {/* The rail shows a pattern, so it waits for a few expenses. */}
+      {open && totals.count >= 3 && <DayRail trip={trip} items={items} base={base} today={t} />}
       <p className="mute tripline">
-        {open ? `${tripPhase(trip, t).kind === "after" ? "Ended" : phaseText(trip, t)} · ${range} · ${totals.final} of ${totals.count} final` : `Concluded · ${range}`}
+        {open ? `${tripPhase(trip, t).kind === "after" ? "Ended" : phaseText(trip, t)} · ${range}` : `Concluded · ${range}`}
       </p>
       {open && trip.budget !== undefined && (
         <>
@@ -93,8 +95,8 @@ function Body({ trip, data, items, totals, tab, setTab, card, setCard, onBack, o
       )}
       {open && <Segmented label="Trip view" value={tab} options={TABS} onChange={(v) => { setCard(undefined); setTab(v); }} />}
       {open && tab === "Expenses" && <Expenses trip={trip} data={data} items={items} onAdd={onAdd} locked={locked} />}
-      {open && tab === "Cards" && <Statement trip={trip} data={data} items={items} card={card} onCard={setCard} open={open} locked={locked} />}
-      {(!open || tab === "Summary") && <Summary trip={trip} data={data} items={items} totals={totals} locked={locked} onCard={(id) => { setCard(id); setTab("Cards"); }} onBack={onBack} onShowInLedger={onShowInLedger} />}
+      {open && tab === "Statements" && <Statement trip={trip} data={data} items={items} card={card} onCard={setCard} open={open} locked={locked} />}
+      {(!open || tab === "Summary") && <Summary trip={trip} data={data} items={items} totals={totals} locked={locked} onCard={(id) => { setCard(id); setTab("Statements"); }} onBack={onBack} onShowInLedger={onShowInLedger} />}
     </div>
   );
 }
@@ -123,7 +125,7 @@ function Expenses({ trip, data, items, onAdd, locked }: { trip: Trip; data: Trav
         const est = its.some((i) => !isFinal(i, base));
         return (
           <div key={date}>
-            <div className="grp day day-head" role="heading" aria-level={2} aria-label={labelDay(date)}>
+            <div className="grp day day-head" role="heading" aria-level={2} aria-label={sum === 0 ? labelDay(date) : `${labelDay(date)}, ${est ? "about " : ""}${formatMinor(Math.abs(sum), base)}${sum < 0 ? " back" : ""}`}>
               <span className="dnum" aria-hidden="true">{Number(date.slice(8))}</span>
               <span className="dname" aria-hidden="true">{labelDay(date).replace(/\s*\d+$/, "")}</span>
               <span className="r">{sum > 0 ? `${est ? "≈ " : ""}${formatMinor(sum, base)}` : sum < 0 ? <span className="in">+{est ? "≈ " : ""}{formatMinor(-sum, base)}</span> : ""}</span>
@@ -166,7 +168,7 @@ function ItemRow({ item, trip, data, onOpen }: { item: TripItem; trip: Trip; dat
       <span className={item.refund ? "money in" : "money"}>
         <span>{item.refund ? "+" : ""}{formatMinor(item.amount, item.currency)}</span>
         {/* Wet or set: an estimate is light and starts with a wavy equals; a final figure is firm and ticked. */}
-        {foreign && (b === undefined ? <span className="approx">no rate</span> : final
+        {foreign && (b === undefined ? <span className="approx">Add a rate</span> : final
           ? <span className="approx set"><CheckIcon />{fmt(b)}<span className="visually-hidden"> final</span></span>
           : <span className="approx wet">≈ {fmt(b)}<span className="visually-hidden"> estimated</span></span>)}
       </span>
@@ -209,7 +211,7 @@ function RefundSheet({ item, left, onDone, onCancel }: { item: TripItem; left: n
   return (
     <>
       <h3>Refund</h3>
-      <p className="mute small">Up to {formatMinor(left, item.currency)} of {item.note || item.category || "this expense"}. The statement shows the credit; type it on the Cards tab.</p>
+      <p className="mute small">Up to {formatMinor(left, item.currency)} of {item.note || item.category || "this expense"}. The statement shows the credit; type it on the Statements tab.</p>
       <label className="field"><b>Amount</b><MoneyInput value={amount} onChange={setAmount} currency={item.currency} autoFocus /></label>
       <label className="field"><b>When</b><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
       {err && <p className="err" role="alert">{err}</p>}
@@ -250,6 +252,9 @@ function Summary({ trip, data, items, totals, locked, onCard, onBack, onShowInLe
   const plan = useMemo(() => (open ? concludePlan(trip, items, data.accounts, base) : undefined), [open, trip, items, data.accounts, base]);
   const summary = plan && !plan.problems.length ? concludeSummary(plan.entries) : undefined;
   const reasons = useRef<HTMLParagraphElement>(null);
+  const whyId = useId();
+  // Conclude is the main button once the trip is over; while it runs it stays quiet, because more expenses are coming.
+  const ended = tripPhase(trip, today()).kind === "after";
   const posted = useMemo(() => data.posted.filter((e) => e.tripId === trip.id), [data.posted, trip.id]);
   const record = useMemo(() => concludedTotals(posted), [posted]);
   const byCardPosted = useMemo(() => concludedByCard(posted), [posted]);
@@ -285,11 +290,12 @@ function Summary({ trip, data, items, totals, locked, onCard, onBack, onShowInLe
             <p className="concludesum" aria-live="polite">
               Adds {summary.count} {summary.count === 1 ? "entry" : "entries"} to your Ledger{summary.from === summary.to ? ` on ${labelShort(summary.from)}` : ` from ${labelShort(summary.from)} to ${labelShort(summary.to)}`}, {fmt(summary.paid)}.
               {owedLines(summary.owed, data.people, fmt).map((l) => ` ${l}.`).join("")}
+              {!ended && ` The trip runs to ${labelShort(tripEnd(trip))}.`}
             </p>
           ) : (
-            <p className="concludewhy" ref={reasons} tabIndex={-1} aria-live="polite">
+            <p className="concludewhy" id={whyId} ref={reasons} tabIndex={-1} aria-live="polite">
               {plan.problems.map((p, i) => <span key={i} className="why">{plan.waiting.length && p.startsWith(waitingText(plan.waiting, data.accounts)) ? (
-                <>{plan.waiting.reduce((n, w) => n + w.count, 0)} still need{plan.waiting.reduce((n, w) => n + w.count, 0) === 1 ? "s" : ""} a statement figure: {plan.waiting.map((w, k) => (
+                <>{plan.waiting.reduce((n, w) => n + w.count, 0)} still need{plan.waiting.reduce((n, w) => n + w.count, 0) === 1 ? "s" : ""} a statement amount: {plan.waiting.map((w, k) => (
                   <span key={w.accountId}>{k > 0 && ", "}<button type="button" className="textlink" onClick={() => onCard(w.accountId)}>{cardName(w.accountId)} {w.count}</button></span>
                 ))}</>
               ) : p}</span>)}
@@ -297,8 +303,8 @@ function Summary({ trip, data, items, totals, locked, onCard, onBack, onShowInLe
           )}
           <fieldset className="plain" disabled={locked}>
             {summary
-              ? <ConfirmButton primary label="Conclude trip" ask={`Conclude ${summary.count} ${summary.count === 1 ? "entry" : "entries"}?`} onConfirm={() => void conclude()} />
-              : <button type="button" className="btn ghost" aria-disabled="true" onClick={() => reasons.current?.focus()}>Conclude trip</button>}
+              ? <ConfirmButton primary={ended} label="Conclude trip" ask={`Conclude ${summary.count} ${summary.count === 1 ? "entry" : "entries"}?`} onConfirm={() => void conclude()} />
+              : <button type="button" className="btn ghost" aria-disabled="true" aria-describedby={whyId} onClick={() => reasons.current?.focus()}>Conclude trip</button>}
           </fieldset>
         </div>
       )}
@@ -312,9 +318,10 @@ function Summary({ trip, data, items, totals, locked, onCard, onBack, onShowInLe
         {open ? <div className="row static"><span>Paid</span><span>{fmt(paid)}</span></div>
           : <div className="row static"><span>In your Ledger</span><span className="set"><CheckIcon />{fmt(paid)}</span></div>}
         {mine !== paid && <div className="row static"><span>Your share</span><span>{fmt(mine)}</span></div>}
+        {open && <div className="row static"><span>Final</span><span>{totals.final} of {totals.count}</span></div>}
+        {!open && <div className="row static"><span>Entries</span><span>{posted.length}</span></div>}
         {trip.budget !== undefined && <div className="row static"><span>Budget</span><span>{fmt(trip.budget)}</span></div>}
         {trip.budget !== undefined && left !== undefined && (left >= 0 ? <div className="row static"><span>{open ? "Left" : "Under budget by"}</span><span>{fmt(left)}</span></div> : <div className="row static"><span>Over budget by</span><span>{fmt(-left)}</span></div>)}
-        {!open && <div className="row static"><span>Entries</span><span>{posted.length}</span></div>}
       </div>
       {open && totals.unrated > 0 && <p className="mute small hint">{totals.unrated} {totals.unrated === 1 ? "expense has" : "expenses have"} no rate and {totals.unrated === 1 ? "is" : "are"} left out. Add a rate under Edit trip.</p>}
       {!open && trip.budget !== undefined && <BudgetMeter budget={trip.budget} mine={mine} days={trip.days} label={left! >= 0 ? `${fmt(left!)} under the ${fmt(trip.budget)} budget` : `${fmt(-left!)} over the ${fmt(trip.budget)} budget`} />}
@@ -342,6 +349,26 @@ function Summary({ trip, data, items, totals, locked, onCard, onBack, onShowInLe
           <div className="card">
             {categories.map((c) => (
               <div key={c.category} className="row static"><span><i className={`dot tone-${categoryTone(c.category)}`} aria-hidden="true" /> {c.category}</span><span>{fmt(c.paid)}</span></div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {!open && posted.length > 0 && (
+        <>
+          <div className="grp" role="heading" aria-level={2}>Expenses</div>
+          <div className="card">
+            {[...posted].sort((a, z) => (a.date !== z.date ? (a.date < z.date ? -1 : 1) : a.id < z.id ? -1 : 1)).map((e) => (
+              <div key={e.id} className="row item static">
+                <span className="main">
+                  <span className="l1">{e.note || e.category || "Expense"}</span>
+                  <span className="l2"><i className={`dot tone-${categoryTone(e.category)}`} aria-hidden="true" /><span>{e.category || "Other"}</span>{e.refund && <span className="tag">refund</span>}<span className="acct">{cardName(e.accountId ?? "none")}</span><span className="acct">{labelShort(e.date)}</span></span>
+                </span>
+                <span className={e.refund ? "money in" : "money"}>
+                  <span>{e.refund ? "+" : ""}{fmt(e.amount)}</span>
+                  {e.local && <span className="approx">{formatMinor(e.local.amount, e.local.currency)}</span>}
+                </span>
+              </div>
             ))}
           </div>
         </>

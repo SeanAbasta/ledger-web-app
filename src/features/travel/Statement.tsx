@@ -25,17 +25,17 @@ export function Statement({ trip, data, items, card, onCard, open, locked }: { t
 
   return (
     <>
-      <p className="mute small hint">Pick a card, then type each amount the statement shows. Amounts already in {base} need nothing.</p>
+      <p className="mute small hint">Type each amount the statement shows. Amounts in {base} need nothing.</p>
       <div className="card">
         {cards.map((id) => {
           const its = items.filter((i) => (i.accountId ?? NO_ACCOUNT) === id);
           const need = its.filter((i) => needsFigure(i, base));
-          const done = need.filter((i) => isFinal(i, base)).length;
+          const done = its.filter((i) => isFinal(i, base)).length;
           const paid = its.reduce((n, i) => n + (baseOf(i, trip, base) ?? 0) * (i.refund ? -1 : 1), 0);
           return (
             <button key={id} className="row" onClick={() => onCard(id)}>
-              <span>{accountLabel(data.accounts, id === NO_ACCOUNT ? undefined : id)}<span className="sub mute small">{need.length ? `${done} of ${need.length} statement amounts typed` : `${its.length} in ${base}, nothing to type`}</span>
-                {need.length > 0 && <span className="tripprog" role="meter" aria-label="Statement amounts typed" aria-valuemin={0} aria-valuemax={need.length} aria-valuenow={done} aria-valuetext={`${done} of ${need.length} typed`}><i style={{ width: `${(done / need.length) * 100}%` }} /></span>}
+              <span>{accountLabel(data.accounts, id === NO_ACCOUNT ? undefined : id)}<span className="sub mute small">{need.length ? `${done} of ${its.length} final` : `${its.length} in ${base}, nothing to type`}</span>
+                {need.length > 0 && <span className="tripprog" role="meter" aria-label="Final expenses" aria-valuemin={0} aria-valuemax={its.length} aria-valuenow={done} aria-valuetext={`${done} of ${its.length} final`}><i style={{ width: `${(done / its.length) * 100}%` }} /></span>}
               </span>
               <span>{formatMinor(paid, base)}</span>
             </button>
@@ -52,7 +52,7 @@ function CardStatement({ trip, data, items, card, locked, onBack }: { trip: Trip
   const list = useRef<HTMLDivElement>(null);
   const ordered = [...items].sort(statementOrder);
   const need = ordered.filter((i) => needsFigure(i, base));
-  const done = need.filter((i) => isFinal(i, base)).length;
+  const done = ordered.filter((i) => isFinal(i, base)).length;
   const lines = ordered.reduce((n, i) => n + (baseOf(i, trip, base) ?? 0) * (i.refund ? -1 : 1), 0);
   const [total, setTotal] = useState("");
   const typed = parseMinor(total, base);
@@ -66,14 +66,14 @@ function CardStatement({ trip, data, items, card, locked, onBack }: { trip: Trip
 
   return (
     <>
-      <div className="toolrow"><span className="nav"><button className="title back" onClick={onBack}><PrevIcon />Cards</button></span></div>
+      <div className="toolrow"><span className="nav"><button className="title back" onClick={onBack}><PrevIcon />Statements</button></span></div>
       <h3 className="cvtitle">{name}</h3>
-      <p className="mute stmtprogress" aria-live="polite">{need.length ? `${done} of ${need.length} statement amounts typed` : `Everything on ${name} is already in ${base}.`}</p>
+      <p className="mute stmtprogress" aria-live="polite">{need.length ? `${done} of ${ordered.length} final` : `Everything on ${name} is already in ${base}.`}</p>
       <fieldset className="plain" disabled={locked}>
         <div className="card" ref={list}>
           {ordered.map((i) => <StatementRow key={i.id} item={i} trip={trip} base={base} onNext={next} />)}
         </div>
-        <label className="field stack stmttotal"><b>Statement total for this trip<span className="mute small sub">Optional. Type what the statement says these charges add up to, to check the lines.</span></b>
+        <label className="field stack stmttotal"><b>Statement total<span className="mute small sub">Optional. Checks the lines above.</span></b>
           <MoneyInput value={total} onChange={setTotal} currency={base} placeholder="0.00" />
         </label>
       </fieldset>
@@ -93,6 +93,8 @@ function StatementRow({ item, trip, base, onNext }: { item: TripItem; trip: Trip
   const est = baseOf({ ...item, final: undefined }, trip, base);
   const [val, setVal] = useState(item.final !== undefined ? formatMinor(item.final, base).replace(/[^\d.]/g, "") : "");
   const [err, setErr] = useState("");
+  // Tapping anywhere on the line (not only the narrow field) puts the cursor in the field.
+  const Root = needs ? "label" : "div";
 
   async function commit() {
     setErr("");
@@ -106,7 +108,7 @@ function StatementRow({ item, trip, base, onNext }: { item: TripItem; trip: Trip
   }
 
   return (
-    <div className={needs ? "stmtrow" : "stmtrow done"}>
+    <Root className={needs ? "stmtrow" : "stmtrow done"}>
       <span className="main">
         <span className="l1">{item.note || item.category || "Expense"}{item.refund && <span className="tag">refund</span>}</span>
         <span className="l2">
@@ -119,11 +121,11 @@ function StatementRow({ item, trip, base, onNext }: { item: TripItem; trip: Trip
       {needs ? (
         <span className="stmtfield">
           <MoneyInput className="stmt" aria-label={`${item.refund ? "Credit" : "Statement amount"} in ${base} for ${item.note || item.category || "expense"}, ${labelShort(item.date)}`} placeholder={est !== undefined ? formatMinor(est, base).replace(/[^\d.,]/g, "") : base}
-            value={val} onChange={setVal} currency={base} onBlur={() => void commit()}
+            value={val} onChange={setVal} currency={base} enterKeyHint="next" onBlur={() => void commit()}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void commit(); onNext(e.currentTarget); } }} />
           {err && <span className="err" role="alert">{err}</span>}
         </span>
       ) : <span className="mute small">in {base}</span>}
-    </div>
+    </Root>
   );
 }

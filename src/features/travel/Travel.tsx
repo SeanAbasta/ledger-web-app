@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { labelShort } from "../../data/dates";
+import { useEffect, useRef, useState } from "react";
+import { labelShort, today } from "../../data/dates";
 import { formatMinor } from "../../data/money";
 import type { Trip } from "../../data/schema";
-import { budgetLeft, concludedTotal, tripEnd, tripTotals } from "../../data/tripMath";
+import { budgetLeft, concludedTotal, tripEnd, tripPhase, tripTotals } from "../../data/tripMath";
 import { Empty } from "../../ui/Empty";
 import { CheckIcon, TravelIcon } from "../../ui/icons";
 import { TripView } from "./TripView";
@@ -15,6 +15,14 @@ export function Travel({ initialTrip, onPlan, onShowInLedger }: { initialTrip?: 
   const data = useTravelData();
   const [openId, setOpenId] = useState(initialTrip);
   useEffect(() => { if (initialTrip) setOpenId(initialTrip); }, [initialTrip]);
+  // One trip is running today: open it straight away (the person is logging). Back still goes to the list.
+  const auto = useRef(false);
+  useEffect(() => {
+    if (!data || auto.current || openId) return;
+    auto.current = true;
+    const running = data.trips.filter((t) => t.status === "open" && tripPhase(t, today()).kind === "during");
+    if (running.length === 1) setOpenId(running[0]!.id);
+  }, [data, openId]);
   if (!data) return null;
   const trip = data.trips.find((t) => t.id === openId);
   if (trip) return <TripView trip={trip} data={data} onBack={() => setOpenId(undefined)} onShowInLedger={onShowInLedger} />;
@@ -22,11 +30,11 @@ export function Travel({ initialTrip, onPlan, onShowInLedger }: { initialTrip?: 
   const open = data.trips.filter((t) => t.status === "open");
   const done = data.trips.filter((t) => t.status === "concluded");
   if (!data.trips.length) {
-    return <Empty icon={<TravelIcon />} title="No trips yet" note="Plan a trip to gather its expenses, in any currency, before they reach your Ledger." action={{ label: "Plan a trip", onClick: onPlan }} />;
+    return <Empty icon={<TravelIcon />} title="No trips yet" note="Log a trip's expenses here, in any currency, before they go into your Ledger." action={{ label: "Plan trip", onClick: onPlan }} />;
   }
   return (
     <div className="travel">
-      <div className="toolrow"><span /><button type="button" className="btn ghost sm" onClick={onPlan}>Plan a trip</button></div>
+      <div className="toolrow"><span /><button type="button" className="btn ghost sm" onClick={onPlan}>Plan trip</button></div>
       {open.length > 0 && <TripList heading="Open" trips={open} data={data} onOpen={setOpenId} />}
       {done.length > 0 && <TripList heading="Concluded" trips={done} data={data} onOpen={setOpenId} />}
     </div>
@@ -60,12 +68,12 @@ function TripRow({ trip, data, onOpen }: { trip: Trip; data: TravelData; onOpen:
     );
   }
   const left = budgetLeft(trip, t);
+  const ended = tripPhase(trip, today()).kind === "after";
   return (
     <button className="row item" onClick={onOpen}>
       <span className="main">
         <span className="l1 tripname">{trip.name}</span>
-        <span className="l2"><span>{dates(trip)}</span><span className="tag">{t.final} of {t.count} final</span></span>
-        {t.count > 0 && <span className="tripprog" role="meter" aria-label="Final expenses" aria-valuemin={0} aria-valuemax={t.count} aria-valuenow={t.final} aria-valuetext={`${t.final} of ${t.count} final`}><i style={{ width: `${(t.final / t.count) * 100}%` }} /></span>}
+        <span className="l2"><span>{dates(trip)}</span>{ended ? <span className="tag warn">Ended</span> : t.count > 0 && <span className="tag">{t.final} of {t.count} final</span>}</span>
       </span>
       <span className="money">
         <span>{formatMinor(t.mine, data.base)}</span>

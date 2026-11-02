@@ -20,7 +20,7 @@ let kept: { name: string; start: string; days: string; budget: string; accountId
 /**
  * Plan a trip (Add > Trip) or edit an open one (a sheet inside the trip). A trip is a name, a start and a
  * number of days, an overall budget in the base currency, the card new expenses start on, and an estimated
- * rate for each foreign currency. The rates are only estimates: the statement figure replaces them.
+ * rate for each foreign currency. The rates are only estimates: the statement amount replaces them.
  */
 export function TripForm({ trip, onDone }: { trip?: Trip; onDone: (t: Trip) => void }) {
   const { store, changed } = useLedger();
@@ -74,12 +74,12 @@ export function TripForm({ trip, onDone }: { trip?: Trip; onDone: (t: Trip) => v
       let cap: number | undefined;
       if (budget.trim()) {
         cap = parseMinor(budget, base) ?? undefined;
-        if (cap === undefined) return setError("Enter the budget as an amount");
+        if (cap === undefined) return setError("Enter a budget amount");
       }
       const rates: Record<string, string> = {};
       for (const r of rateRows) {
         if (!r.rate.trim() && r.currency !== currency) continue;
-        if (!/^\d+(\.\d+)?$/.test(r.rate)) return setError(`Enter a rate for ${r.currency}`);
+        if (!/^\d+(\.\d+)?$/.test(r.rate)) return setError(`Enter an estimated rate for ${r.currency}`);
         rates[r.currency] = r.rate;
       }
       const input = { name, start, days: n, budget: cap, accountId: accountId || undefined, currency: currency || undefined, rates };
@@ -106,19 +106,19 @@ export function TripForm({ trip, onDone }: { trip?: Trip; onDone: (t: Trip) => v
       </div>
       <div className="slip-r">
         {accounts.length > 0 && (
-          <label className="field"><b>Home card<span className="mute small sub">new expenses start here</span></b>
+          <label className="field"><b>Paid with<span className="mute small sub">New expenses start here</span></b>
             <select value={accountId} onChange={(e) => setAccountId(e.target.value)}>
               <option value="">None</option>
               <AccountOptions accounts={accounts} />
             </select></label>
         )}
-        <label className="field"><b>Main currency<span className="mute small sub">new expenses start in this one</span></b>
+        <label className="field"><b>Main currency<span className="mute small sub">For new expenses</span></b>
           <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
             <option value="">{base} (home)</option>
             {foreign.map((c) => <option key={c}>{c}</option>)}
           </select></label>
         {rateRows.length > 0 && (
-          <div className="field stack"><b>Estimated rates<span className="mute small sub">{base} per 1 unit, typed by hand. The statement figure replaces them.</span></b>
+          <div className="field stack"><b>Estimated rates<span className="mute small sub">{base} per 1 unit. Typed by hand, replaced by the statement.</span></b>
             {rateRows.map((r) => (
               <div className="raterow" key={r.currency}>
                 <select aria-label="Currency" value={r.currency} onChange={(e) => pickRowCurrency(r.currency, e.target.value)}>

@@ -28,10 +28,19 @@ describe("open trip reminders", () => {
     expect(tripReminders([trip()], [], "PHP", "2026-10-02")).toEqual([]);
   });
 
+  it("is exact only when every figure is final or already in the base currency", () => {
+    const final = tripReminders([trip()], [item({ final: 370000 }), item({ currency: "PHP", amount: 5000 })], "PHP", "2026-10-02")[0]!;
+    expect(final.exact).toBe(true);
+    expect(tripReminders([trip()], [item({ final: 370000 }), item()], "PHP", "2026-10-02")[0]!.exact).toBe(false);
+    expect(tripReminders([trip()], [item({ currency: "EUR" }), item({ final: 370000 })], "PHP", "2026-10-02")[0]!.exact).toBe(false); // an amount with no rate is left out
+  });
+
   it("words the line quietly while open and plainly when late", () => {
     const [r] = tripReminders([trip()], [item()], "PHP", "2026-10-02");
     expect(reminderLine(r!, fmt)).toBe("Trip A is open: about P3700 not yet in your Ledger.");
     expect(reminderLine({ ...r!, late: true }, fmt)).toBe("Trip A has ended: about P3700 is not in your Ledger until you conclude it.");
+    expect(reminderLine({ ...r!, exact: true }, fmt)).toBe("Trip A is open: P3700 not yet in your Ledger.");
+    expect(cardReminders([{ ...r!, exact: true }], "cardA", fmt)[0]!.text).toBe("Trip A: P3700 not yet on this card.");
     expect(cardReminders([r!], "cardA", fmt)).toEqual([{ tripId: "t1", text: "Trip A: about P3700 not yet on this card." }]);
     expect(cardReminders([r!], "cardB", fmt)).toEqual([]);
   });

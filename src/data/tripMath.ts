@@ -142,10 +142,10 @@ export interface ConcludePlan {
 
 const nameOfAccount = (accounts: Account[], id: string) => (id === NO_ACCOUNT ? "no account" : accounts.find((a) => a.id === id)?.name ?? "a removed account");
 
-/** "3 still need a statement figure: Card A 2, Bank A 1". */
+/** "3 still need a statement amount: Card A 2, Bank A 1". */
 export function waitingText(waiting: ConcludePlan["waiting"], accounts: Account[]): string {
   const n = waiting.reduce((a, w) => a + w.count, 0);
-  return `${n} still need${n === 1 ? "s" : ""} a statement figure: ${waiting.map((w) => `${nameOfAccount(accounts, w.accountId)} ${w.count}`).join(", ")}`;
+  return `${n} still need${n === 1 ? "s" : ""} a statement amount: ${waiting.map((w) => `${nameOfAccount(accounts, w.accountId)} ${w.count}`).join(", ")}`;
 }
 
 /**
@@ -166,15 +166,15 @@ export function concludePlan(t: Trip, items: TripItem[], accounts: Account[], ba
 
   const unpaidByMe = (i: TripItem) => !!i.split && i.split.paidBy !== "me";
   const accountless = live.filter((i) => !i.accountId && !unpaidByMe(i)).length;
-  if (accountless && accounts.some((a) => !a.deleted)) problems.push(`${accountless} ${accountless === 1 ? "has" : "have"} no card or account`);
+  if (accountless && accounts.some((a) => !a.deleted)) problems.push(`${accountless} ${accountless === 1 ? "expense has" : "expenses have"} no card or account`);
   const gone = live.filter((i) => i.accountId && !accounts.some((a) => a.id === i.accountId && !a.deleted));
-  if (gone.length) problems.push(`${gone.length} ${gone.length === 1 ? "is" : "are"} on a removed card or account`);
+  if (gone.length) problems.push(`${gone.length} ${gone.length === 1 ? "expense is" : "expenses are"} on a card or account you removed`);
   const foreign = new Set(live.flatMap((i) => (i.accountId && accounts.some((a) => a.id === i.accountId && !a.deleted && a.currency !== base) ? [nameOfAccount(accounts, i.accountId)] : [])));
   if (foreign.size) problems.push(`${[...foreign].join(", ")} ${foreign.size === 1 ? "is" : "are"} not in ${base}; move those to a ${base} account`);
 
   const ids = new Map(live.map((i) => [i.id, newId()]));
   for (const r of live) {
-    if (r.refund && (!r.refundOf || !ids.has(r.refundOf))) { problems.push("A refund points at an expense that is no longer in the trip"); break; }
+    if (r.refund && (!r.refundOf || !ids.has(r.refundOf))) { problems.push("A refund belongs to an expense that is no longer in the trip"); break; }
   }
   // A foreign item with no figure is already reported as waiting, so past that point every item has an amount.
   const baseAmt = new Map(live.map((i) => [i.id, baseOf(i, t, base)]));

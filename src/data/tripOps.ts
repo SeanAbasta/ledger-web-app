@@ -23,7 +23,7 @@ function tripProblem(t: Pick<Trip, "name" | "start" | "days" | "budget">): strin
   if (!t.name.trim()) return "Name the trip";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(t.start)) return "Pick a start date";
   if (!Number.isInteger(t.days) || t.days < 1) return "Days must be 1 or more";
-  if (t.budget !== undefined && (!Number.isInteger(t.budget) || t.budget < 0)) return "Budget must be an amount";
+  if (t.budget !== undefined && (!Number.isInteger(t.budget) || t.budget < 0)) return "Enter a budget amount";
   return undefined;
 }
 

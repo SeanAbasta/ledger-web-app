@@ -4,7 +4,7 @@ A personal expense tracker that runs in the browser. It replaced a spreadsheet.
 
 Your data is kept in your browser first and synced between your computers through a private GitHub repository that you own. There is no server run by anyone else, no account to create and nothing to pay for.
 
-Latest version: V2.1.1. [Changelog](CHANGELOG.md).
+Latest version: V2.1.2. [Changelog](CHANGELOG.md).
 
 Travel arrived in V2.1.0. Beyond that, later releases are fixes and small improvements.
 
@@ -22,7 +22,7 @@ An Expense, Income, Transfer or Trip switch sits at the top.
 - **Again:** your most repeated notes from the last 30 days, shown as chips. A tap fills the note, category and split. It never fills the amount.
 - **Income:** money from another source, paid into one of your bank accounts. Salary is set under Coming up.
 - **Transfer:** money moved between two of your bank accounts in the same currency.
-- **Trip:** plan a trip for the Travel screen: name, start, days, an overall budget, a card and estimated rates.
+- **Trip:** plan a trip for the Travel screen: name, start, days, an overall budget, what it is paid with and estimated rates.
 - After Save you stay on Add. A message says what was saved, with Undo for eight seconds, or until you close it if you turn that on in Settings.
 - What you have typed is kept if you leave Add for another screen and come back.
 
@@ -63,7 +63,7 @@ Balances per person and per currency, with a running balance on each line.
 A trip has its own ledger, kept apart from your real one until you finish it. Use it when a trip means several currencies and card statements that arrive weeks later with a foreign fee in them.
 
 - A trip holds expenses in any currency, with the same form as Add (category, note, card, split, refunds). Each shows its local price and an estimate in PHP, marked "est." until it is final.
-- On the Cards tab you type the PHP amount from each card's statement. That makes the expense final. A cash withdrawal works the same way.
+- On the Statements tab you type the PHP amount from each card's statement. That makes the expense final. A cash withdrawal works the same way.
 - A row of small cells under the trip's name shows each day of the trip and what was spent, and the budget is a bar ticked by day. A trip can be read offline; only its edit controls lock.
 - **Conclude trip** adds one Ledger entry per expense, on the day it was spent, in PHP with the statement amount, and keeps the local price under it. Splits are worked out on the final amount. Undo brings it all back for a few seconds.
 - Until then nothing from the trip reaches your balances, Dashboard, forecast or People. The Dashboard and the card tiles say how much is still outside your Ledger.
@@ -215,6 +215,7 @@ Ledger is deployed and in daily use. Sync between a Mac and a Windows PC has bee
 
 | Version | What changed |
 |---|---|
+| V2.1.2 | Travel: one word per thing, a Statements tab, the running trip opens directly, a fuller concluded record |
 | V2.1.1 | Travel: readable offline, a day row and budget bar, estimated and final figures, a concluded record |
 | V2.1.0 | Travel: a trip ledger with several currencies, a statement step, and Conclude |
 | V2.0.3 | Smaller amount field on a computer, clearer Data health wording, Windows High Contrast support |

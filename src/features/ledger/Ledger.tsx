@@ -351,6 +351,7 @@ export function Ledger({ initialDate, initialView, notice, tripFilter, onAdd, on
           {wide && <p className="mute dmeta">{labelDay(editing.date)}{editing.accountId ? `, ${accountName(editing.accountId)}` : ""}</p>}
           <h3>{editing.refund ? "Edit refund" : editing.kind === "income" ? "Edit income" : "Edit expense"}</h3>
           {editing.tripId && onOpenTrip && <button type="button" className="golink" onClick={() => onOpenTrip(editing.tripId!)}>Part of {tripLabel(trips.get(editing.tripId))}<NextIcon /></button>}
+          {editing.local && <p className="mute small">Spent as {formatMinor(editing.local.amount, editing.local.currency)}</p>}
           {/* One-off side income opens its own form; salary entries and refunds open the expense form as before. */}
           {incomeEditor(editing) === "income" ? <IncomeForm entry={editing} onDone={finish(() => setEditing(undefined))} /> : <AddForm entry={editing} onDone={finish(() => setEditing(undefined))} />}
           {editing.kind === "expense" && onCard(editing) && (

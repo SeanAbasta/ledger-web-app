@@ -38,7 +38,7 @@ describe("trips and expenses", () => {
   it("refuses a trip with no name, no days, or a bad budget, with a plain reason", async () => {
     await expect(addTrip(store, { ...trip0, name: " " })).rejects.toThrow("Name the trip");
     await expect(addTrip(store, { ...trip0, days: 0 })).rejects.toThrow("Days must be 1 or more");
-    await expect(addTrip(store, { ...trip0, budget: -1 })).rejects.toThrow("Budget must be an amount");
+    await expect(addTrip(store, { ...trip0, budget: -1 })).rejects.toThrow("Enter a budget amount");
   });
 
   it("adds and edits an expense, and typing the statement figure makes it Final", async () => {
@@ -92,7 +92,7 @@ describe("Conclude", () => {
     const { t } = await ready();
     await yen(t.id, { note: "no figure yet" });
     const plan = await planConclude(store, t.id, await accounts(), "PHP");
-    expect(plan.problems).toEqual(["1 still needs a statement figure: Card A 1"]);
+    expect(plan.problems).toEqual(["1 still needs a statement amount: Card A 1"]);
     await expect(concludeTrip(store, t.id, await accounts(), "PHP")).rejects.toBeInstanceOf(ConcludeBlocked);
     expect(await loadAllEntries(store)).toEqual([]);
     expect((await listTrips(store))[0]?.status).toBe("open");
@@ -181,7 +181,7 @@ describe("removing an account or person that an open trip uses", () => {
     const after = await loadTripsFile(store);
     expect(after.trips[0]!.accountId).toBe(card2.id);
     expect(after.tripItems.every((x) => x.accountId === card2.id)).toBe(true);
-    expect((await planConclude(store, t.id, await accounts(), "PHP")).problems).not.toContain("2 are on a removed card or account");
+    expect((await planConclude(store, t.id, await accounts(), "PHP")).problems).not.toContain("2 expenses are on a card or account you removed");
   });
 
   it("counts a person in a trip split, and ignores concluded and deleted trips", async () => {

@@ -98,8 +98,8 @@ describe("Conclude", () => {
     const plan = concludePlan(trip, [dinner(), item({ id: "x" }), item({ id: "y", accountId: "bankA" }), item({ id: "z" })], accounts, "PHP", T, ids());
     expect(plan.entries).toEqual([]);
     expect(plan.waiting).toEqual([{ accountId: "cardA", count: 2 }, { accountId: "bankA", count: 1 }]);
-    expect(plan.problems).toEqual(["3 still need a statement figure: Card A 2, Bank A 1"]);
-    expect(waitingText([{ accountId: "bankA", count: 1 }], accounts)).toBe("1 still needs a statement figure: Bank A 1");
+    expect(plan.problems).toEqual(["3 still need a statement amount: Card A 2, Bank A 1"]);
+    expect(waitingText([{ accountId: "bankA", count: 1 }], accounts)).toBe("1 still needs a statement amount: Bank A 1");
   });
 
   it("posts base-currency entries with the statement figure and keeps the local price", () => {
@@ -131,16 +131,16 @@ describe("Conclude", () => {
   it("refuses an empty trip, a refund with nothing to refund, and a refund bigger than its expense", () => {
     expect(concludePlan(trip, [], accounts, "PHP", T, ids()).problems).toEqual(["There is nothing in this trip to conclude"]);
     const orphan = item({ refund: true, refundOf: "gone", final: 100 });
-    expect(concludePlan(trip, [orphan], accounts, "PHP", T, ids()).problems).toContain("A refund points at an expense that is no longer in the trip");
+    expect(concludePlan(trip, [orphan], accounts, "PHP", T, ids()).problems).toContain("A refund belongs to an expense that is no longer in the trip");
     const big = item({ id: "r", refund: true, refundOf: "d", amount: 9000, final: 999999 });
     expect(concludePlan(trip, [dinner(), big], accounts, "PHP", T, ids()).problems).toContain("A refund is larger than the expense it refunds");
   });
 
   it("refuses items with no account, on a removed account, or on a foreign-currency account", () => {
     const none = concludePlan(trip, [dinner({ accountId: undefined })], accounts, "PHP", T, ids());
-    expect(none.problems).toEqual(["1 has no card or account"]);
+    expect(none.problems).toEqual(["1 expense has no card or account"]);
     const gone = concludePlan(trip, [dinner()], [acct("cardA", "Card A", { deleted: true }), acct("bankA", "Bank A")], "PHP", T, ids());
-    expect(gone.problems).toEqual(["1 is on a removed card or account"]);
+    expect(gone.problems).toEqual(["1 expense is on a card or account you removed"]);
     const usd = concludePlan(trip, [dinner({ accountId: "usd" })], [...accounts, acct("usd", "USD Bank", { currency: "USD" })], "PHP", T, ids());
     expect(usd.problems).toEqual(["USD Bank is not in PHP; move those to a PHP account"]);
   });
