@@ -156,6 +156,8 @@ export interface Trip {
   budget?: Minor;
   /** The account new expenses start on. */
   accountId?: string;
+  /** The currency new expenses start in (the one most spent abroad). Absent means the default currency. */
+  currency?: string;
   /** Estimated rate per currency (base units per 1 unit), typed by hand. */
   rates: Record<string, string>;
   status: TripStatus;

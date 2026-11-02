@@ -238,3 +238,15 @@ export function owedLines(owed: ConcludeSummary["owed"], people: Pick<Person, "i
   const name = (id: string) => people.find((p) => p.id === id)?.name ?? "Someone";
   return owed.map((o) => (o.amount > 0 ? `${name(o.personId)} owes you ${fmt(o.amount)}` : `You owe ${name(o.personId)} ${fmt(-o.amount)}`));
 }
+
+// ---- the expense form ------------------------------------------------------------------------
+
+/** A trip expense in the shape the expense form edits. Nothing here is stored as an entry. */
+export const itemAsEntry = (i: TripItem): Entry => ({
+  id: i.id, kind: "expense", date: i.date, amount: i.amount, currency: i.currency, createdAt: i.createdAt, updatedAt: i.updatedAt,
+  ...(i.rate ? { rate: i.rate } : {}), ...(i.category ? { category: i.category } : {}), ...(i.note ? { note: i.note } : {}),
+  ...(i.accountId ? { accountId: i.accountId } : {}), ...(i.split ? { split: i.split } : {}),
+});
+
+/** Today when it falls inside the trip, else the first day. */
+export const defaultTripDate = (t: Pick<Trip, "start" | "days">, today: string): string => (today >= t.start && today <= tripEnd(t) ? today : t.start);

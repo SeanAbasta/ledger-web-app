@@ -54,6 +54,7 @@ function tripProblem(t: Record<string, unknown>): string | undefined {
   if (!Number.isInteger(t.days) || (t.days as number) < 1) return "bad days";
   if (t.budget !== undefined && !(Number.isInteger(t.budget) && (t.budget as number) >= 0)) return "bad budget";
   if (t.accountId !== undefined && typeof t.accountId !== "string") return "bad accountId";
+  if (t.currency !== undefined && !(typeof t.currency === "string" && /^[A-Za-z]{3}$/.test(t.currency))) return "bad currency";
   if (!isObj(t.rates) || !Object.entries(t.rates).every(([k, v]) => /^[A-Za-z]{3}$/.test(k) && typeof v === "string" && /^\d+(\.\d+)?$/.test(v))) return "bad rates";
   if (t.status !== "open" && t.status !== "concluded") return "bad status";
   return undefined;

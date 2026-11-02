@@ -4,9 +4,11 @@ import { canBillNext, cutoffFor, dueFor, nextCutoff } from "../../data/cards";
 import { CURRENCIES } from "../../data/currencies";
 import { startAccount, startCategory } from "../../data/defaults";
 import { addEntry, deleteEntry, loadEntries, restoreEntry, updateEntry } from "../../data/months";
+import { defaultTripDate, itemAsEntry } from "../../data/tripMath";
+import { addTripItem, deleteTripItem, restoreTripItems, updateTrip, updateTripItem } from "../../data/tripOps";
 import { formatMinor, parseMinor, splitEvenly } from "../../data/money";
 import { addDays, labelShort, today } from "../../data/dates";
-import type { Account, Entry, Frequency, Person, Settings, SplitMode } from "../../data/schema";
+import type { Account, Entry, Frequency, Person, Settings, SplitMode, Trip, TripItem } from "../../data/schema";
 import { isCard, monthOf, DEFAULT_SETTINGS } from "../../data/schema";
 import { addName, hasName, keptKey, namesOf, payerAfter, payerForMode, resolveNames, splitFormOf, splitFromForm, toggleName, type SplitFormState } from "../../data/splitForm";
 import { MoneyInput } from "../../ui/MoneyInput";
@@ -54,10 +56,15 @@ export interface SavedNote {
   draft?: Draft;
 }
 
-/** New expense, or edit an existing one (pass `entry`). `draft` starts a new one from values put back by Undo. */
-export function AddForm({ entry, onDone, draft, onDraft }: { entry?: Entry; onDone?: (saved?: SavedNote) => void; draft?: ExpenseDraft; onDraft?: (d?: ExpenseDraft) => void }) {
+/**
+ * New expense, or edit an existing one (pass `entry`). `draft` starts a new one from values put back by Undo.
+ * With `trip` the same form fills a trip's expenses instead: it writes trip items (never entries), starts on
+ * the trip's account, date and rate, and has no Repeats, Bill on next statement or Again chips.
+ */
+export function AddForm({ entry: entryProp, onDone, draft, onDraft, trip }: { entry?: Entry; onDone?: (saved?: SavedNote) => void; draft?: ExpenseDraft; onDraft?: (d?: ExpenseDraft) => void; trip?: { trip: Trip; item?: TripItem } }) {
   const { store, rev, changed } = useLedger();
   const { show } = useToast();
+  const entry = entryProp ?? (trip?.item ? itemAsEntry(trip.item) : undefined);
   const d = entry ? undefined : draft;
   // Again chips (new expenses only): the most repeated notes of the last 30 days.
   const [again, setAgain] = useState<Again[]>([]);
@@ -68,11 +75,11 @@ export function AddForm({ entry, onDone, draft, onDraft }: { entry?: Entry; onDo
   const [accounts, setAccounts] = useState<Account[]>([]);
 
   const [amount, setAmount] = useState(entry ? formatMinor(entry.amount, entry.currency).replace(/[^\d.]/g, "") : d?.amount ?? "");
-  const [currency, setCurrency] = useState(entry?.currency ?? d?.currency ?? "");
+  const [currency, setCurrency] = useState(entry?.currency ?? d?.currency ?? trip?.trip.currency ?? "");
   const [rate, setRate] = useState(entry?.rate ?? d?.rate ?? "");
   const [category, setCategory] = useState(entry?.category ?? d?.category ?? "");
   const [note, setNote] = useState(entry?.note ?? d?.note ?? "");
-  const [date, setDate] = useState(entry?.date ?? d?.date ?? today());
+  const [date, setDate] = useState(entry?.date ?? d?.date ?? (trip ? defaultTripDate(trip.trip, today()) : today()));
   const [accountId, setAccountId] = useState(entry?.accountId ?? d?.accountId ?? "");
   // The account and category a new item started with, so the form can say they came from a default.
   const [startAcct, setStartAcct] = useState({ id: "", from: "" });
@@ -106,8 +113,9 @@ export function AddForm({ entry, onDone, draft, onDraft }: { entry?: Entry; onDo
       if (!entry) setStartCat({ name: cat, from: s.defaults?.lastUsed && last.category === cat ? "last used" : s.defaults?.category === cat ? "default" : "" });
       setCategory((c) => c || (entry ? s.categories[0] ?? "" : cat));
       if (!entry) {
-        const start = startAccount("expense", s.defaults, last, a);
-        setStartAcct({ id: start, from: s.defaults?.lastUsed && last.expense === start ? "last used" : "default" });
+        const tripAcct = trip?.trip.accountId && a.some((x) => x.id === trip.trip.accountId) ? trip.trip.accountId : "";
+        const start = tripAcct || startAccount("expense", s.defaults, last, a);
+        setStartAcct({ id: start, from: tripAcct ? "trip card" : s.defaults?.lastUsed && last.expense === start ? "last used" : "default" });
         setAccountId((x) => x || start);
       }
       if (entry?.split) {
@@ -120,8 +128,14 @@ export function AddForm({ entry, onDone, draft, onDraft }: { entry?: Entry; onDo
     })();
   }, [store, entry]);
 
+  // A trip knows its rates: a foreign currency starts on the trip's rate for it (or the item's own, kept as typed).
   useEffect(() => {
-    if (entry) return;
+    if (!trip || currency === settings.baseCurrency || !currency) return;
+    setRate((r) => r || trip.trip.rates[currency] || "");
+  }, [trip, currency, settings.baseCurrency]);
+
+  useEffect(() => {
+    if (entry || trip) return;
     let stale = false;
     const t = today();
     void loadEntries(store, addDays(t, -30), t).then((es) => { if (!stale) setAgain(recents(es, t)); });
@@ -150,7 +164,7 @@ export function AddForm({ entry, onDone, draft, onDraft }: { entry?: Entry; onDo
   // (or already moved, so it can be turned off).
   const card = accounts.find((a) => a.id === accountId && isCard(a));
   const validDate = /^\d{4}-\d{2}-\d{2}$/.test(date);
-  const billable = !!card && validDate && entry?.kind !== "income" && (!!entry || kind === "one-off") && !someoneElsePaid && (canBillNext(card, date) || !!entry?.nextBill);
+  const billable = !trip && !!card && validDate && entry?.kind !== "income" && (!!entry || kind === "one-off") && !someoneElsePaid && (canBillNext(card, date) || !!entry?.nextBill);
   const nextCut = card && validDate ? nextCutoff(card, cutoffFor(card, date)) : undefined;
 
   // A second Save while the first is still being written would add the entry twice.
@@ -178,6 +192,34 @@ export function AddForm({ entry, onDone, draft, onDraft }: { entry?: Entry; onDo
         // An unchanged split is saved exactly as stored; removed people in it are never dropped.
         const original = entry?.split ? { amount: entry.amount, split: entry.split } : undefined;
         splitVal = splitFromForm({ names, paidBy, mode, custom, kept }, named, perPayment, currency, original);
+      }
+
+      if (trip) {
+        // A trip expense: kept in the trip until Conclude. The rate is stored only when it differs from the
+        // trip's, so changing the trip's rate later still revises every estimate that used it.
+        const tripRate = trip.trip.rates[currency];
+        const own = foreign && rate !== tripRate ? rate : undefined;
+        const tripBase = {
+          tripId: trip.trip.id, amount: minor, currency, category, note: note || undefined, date,
+          accountId: someoneElsePaid ? undefined : accountId || undefined, split: splitVal, rate: own,
+        };
+        let takeBackItem: (() => Promise<void>) | undefined;
+        if (entry) {
+          const { tripId: _t, ...patch } = tripBase;
+          await updateTripItem(store, entry.id, patch);
+        } else {
+          const made = await addTripItem(store, tripBase);
+          takeBackItem = async () => { await deleteTripItem(store, made.id); };
+        }
+        if (foreign && !tripRate) await updateTrip(store, trip.trip.id, { rates: { ...trip.trip.rates, [currency]: rate } });
+        changed();
+        if (entry) return onDone?.();
+        const t = today();
+        const r = afterSave({ form: "expense", amount, note, date, accountId, category, type: "one-off", freq, count, end, nextBill: false, split, names, newName, mode, paidBy, custom, kept }, t);
+        setAmount(r.amount); setNote(r.note); setDate(defaultTripDate(trip.trip, t));
+        setSplit(r.split); setNames(r.names); setNewName(r.newName); setMode(r.mode); setPaidBy(r.paidBy); setCustom(r.custom); setKept(r.kept);
+        const owes = preview && !("error" in preview) ? preview.lines : [];
+        return onDone?.({ date, message: savedLine({ note, category, amount: minor, currency, date, today: t }), toast: savedLine({ note, category, amount: minor, currency, date, today: t }), sub: splitVal ? [`yours ${formatMinor(myShare(minor, splitVal), currency)}`, ...owes].join(", ") : undefined, undo: takeBackItem });
       }
 
       const base = {
@@ -241,6 +283,13 @@ export function AddForm({ entry, onDone, draft, onDraft }: { entry?: Entry; onDo
 
   async function remove() {
     if (!entry) return;
+    if (trip) {
+      const { removed } = await deleteTripItem(store, entry.id);
+      changed();
+      onDone?.();
+      show({ message: `Deleted: ${entry.note || entry.category || "Expense"} ${formatMinor(entry.amount, entry.currency)}`, undo: async () => { await restoreTripItems(store, removed); }, failed: UNDO_FAILED.delete });
+      return;
+    }
     await deleteEntry(store, monthOf(entry.date), entry.id);
     changed();
     onDone?.();
@@ -318,7 +367,7 @@ export function AddForm({ entry, onDone, draft, onDraft }: { entry?: Entry; onDo
       {foreign && (
         <label className="field"><b>Rate</b><input placeholder={`${settings.baseCurrency} per 1 ${currency}`} inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} /></label>
       )}
-      {!entry && again.length > 0 && (
+      {!entry && !trip && again.length > 0 && (
         <div className="again">
           <span className="again-label" id="again-label">Again</span>
           <div className="again-row" role="group" aria-labelledby="again-label">
@@ -408,7 +457,7 @@ export function AddForm({ entry, onDone, draft, onDraft }: { entry?: Entry; onDo
         </>
       )}
 
-      {!entry && (
+      {!entry && !trip && (
         <div className="field"><b>Repeats</b><Segmented label="Repeats" value={kind} options={KINDS} labels={KIND_LABEL} onChange={setKind} /></div>
       )}
       {kind !== "one-off" && !entry && (
