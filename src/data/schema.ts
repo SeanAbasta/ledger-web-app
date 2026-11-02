@@ -52,6 +52,11 @@ export interface Entry {
   nextBill?: true;
   /** Set when generated or overridden from a rule. */
   ruleId?: string;
+  /** Posted by Conclude: the trip this expense belongs to. A label only; older app copies keep it. */
+  tripId?: string;
+  /** Posted by Conclude: the price in the local currency, shown under the base amount. A label only:
+   *  editing the entry changes `amount` and never this. */
+  local?: { amount: Minor; currency: string };
   split?: Split;
   /** Settlement entries: the person paid to or received from. */
   personId?: string;
@@ -135,6 +140,60 @@ export interface Account {
   color?: string;
   updatedAt: Stamp;
   deleted?: true;
+}
+
+export type TripStatus = "open" | "concluded";
+
+/** A trip. Its expenses live in `TripItem`s, outside the months, until Conclude posts them as entries. */
+export interface Trip {
+  id: string;
+  name: string;
+  /** First day of the trip. A guide for the default date, not a limit on expense dates. */
+  start: IsoDate;
+  /** Length in days, at least 1. */
+  days: number;
+  /** One overall budget in the base currency. */
+  budget?: Minor;
+  /** The account new expenses start on. */
+  accountId?: string;
+  /** Estimated rate per currency (base units per 1 unit), typed by hand. */
+  rates: Record<string, string>;
+  status: TripStatus;
+  concludedAt?: Stamp;
+  updatedAt: Stamp;
+  deleted?: true;
+}
+
+/** One trip expense (or refund). Never read by Ledger totals; Conclude turns it into an `Entry`. */
+export interface TripItem {
+  id: string;
+  tripId: string;
+  date: IsoDate;
+  /** In `currency`, always positive. */
+  amount: Minor;
+  currency: string;
+  /** Estimate: base units per 1 unit of `currency`. Absent when the currency is the base. */
+  rate?: string;
+  /** The exact base-currency figure from the statement. A foreign item is Final once this is set;
+   *  an item already in the base currency needs none. */
+  final?: Minor;
+  category?: string;
+  note?: string;
+  accountId?: string;
+  /** Shares are in `currency`; Conclude rebuilds them from the final base amount. */
+  split?: Split;
+  /** A refund: money back for the trip item `refundOf`. */
+  refund?: true;
+  refundOf?: string;
+  createdAt: Stamp;
+  updatedAt: Stamp;
+  deleted?: true;
+}
+
+/** trips.json: two flat lists, each merged by id (a trip with its items nested would lose one side). */
+export interface TripsFile {
+  trips: Trip[];
+  tripItems: TripItem[];
 }
 
 /** What a new item starts with (account ids, a category). Optional, so older app copies keep reading settings. */

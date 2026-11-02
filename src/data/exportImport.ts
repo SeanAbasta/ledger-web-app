@@ -26,6 +26,8 @@ function entryProblem(e: unknown): string | undefined {
   if (e.rate !== undefined && (typeof e.rate !== "string" || !/^\d+(\.\d+)?$/.test(e.rate))) return "bad rate";
   for (const k of ["accountId", "toAccountId", "refundOf"]) if (e[k] !== undefined && typeof e[k] !== "string") return `bad ${k}`;
   if (e.nextBill !== undefined && e.nextBill !== true) return "bad nextBill";
+  if (e.tripId !== undefined && typeof e.tripId !== "string") return "bad tripId";
+  if (e.local !== undefined && !(isObj(e.local) && Number.isInteger(e.local.amount) && (e.local.amount as number) > 0 && typeof e.local.currency === "string" && /^[A-Za-z]{3}$/.test(e.local.currency))) return "bad local amount";
   return shapeProblem(e as unknown as Entry)?.toLowerCase();
 }
 
@@ -44,6 +46,32 @@ function accountProblem(a: Record<string, unknown>): string | undefined {
   return undefined;
 }
 
+const idStamp = (x: unknown): x is Record<string, unknown> => isObj(x) && typeof x.id === "string" && typeof x.updatedAt === "string";
+
+function tripProblem(t: Record<string, unknown>): string | undefined {
+  if (typeof t.name !== "string") return "bad name";
+  if (!isoDate(t.start)) return "bad start date";
+  if (!Number.isInteger(t.days) || (t.days as number) < 1) return "bad days";
+  if (t.budget !== undefined && !(Number.isInteger(t.budget) && (t.budget as number) >= 0)) return "bad budget";
+  if (t.accountId !== undefined && typeof t.accountId !== "string") return "bad accountId";
+  if (!isObj(t.rates) || !Object.entries(t.rates).every(([k, v]) => /^[A-Za-z]{3}$/.test(k) && typeof v === "string" && /^\d+(\.\d+)?$/.test(v))) return "bad rates";
+  if (t.status !== "open" && t.status !== "concluded") return "bad status";
+  return undefined;
+}
+
+function tripItemProblem(t: Record<string, unknown>): string | undefined {
+  if (typeof t.tripId !== "string" || !t.tripId) return "missing tripId";
+  if (!isoDate(t.date)) return "bad date";
+  if (!Number.isInteger(t.amount) || (t.amount as number) <= 0) return "bad amount";
+  if (typeof t.currency !== "string" || !/^[A-Za-z]{3}$/.test(t.currency)) return "bad currency";
+  if (t.rate !== undefined && (typeof t.rate !== "string" || !/^\d+(\.\d+)?$/.test(t.rate))) return "bad rate";
+  if (t.final !== undefined && !(Number.isInteger(t.final) && (t.final as number) > 0)) return "bad final amount";
+  for (const k of ["accountId", "refundOf"]) if (t[k] !== undefined && typeof t[k] !== "string") return `bad ${k}`;
+  if (t.refund !== undefined && t.refund !== true) return "bad refund";
+  if (t.refund && t.split) return "a refund cannot be split";
+  return undefined;
+}
+
 /** Problems that make a file unsafe to import. An empty list means it is fine. */
 export function validateBundle(b: Bundle): string[] {
   const out: string[] = [];
@@ -58,6 +86,15 @@ export function validateBundle(b: Bundle): string[] {
         if (p) out.push(`${path} entry ${i + 1}: ${p}`);
         else if (!(e as Entry).date.startsWith(month)) out.push(`${path} entry ${i + 1}: date is in another month`);
       });
+    } else if (path === "trips.json") {
+      for (const [key, check] of [["trips", tripProblem], ["tripItems", tripItemProblem]] as const) {
+        const list = doc[key];
+        if (!Array.isArray(list)) { out.push(`${path}: no ${key} list`); continue; }
+        list.forEach((x, i) => {
+          const p = !idStamp(x) ? "missing id or timestamp" : check(x);
+          if (p) out.push(`${path} ${key === "trips" ? "trip" : "item"} ${i + 1}: ${p}`);
+        });
+      }
     } else if (path !== "settings.json") {
       const key = path.slice(0, -5);
       const list = doc[key];

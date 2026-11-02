@@ -9,7 +9,11 @@ import { GitHubError, type GitHubApi } from "./github";
 import { mergeDocs } from "./merge";
 
 export const MANIFEST = "manifest.json";
-export const isDataPath = (p: string) => /^(settings|people|accounts|rules)\.json$/.test(p) || /^months\/\d{4}-\d{2}\.json$/.test(p);
+export const isDataPath = (p: string) => /^(settings|people|accounts|rules|trips)\.json$/.test(p) || /^months\/\d{4}-\d{2}\.json$/.test(p);
+
+/** A file added after V2.0.3. An older copy rebuilds the manifest from the files it knows, so it drops
+ *  this one from the list even though the file stays in the repo. */
+const RESCUE = "trips.json";
 
 export class ChecksumError extends Error {
   constructor(public path: string) {
@@ -74,8 +78,20 @@ async function downloadAll(api: GitHubApi, r: Remote, have?: Record<string, stri
     if ((await sha256Hex(text)) !== sum) throw new ChecksumError(path);
     out[path] = JSON.parse(text) as Doc;
   }
+  // The rescue: the manifest does not list the file but the repo still holds it, so read it rather than
+  // let the pull delete the trips from this device. It has no checksum to verify; it must parse.
+  const orphan = r.manifest && !(RESCUE in r.manifest.checksums) ? r.blobs.get(RESCUE) : undefined;
+  if (orphan) {
+    try {
+      const doc = JSON.parse(await api.getBlobText(orphan)) as Doc;
+      if (doc && typeof doc === "object" && !Array.isArray(doc)) out[RESCUE] = doc;
+    } catch { /* unreadable: leave it in the repo untouched */ }
+  }
   return out;
 }
+
+/** Paths that came from the rescue, so the next push lists them in the manifest again. */
+const rescued = (r: Remote, docs: Record<string, Doc>) => (r.manifest && RESCUE in docs && !(RESCUE in r.manifest.checksums) ? [RESCUE] : []);
 
 async function setBase(store: LedgerStore, r: Pick<Remote, "head" | "manifest">, now: Date) {
   await store.setMeta("baseCommit", r.head);
@@ -108,7 +124,10 @@ export async function check(store: LedgerStore, c: Ctx): Promise<CheckResult> {
   const texts = await localTexts(store);
   const docs = await store.allDocs();
   const next = await downloadAll(c.api, remote, await checksums(texts), docs);
+  const orphans = rescued(remote, next);
+  for (const p of orphans) if (docs[p]) next[p] = mergeDocs(p, docs[p], next[p]); // keep trips made on this device
   await store.replaceAll(next);
+  await store.markDirty(orphans);
   await setBase(store, remote, nowOf(c));
   return "pulled";
 }
@@ -186,6 +205,7 @@ export async function resolve(store: LedgerStore, c: Ctx, choice: Choice, saveBa
 
   if (choice === "remote") {
     await store.replaceAll(remoteDocs);
+    await store.markDirty(rescued(remote, remoteDocs));
     await setBase(store, remote, stamp);
     return { deletions: [] };
   }

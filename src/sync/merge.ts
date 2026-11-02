@@ -23,6 +23,9 @@ export function mergeDocs(path: string, local: Doc | undefined, remote: Doc | un
     const cats = [...new Set([...((remote.categories as string[]) ?? []), ...((local.categories as string[]) ?? [])])];
     return { ...remote, ...local, categories: cats };
   }
+  if (path === "trips.json") {
+    return { trips: mergeById((local.trips as Item[]) ?? [], (remote.trips as Item[]) ?? []), tripItems: mergeById((local.tripItems as Item[]) ?? [], (remote.tripItems as Item[]) ?? []) };
+  }
   for (const key of ["people", "accounts", "rules"]) {
     if (path === `${key}.json`) return { [key]: mergeById((local[key] as Item[]) ?? [], (remote[key] as Item[]) ?? []) };
   }
