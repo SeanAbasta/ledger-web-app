@@ -26,6 +26,8 @@ import { DashboardIcon, NextIcon, PrevIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
 import { useTodayKey } from "../../ui/useTodayKey";
 import { balanceNote } from "./balanceNote";
+import { loadTripsFile } from "../../data/trips";
+import { cardReminders, reminderLine, tripReminders, type TripReminder } from "../../data/tripReminders";
 import { CardTile } from "./CardTile";
 import { CardView } from "./CardView";
 import { FixSheet } from "./FixSheet";
@@ -33,6 +35,8 @@ import { roveTo } from "./rove";
 import { YearView } from "./YearView";
 
 interface View {
+  /** Open trips whose money is not in the Ledger yet (read-only lines, never a figure). */
+  reminders: TripReminder[];
   base: string;
   cur: Summary;
   /** The category chart and daily bars: what was spent, plus the rest of the month's scheduled items when it is not over. */
@@ -137,7 +141,7 @@ function Lattice({ days, from, elapsed, todayIdx, base, label, onOpen }: { days:
 
 /** `onOpenDay` opens one day in the Ledger's Day view (a tap on the Daily calendar); `onOpenLedger` opens the Month view at a date, as before. */
 /** `focusTile` (a Coming up bill) scrolls that card's tile into view once loaded; `onComingUp` opens Coming up. */
-export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSettings, onAdd, onComingUp, focusTile }: { onOpenPerson: (personId: string) => void; onOpenLedger: (date: string) => void; onOpenDay?: (date: string) => void; onOpenCardSettings: (cardId: string) => void; onAdd?: () => void; onComingUp?: () => void; focusTile?: string }) {
+export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSettings, onOpenTrip, onAdd, onComingUp, focusTile }: { onOpenTrip?: (tripId: string) => void; onOpenPerson: (personId: string) => void; onOpenLedger: (date: string) => void; onOpenDay?: (date: string) => void; onOpenCardSettings: (cardId: string) => void; onAdd?: () => void; onComingUp?: () => void; focusTile?: string }) {
   const { store, rev } = useLedger();
   const [anchor, setAnchor] = useState(today());
   const [v, setV] = useState<View>();
@@ -200,10 +204,11 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
       const cards = world.accounts.filter(isCard).map((card) => ({ card, st: cardStatus(card, upToToday, world.rules, t), bd: cardBreakdown(card, upToToday, t) }));
       const banks = world.accounts.filter((a) => !isCard(a));
       const allAccounts = await listAll(store, "accounts");
+      const tripFile = await loadTripsFile(store);
       if (stale) return;
       const d = dir.current;
       dir.current = 0;
-      setV((old) => ({ dir: old && old.from !== from ? d : 0, acct, base, cur, chart, planned, future, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, accounts: world.accounts, items: upToToday, salaryAccount: activeSalaryRule(world.rules, t)?.accountId, defaults: settings.defaults, orphans: orphans(world.entries, world.rules, allAccounts), allAccounts }));
+      setV((old) => ({ dir: old && old.from !== from ? d : 0, acct, base, cur, chart, planned, future, prevTotal: prev.total, stillDue, from, isCurrent, balances, owed, next: fc.months[1], cards, banks, accounts: world.accounts, items: upToToday, salaryAccount: activeSalaryRule(world.rules, t)?.accountId, defaults: settings.defaults, orphans: orphans(world.entries, world.rules, allAccounts), allAccounts, reminders: tripReminders(tripFile.trips, tripFile.tripItems, base, t) }));
     })();
     return () => { stale = true; };
   }, [store, rev, anchor, acct]);
@@ -212,6 +217,8 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
   if (view === "Year") return <>{switcher}<YearView /></>;
   if (!v) return null;
   const { base, cur, chart, planned, future, prevTotal, stillDue, from, isCurrent, balances, owed, next, cards, banks, accounts, items, salaryAccount, defaults } = v;
+  const late = v.reminders.filter((r) => r.late);
+  const quiet = v.reminders.filter((r) => !r.late);
   const fixable = v.orphans.entries.length + v.orphans.rules.length > 0;
   const showAccounts = balances.accounts.length > 0 || balances.unassigned !== 0 || fixable;
   const showOwed = owed.people.length > 0;
@@ -243,7 +250,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
         <div className="toolrow">
           <span className="nav"><button className="title back" onClick={back}><PrevIcon />Dashboard</button></span>
         </div>
-        <CardView card={opened.card} st={opened.st} bd={opened.bd} banks={banks} items={items} accounts={accounts} onOpenLedger={onOpenLedger} onOpenCard={() => onOpenCardSettings(opened.card.id)} />
+        <CardView trips={cardReminders(v.reminders, opened.card.id, (n) => formatMinor(n, base))} onOpenTrip={onOpenTrip} card={opened.card} st={opened.st} bd={opened.bd} banks={banks} items={items} accounts={accounts} onOpenLedger={onOpenLedger} onOpenCard={() => onOpenCardSettings(opened.card.id)} />
       </>
     );
   }
@@ -255,6 +262,7 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
   return (
     <>
       {switcher}
+      {late.length > 0 && <div className="tripnotes late">{late.map((r) => <p key={r.tripId}><button type="button" className="textlink" onClick={() => onOpenTrip?.(r.tripId)}>{reminderLine(r, (n) => formatMinor(n, base))}</button></p>)}</div>}
       <div className="toolrow">
         <span className="nav">
           <button aria-label="Previous month" onClick={() => go(-1, (a) => addMonths(monthStart(a), -1))}><PrevIcon /></button>
@@ -342,9 +350,10 @@ export function Dashboard({ onOpenPerson, onOpenLedger, onOpenDay, onOpenCardSet
         </div>
       )}
       {note && <p className="mute small hint balnote">{note}</p>}
+      {quiet.map((r) => <p key={r.tripId} className="mute small hint balnote"><button type="button" className="textlink quiet" onClick={() => onOpenTrip?.(r.tripId)}>{reminderLine(r, (n) => formatMinor(n, base))}</button></p>)}
       {cards.length > 0 && (
         <div className={`grid ${cards.length % 3 === 0 ? "g3" : "g2"}`}>
-          {cards.map(({ card, st }) => <CardTile key={card.id} focused={card.id === focusTile} card={card} color={cardColor(card, accounts)} st={st} banks={banks} defaultBank={salaryAccount} defaults={defaults} onOpen={() => setOpenCard(card.id)} />)}
+          {cards.map(({ card, st }) => <CardTile key={card.id} trips={cardReminders(v.reminders, card.id, (n) => formatMinor(n, base))} onOpenTrip={onOpenTrip} focused={card.id === focusTile} card={card} color={cardColor(card, accounts)} st={st} banks={banks} defaultBank={salaryAccount} defaults={defaults} onOpen={() => setOpenCard(card.id)} />)}
         </div>
       )}
       <div className={`grid ${bottomCards === 3 ? "g3" : "g2"}`}>

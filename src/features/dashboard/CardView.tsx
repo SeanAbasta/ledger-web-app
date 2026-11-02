@@ -13,7 +13,8 @@ const TABS = ["Statement", "Unbilled", "Plans"] as const;
 type Tab = (typeof TABS)[number];
 
 /** What makes up each number on a card tile. Read-only; every list adds up to the tile's figure. */
-export function CardView({ card, st, bd, banks, items, accounts, onOpenLedger, onOpenCard }: {
+export function CardView({ card, st, bd, banks, items, accounts, onOpenLedger, onOpenCard, trips, onOpenTrip }: {
+  trips?: { tripId: string; text: string }[]; onOpenTrip?: (tripId: string) => void;
   card: Account; st: CardStatus; bd: CardBreakdown; banks: Account[]; items: LedgerItem[]; accounts: Account[];
   onOpenLedger: (date: string) => void; onOpenCard: () => void;
 }) {
@@ -51,6 +52,7 @@ export function CardView({ card, st, bd, banks, items, accounts, onOpenLedger, o
     <div className="cardview">
       <h2 className="cvtitle">{card.name}</h2>
       <Segmented label="Card view" value={tab} options={TABS} onChange={setTab} />
+      {tab !== "Plans" && trips?.map((t) => <p key={t.tripId} className="mute small"><button type="button" className="textlink quiet" onClick={() => onOpenTrip?.(t.tripId)}>{t.text}</button></p>)}
 
       {tab === "Statement" && (
         <>

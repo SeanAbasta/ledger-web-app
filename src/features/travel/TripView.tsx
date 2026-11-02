@@ -32,7 +32,7 @@ function saveTab(v: Tab) {
 }
 
 /** One trip: its expenses, the statement step per card, and the summary with Conclude. */
-export function TripView({ trip, data, onBack }: { trip: Trip; data: TravelData; onBack: () => void }) {
+export function TripView({ trip, data, onBack, onShowInLedger }: { trip: Trip; data: TravelData; onBack: () => void; onShowInLedger: (tripId: string) => void }) {
   const [tab, setTabState] = useState<Tab>(loadTab);
   const setTab = (t: Tab) => { saveTab(t); setTabState(t); };
   const [adding, setAdding] = useState(false);
@@ -52,10 +52,11 @@ export function TripView({ trip, data, onBack }: { trip: Trip; data: TravelData;
     );
   }
 
-  return <Body trip={trip} data={data} items={items} totals={totals} tab={tab} setTab={setTab} card={card} setCard={setCard} onBack={onBack} onAdd={() => setAdding(true)} open={open} />;
+  return <Body trip={trip} data={data} items={items} totals={totals} tab={tab} setTab={setTab} card={card} setCard={setCard} onBack={onBack} onAdd={() => setAdding(true)} open={open} onShowInLedger={onShowInLedger} />;
 }
 
-function Body({ trip, data, items, totals, tab, setTab, card, setCard, onBack, onAdd, open }: {
+function Body({ trip, data, items, totals, tab, setTab, card, setCard, onBack, onAdd, open, onShowInLedger }: {
+  onShowInLedger: (tripId: string) => void;
   trip: Trip; data: TravelData; items: TripItem[]; totals: ReturnType<typeof tripTotals>; tab: Tab; setTab: (t: Tab) => void;
   card?: string; setCard: (c?: string) => void; onBack: () => void; onAdd: () => void; open: boolean;
 }) {
@@ -82,7 +83,7 @@ function Body({ trip, data, items, totals, tab, setTab, card, setCard, onBack, o
       <Segmented label="Trip view" value={tab} options={TABS} onChange={(v) => { setCard(undefined); setTab(v); }} />
       {tab === "Expenses" && <Expenses trip={trip} data={data} items={items} onAdd={onAdd} open={open} />}
       {tab === "Cards" && <Statement trip={trip} data={data} items={items} card={card} onCard={setCard} open={open} />}
-      {tab === "Summary" && <Summary trip={trip} data={data} items={items} totals={totals} onCard={(id) => { setCard(id); setTab("Cards"); }} onBack={onBack} />}
+      {tab === "Summary" && <Summary trip={trip} data={data} items={items} totals={totals} onCard={(id) => { setCard(id); setTab("Cards"); }} onBack={onBack} onShowInLedger={onShowInLedger} />}
     </div>
   );
 }
@@ -225,7 +226,7 @@ function RefundOnly({ item, onClose }: { item: TripItem; onClose: () => void }) 
 
 // ---- Summary and Conclude --------------------------------------------------------------------
 
-function Summary({ trip, data, items, totals, onCard, onBack }: { trip: Trip; data: TravelData; items: TripItem[]; totals: ReturnType<typeof tripTotals>; onCard: (id: string) => void; onBack: () => void }) {
+function Summary({ trip, data, items, totals, onCard, onBack, onShowInLedger }: { onShowInLedger: (tripId: string) => void; trip: Trip; data: TravelData; items: TripItem[]; totals: ReturnType<typeof tripTotals>; onCard: (id: string) => void; onBack: () => void }) {
   const base = data.base;
   const { store, changed } = useLedger();
   const { show } = useToast();
@@ -325,6 +326,7 @@ function Summary({ trip, data, items, totals, onCard, onBack }: { trip: Trip; da
       )}
       {!open && (
         <div className="actions tripactions">
+          {posted.length > 0 && <button type="button" className="btn ghost" onClick={() => onShowInLedger(trip.id)}>Show in Ledger</button>}
           <ConfirmButton danger label="Delete trip record" ask={`Delete the ${trip.name} record? Its ${posted.length} entries stay.`} onConfirm={() => void remove()} />
         </div>
       )}

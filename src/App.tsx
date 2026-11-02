@@ -88,11 +88,11 @@ function AddTab({ initialKind, onTrip, onView, onOpenSettings, onSetup, onSalary
   );
 }
 
-function Screen({ addKind, focusTrip, openTrip, planTrip, refill, onRefill, onTaken, unsaved, tab, go, setup, focusPerson, openPerson, saved, onSaved, ledgerView, setLedgerView, focusCard, openCard, focusTile, openTile, settingsPage, openSettings }: { addKind?: AddKind; focusTrip?: string; openTrip: (id: string) => void; planTrip: () => void; refill?: Refill; onRefill: (d: Draft) => void; onTaken: () => void; unsaved: MutableRefObject<Unsaved>; tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; ledgerView?: LedgerView; setLedgerView: (v?: LedgerView) => void; focusCard?: string; openCard: (id: string) => void; focusTile?: string; openTile: (id: string) => void; settingsPage?: SettingsPage; openSettings: (p: SettingsPage) => void }) {
+function Screen({ ledgerTrip, showTrip, addKind, focusTrip, openTrip, planTrip, refill, onRefill, onTaken, unsaved, tab, go, setup, focusPerson, openPerson, saved, onSaved, ledgerView, setLedgerView, focusCard, openCard, focusTile, openTile, settingsPage, openSettings }: { ledgerTrip?: string; showTrip: (tripId: string) => void; addKind?: AddKind; focusTrip?: string; openTrip: (id: string) => void; planTrip: () => void; refill?: Refill; onRefill: (d: Draft) => void; onTaken: () => void; unsaved: MutableRefObject<Unsaved>; tab: Tab; go: (t: Tab) => void; setup: () => void; focusPerson?: string; openPerson: (id: string) => void; saved?: SavedNote; onSaved: (s?: SavedNote) => void; ledgerView?: LedgerView; setLedgerView: (v?: LedgerView) => void; focusCard?: string; openCard: (id: string) => void; focusTile?: string; openTile: (id: string) => void; settingsPage?: SettingsPage; openSettings: (p: SettingsPage) => void }) {
   if (tab === "Add") return <AddTab key={`${refill?.n ?? 0}${addKind ?? ""}`} initialKind={addKind} onTrip={openTrip} refill={refill} onRefill={onRefill} onTaken={onTaken} unsaved={unsaved} onView={(s) => { onSaved(s); go("Ledger"); }} onOpenSettings={() => openSettings("accounts")} onSetup={setup} onSalary={() => { try { localStorage.setItem("ledger.comingUp", "12 months"); } catch { /* storage blocked */ } go("Coming up"); }} />;
-  if (tab === "Ledger") return <Ledger key={`${saved?.date ?? ""}/${ledgerView ?? ""}`} initialDate={saved?.date} initialView={ledgerView} notice={saved?.message} onAdd={() => go("Add")} onComingUp={() => go("Coming up")} />;
-  if (tab === "Travel") return <Travel key={focusTrip ?? ""} initialTrip={focusTrip} onPlan={planTrip} />;
-  if (tab === "Dashboard") return <Dashboard onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); setLedgerView(undefined); go("Ledger"); }} onOpenDay={(date) => { onSaved({ date, message: "" }); setLedgerView("Day"); go("Ledger"); }} onOpenCardSettings={openCard} onAdd={() => go("Add")} onComingUp={() => go("Coming up")} focusTile={focusTile} />;
+  if (tab === "Ledger") return <Ledger key={`${saved?.date ?? ""}/${ledgerView ?? ""}/${ledgerTrip ?? ""}`} initialDate={saved?.date} initialView={ledgerView} notice={saved?.message} tripFilter={ledgerTrip} onOpenTrip={openTrip} onAdd={() => go("Add")} onComingUp={() => go("Coming up")} />;
+  if (tab === "Travel") return <Travel key={focusTrip ?? ""} initialTrip={focusTrip} onPlan={planTrip} onShowInLedger={showTrip} />;
+  if (tab === "Dashboard") return <Dashboard onOpenTrip={openTrip} onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); setLedgerView(undefined); go("Ledger"); }} onOpenDay={(date) => { onSaved({ date, message: "" }); setLedgerView("Day"); go("Ledger"); }} onOpenCardSettings={openCard} onAdd={() => go("Add")} onComingUp={() => go("Coming up")} focusTile={focusTile} />;
   if (tab === "People") return <Splits key={focusPerson ?? ""} initialPerson={focusPerson} />;
   if (tab === "Coming up") return <ComingUp onOpenCard={openTile} onOpenPerson={openPerson} onOpenLedger={(date) => { onSaved({ date, message: "" }); setLedgerView(undefined); go("Ledger"); }} />;
   return <Settings onSetup={setup} focusCard={focusCard} initialPage={settingsPage} />;
@@ -116,6 +116,8 @@ function Shell() {
   // Set when a new trip is saved, so Travel opens on it; and when Travel sends you to Add > Trip.
   const [focusTrip, setFocusTrip] = useState<string>();
   const [addKind, setAddKind] = useState<AddKind>();
+  // Set when a trip record opens "Show in Ledger", so the Ledger lists only what that trip posted.
+  const [ledgerTrip, setLedgerTrip] = useState<string>();
   // Set when Reconcile opens a card's settings ("Set as Owed at start"), so Settings scrolls to it.
   const [focusCard, setFocusCard] = useState<string>();
   // Set when another screen opens a Settings page directly (the Add tab's transfer hint).
@@ -148,7 +150,7 @@ function Shell() {
   // The Ledger's docked pane may hold typed changes: it can ask before a room change drops them.
   const guard = useRef<LeaveGuard | undefined>(undefined);
   const open = (n: Tab) => {
-    const go = () => { setFocusPerson(undefined); setSaved(undefined); setLedgerView(undefined); setFocusTile(undefined); setFocusCard(undefined); setSettingsPage(undefined); setFocusTrip(undefined); setAddKind(undefined); setTab(n); };
+    const go = () => { setFocusPerson(undefined); setSaved(undefined); setLedgerView(undefined); setFocusTile(undefined); setFocusCard(undefined); setSettingsPage(undefined); setFocusTrip(undefined); setAddKind(undefined); setLedgerTrip(undefined); setTab(n); };
     if (!guard.current?.(go)) go();
   };
 
@@ -192,7 +194,7 @@ function Shell() {
           <fieldset className="plain" disabled={locked}>
             {/* Keyed on the tab so the new screen fades in (screens already remount on a tab change). */}
             <div key={tab} className="tabfade">
-            <Screen addKind={addKind} focusTrip={focusTrip} openTrip={(id) => { setFocusTrip(id); setAddKind(undefined); setTab("Travel"); }} planTrip={() => { setAddKind("Trip"); setTab("Add"); }} refill={refill} unsaved={unsaved} onTaken={() => setRefill((r) => (r ? { ...r, taken: true } : r))} onRefill={(draft) => { setRefill((r) => ({ draft, n: (r?.n ?? 0) + 1 })); setTab("Add"); }} tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("People"); }} saved={saved} onSaved={setSaved} ledgerView={ledgerView} setLedgerView={setLedgerView} focusTile={focusTile} openTile={(id) => { setFocusTile(id); setTab("Dashboard"); }} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} settingsPage={settingsPage} openSettings={(p) => { setSettingsPage(p); setTab("Settings"); }} />
+            <Screen ledgerTrip={ledgerTrip} showTrip={(id) => { setLedgerTrip(id); setTab("Ledger"); }} addKind={addKind} focusTrip={focusTrip} openTrip={(id) => { setFocusTrip(id); setAddKind(undefined); setTab("Travel"); }} planTrip={() => { setAddKind("Trip"); setTab("Add"); }} refill={refill} unsaved={unsaved} onTaken={() => setRefill((r) => (r ? { ...r, taken: true } : r))} onRefill={(draft) => { setRefill((r) => ({ draft, n: (r?.n ?? 0) + 1 })); setTab("Add"); }} tab={tab} go={setTab} setup={() => setSheet("setup")} focusPerson={focusPerson} openPerson={(id) => { setFocusPerson(id); setTab("People"); }} saved={saved} onSaved={setSaved} ledgerView={ledgerView} setLedgerView={setLedgerView} focusTile={focusTile} openTile={(id) => { setFocusTile(id); setTab("Dashboard"); }} focusCard={focusCard} openCard={(id) => { setFocusCard(id); setTab("Settings"); }} settingsPage={settingsPage} openSettings={(p) => { setSettingsPage(p); setTab("Settings"); }} />
             </div>
           </fieldset>
         </section>

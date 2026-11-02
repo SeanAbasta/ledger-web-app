@@ -15,7 +15,7 @@ import { PlanSheet } from "./PlanSheet";
 import { dayShare, shareLine } from "./rowShare";
 import { cardVisible } from "./nextCard";
 import { itemTags, tripTag } from "./rowTags";
-import { tripNames } from "../../data/trips";
+import { tripLabel, tripNames } from "../../data/trips";
 import { allTimeRange, emptyAction, groupByDay, groupByMonth } from "./allTime";
 import { TransferForm } from "./TransferForm";
 import { MoneyInput } from "../../ui/MoneyInput";
@@ -26,7 +26,7 @@ import { ConfirmButton } from "../../ui/ConfirmButton";
 import { confirmLabel } from "../../ui/confirm";
 import { categoryTone } from "../../ui/categoryColor";
 import { Empty } from "../../ui/Empty";
-import { LedgerIcon, NextIcon, PrevIcon } from "../../ui/icons";
+import { CloseIcon, LedgerIcon, NextIcon, PrevIcon } from "../../ui/icons";
 import { useLedger } from "../../ui/Ledger";
 import { useLeaveGuard } from "../../ui/leaveGuard";
 import { UNDO_FAILED, useToast } from "../../ui/Toast";
@@ -50,13 +50,15 @@ function title(view: View, anchor: string): string {
  * `initialView` opens Day, Week or Month (default Month); a tap on the Dashboard calendar opens Day.
  * `onAdd` opens the Add tab (the empty state's button on the period that holds today).
  */
-export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: { initialDate?: string; initialView?: View; notice?: string; onAdd?: () => void; onComingUp?: () => void } = {}) {
+export function Ledger({ initialDate, initialView, notice, tripFilter, onAdd, onComingUp, onOpenTrip }: { initialDate?: string; initialView?: View; notice?: string; tripFilter?: string; onAdd?: () => void; onComingUp?: () => void; onOpenTrip?: (tripId: string) => void } = {}) {
   const { store, rev, changed } = useLedger();
   const { show } = useToast();
   const [view, setView] = useState<View>(initialView ?? "Month");
   const [anchor, setAnchor] = useState(initialDate ?? today());
   const [q, setQ] = useState("");
   const [cat, setCat] = useState(""); // "" is All categories
+  // Only what one trip posted (set from the trip's record); a chip shows it and removes it.
+  const [tripId, setTripId] = useState(tripFilter);
   const [categories, setCategories] = useState<string[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
   // False until the first period has loaded: no "Nothing logged" flash over a list that is coming.
@@ -75,7 +77,7 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
   const [refundDate, setRefundDate] = useState(today());
   const [refundErr, setRefundErr] = useState("");
   // "Search all months": while searching or filtering, look through every month instead of the period.
-  const [scope, setScope] = useState<"period" | "all">("period");
+  const [scope, setScope] = useState<"period" | "all">(tripFilter ? "all" : "period");
   const [allData, setAllData] = useState<{ entries: Entry[]; rules: Rule[] }>();
 
   const [from, to] = periodOf(view, anchor);
@@ -114,9 +116,10 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
   useTodayKey(goToday);
   // Generated payments after today show too (as upcoming), so a plan that starts later can be found and fixed.
   const all = useMemo(() => ledgerItems(entries, rules, shown.from, shown.to), [entries, rules, shown, t]);
-  const items = useMemo(() => all.filter((it) => itemMatches(it, q, cat)), [all, q, cat]);
+  const inTrip = (it: LedgerItem) => !tripId || (it.type === "entry" && it.entry.tripId === tripId);
+  const items = useMemo(() => all.filter((it) => itemMatches(it, q, cat) && inTrip(it)), [all, q, cat, tripId]); // eslint-disable-line react-hooks/exhaustive-deps
   const choices = useMemo(() => categoryChoices(all, categories, cat), [all, categories, cat]);
-  const filtered = !!q.trim() || !!cat;
+  const filtered = !!q.trim() || !!cat || !!tripId;
   const allScope = scope === "all" && filtered;
   // Clearing Search and the category goes back to the period.
   useEffect(() => { if (!filtered) setScope("period"); }, [filtered]);
@@ -133,8 +136,8 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
   const months = useMemo(() => {
     if (!allScope || !allData) return undefined;
     const range = allTimeRange(allData.entries, allData.rules, t);
-    return groupByMonth(range ? ledgerItems(allData.entries, allData.rules, range[0], range[1]).filter((it) => itemMatches(it, q, cat)) : []);
-  }, [allScope, allData, q, cat, t]);
+    return groupByMonth(range ? ledgerItems(allData.entries, allData.rules, range[0], range[1]).filter((it) => itemMatches(it, q, cat) && inTrip(it)) : []);
+  }, [allScope, allData, q, cat, t, tripId]); // eslint-disable-line react-hooks/exhaustive-deps
   const upcoming = (it: LedgerItem) => it.type === "occurrence" && it.date > t;
   const due = useMemo(
     () => rules.flatMap((r) => occurrences(r, addDays(t, 1), addDays(t, 30))).sort((a, b) => (a.date < b.date ? -1 : 1)).filter((o) => o.kind === "expense"),
@@ -300,6 +303,11 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
       </div>
 
       {notice && <p className="mute small hint" role="status">{notice}</p>}
+      {tripId && (
+        <p className="tripchipline">
+          <button type="button" className="tag trip chipbtn" aria-label={`Showing only ${trips.get(tripId) ?? "one trip"}. Remove this filter.`} onClick={() => setTripId(undefined)}>{trips.get(tripId) ?? "Trip"}<CloseIcon /></button>
+        </p>
+      )}
       {filtered && (
         <p className="mute small hint scopeline">
           {allScope
@@ -342,6 +350,7 @@ export function Ledger({ initialDate, initialView, notice, onAdd, onComingUp }: 
         <Panel key={editing.id} locked onClose={close(() => setEditing(undefined))}>
           {wide && <p className="mute dmeta">{labelDay(editing.date)}{editing.accountId ? `, ${accountName(editing.accountId)}` : ""}</p>}
           <h3>{editing.refund ? "Edit refund" : editing.kind === "income" ? "Edit income" : "Edit expense"}</h3>
+          {editing.tripId && onOpenTrip && <button type="button" className="golink" onClick={() => onOpenTrip(editing.tripId!)}>Part of {tripLabel(trips.get(editing.tripId))}<NextIcon /></button>}
           {/* One-off side income opens its own form; salary entries and refunds open the expense form as before. */}
           {incomeEditor(editing) === "income" ? <IncomeForm entry={editing} onDone={finish(() => setEditing(undefined))} /> : <AddForm entry={editing} onDone={finish(() => setEditing(undefined))} />}
           {editing.kind === "expense" && onCard(editing) && (

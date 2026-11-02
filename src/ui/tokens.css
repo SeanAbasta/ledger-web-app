@@ -1032,3 +1032,12 @@ button.link:focus-visible, .chip button:focus-visible, .sheet .close:focus-visib
 .stmttotal { margin-top: var(--sp-5); }
 .stmttotal b, .stmttotal b .sub { display: block; }
 .stmtcheck { margin: var(--sp-2) 0 0; font-size: var(--fs-md); }
+.tripnotes { margin: 0 0 var(--sp-3); display: grid; gap: var(--sp-2); }
+.tripnotes p { margin: 0; font-size: var(--fs-md); }
+.tripnotes.late .textlink { text-decoration: none; font-weight: 500; color: var(--ink); }
+.tripnotes.late { padding: var(--sp-3) var(--sp-4); border: 1px solid var(--warn-ink); border-radius: var(--r-slip); }
+.textlink.quiet { color: var(--sub); font-weight: 400; text-decoration: underline; text-underline-offset: 3px; text-align: left; }
+.tripchipline { margin: var(--sp-2) 0 0; }
+.tag.chipbtn { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; margin: 0; border: 1px solid var(--accent-ink); border-radius: var(--r-tag); font: 500 calc(13px * var(--ts)) var(--font); color: var(--accent-ink); cursor: pointer; }
+.tag.chipbtn .icon { width: 13px; height: 13px; }
+.tag.chipbtn:focus-visible { outline: var(--ring); outline-offset: 2px; }

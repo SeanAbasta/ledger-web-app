@@ -25,3 +25,6 @@ export const byDay = (a: TripItem, b: TripItem) => (a.date !== b.date ? (a.date 
 export async function tripNames(store: LedgerStore): Promise<Map<string, string>> {
   return new Map((await loadTripsFile(store)).trips.map((t) => [t.id, t.name]));
 }
+
+/** "Japan trip" for a trip called Japan, and just the name when it already says trip. */
+export const tripLabel = (name?: string): string => (!name ? "a trip" : /trip/i.test(name) ? name : `${name} trip`);

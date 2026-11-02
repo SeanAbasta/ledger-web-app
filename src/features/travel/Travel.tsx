@@ -11,13 +11,13 @@ import { useTravelData, type TravelData } from "./travelData";
 const dates = (t: Trip) => (t.days === 1 ? labelShort(t.start) : `${labelShort(t.start)} to ${labelShort(tripEnd(t))}`);
 
 /** The Travel room: your trips, open ones first. Tap one to go into its own ledger. */
-export function Travel({ initialTrip, onPlan }: { initialTrip?: string; onPlan: () => void }) {
+export function Travel({ initialTrip, onPlan, onShowInLedger }: { initialTrip?: string; onPlan: () => void; onShowInLedger: (tripId: string) => void }) {
   const data = useTravelData();
   const [openId, setOpenId] = useState(initialTrip);
   useEffect(() => { if (initialTrip) setOpenId(initialTrip); }, [initialTrip]);
   if (!data) return null;
   const trip = data.trips.find((t) => t.id === openId);
-  if (trip) return <TripView trip={trip} data={data} onBack={() => setOpenId(undefined)} />;
+  if (trip) return <TripView trip={trip} data={data} onBack={() => setOpenId(undefined)} onShowInLedger={onShowInLedger} />;
 
   const open = data.trips.filter((t) => t.status === "open");
   const done = data.trips.filter((t) => t.status === "concluded");

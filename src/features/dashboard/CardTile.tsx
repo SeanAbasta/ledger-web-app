@@ -19,7 +19,7 @@ const plain = (minor: number, cur: string) => formatMinor(minor, cur).replace(/[
 type Choice = "statement" | "all" | "other";
 
 /** One credit card: the last statement, what is unbilled, the credit left, and paying the bill. */
-export function CardTile({ card, color, st, banks, defaultBank, defaults, onOpen, focused }: { card: Account; color: CardColor; st: CardStatus; banks: Account[]; defaultBank?: string; defaults?: Defaults; onOpen?: () => void; focused?: boolean }) {
+export function CardTile({ card, color, st, banks, defaultBank, defaults, onOpen, focused, trips, onOpenTrip }: { trips?: { tripId: string; text: string }[]; onOpenTrip?: (tripId: string) => void; card: Account; color: CardColor; st: CardStatus; banks: Account[]; defaultBank?: string; defaults?: Defaults; onOpen?: () => void; focused?: boolean }) {
   const { store, changed } = useLedger();
   const [sheet, setSheet] = useState<"pay" | "due">();
   const [from, setFrom] = useState("");
@@ -124,6 +124,7 @@ export function CardTile({ card, color, st, banks, defaultBank, defaults, onOpen
           ))}
         </>
       )}
+      {trips?.map((t) => <p key={t.tripId} className="mute small"><button type="button" className="textlink quiet" onClick={() => onOpenTrip?.(t.tripId)}>{t.text}</button></p>)}
       {st.skipped > 0 && <p className="mute small">{st.skipped} foreign {st.skipped === 1 ? "amount has" : "amounts have"} no rate and {st.skipped === 1 ? "is" : "are"} left out.</p>}
       {st.remaining > 0 && <div className="actions"><button className="btn sm" onClick={() => open("pay")}>Pay</button></div>}
       {payAhead && <div className="actions"><button className="btn sm ghost" onClick={() => open("pay")}>Pay ahead</button></div>}
