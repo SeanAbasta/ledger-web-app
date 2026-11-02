@@ -3,7 +3,7 @@ import { list, listAll, remove, restore, saveSettings, upsert } from "../../data
 import { moveAndRemove } from "../../data/accountMove";
 import { CURRENCIES } from "../../data/currencies";
 import { formatMinor } from "../../data/money";
-import type { Account, Defaults, Entry, Person, Rule, Settings as S } from "../../data/schema";
+import type { Account, Defaults, Entry, Person, Rule, Settings as S, TripsFile } from "../../data/schema";
 import { DEFAULT_DUE_DAYS, DEFAULT_SETTINGS, isCard } from "../../data/schema";
 import { getSettings } from "../../data/collections";
 import { CARD_COLORS, CARD_COLOR_LABEL, cardColor, type CardColor } from "../../ui/cardColor";
@@ -12,6 +12,7 @@ import { daysLeft } from "../../sync/config";
 import { bundleText, parseBundle, type Bundle } from "../../data/bundle";
 import { entriesCsv, exportBundle, importBundle, validateBundle } from "../../data/exportImport";
 import { loadAllEntries } from "../../data/months";
+import { loadTripsFile } from "../../data/trips";
 import { accountBalances } from "../../data/accounts";
 import { nonZero } from "../../data/balances";
 import { today } from "../../data/dates";
@@ -188,7 +189,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
   const [drop, setDrop] = useState<{ kind: "people" | "accounts"; id: string; name: string; lines: string[]; targets?: Account[]; none?: string }>();
   const [moveTo, setMoveTo] = useState("");
   const [dropErr, setDropErr] = useState("");
-  const [refs, setRefs] = useState<{ entries: Entry[]; rules: Rule[] }>({ entries: [], rules: [] });
+  const [refs, setRefs] = useState<{ entries: Entry[]; rules: Rule[]; trips: TripsFile }>({ entries: [], rules: [], trips: { trips: [], tripItems: [] } });
   const [s, setS] = useState<S>(DEFAULT_SETTINGS);
   const [people, setPeople] = useState<Person[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -212,8 +213,8 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
       setAccounts(all.filter((a) => !a.deleted));
       setRemoved(all.filter((a) => a.deleted).sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)));
       // What refers to people and accounts, so removing one in use asks first.
-      const [entries, rules] = await Promise.all([loadAllEntries(store), list(store, "rules") as Promise<Rule[]>]);
-      setRefs({ entries, rules });
+      const [entries, rules, trips] = await Promise.all([loadAllEntries(store), list(store, "rules") as Promise<Rule[]>, loadTripsFile(store)]);
+      setRefs({ entries, rules, trips });
       setLastExported(await store.getMeta<string>("lastExported"));
       setLastSynced(await store.getMeta<string>("lastSynced"));
     })();
@@ -261,9 +262,9 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
     setDrop(d);
   }
   function askRemovePerson(p: Person) {
-    const u = personUsage(p.id, refs.entries, refs.rules, itemsToDate(refs, today()));
+    const u = personUsage(p.id, refs.entries, refs.rules, itemsToDate(refs, today()), refs.trips);
     const owed = nonZero(u.owed);
-    if (!u.entries && !u.plans && !owed.length) return void removeNow("people", p.id);
+    if (!u.entries && !u.plans && !u.trips && !owed.length) return void removeNow("people", p.id);
     const amts = (xs: [string, number][]) => xs.map(([c, v]) => formatMinor(Math.abs(v), c)).join(" and ");
     const theyOwe = owed.filter(([, v]) => v > 0);
     const iOwe = owed.filter(([, v]) => v < 0);
@@ -274,10 +275,10 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
     ] });
   }
   function askRemoveAccount(a: Account) {
-    const u = accountUsage(a.id, refs.entries, refs.rules);
+    const u = accountUsage(a.id, refs.entries, refs.rules, refs.trips);
     const on = usageText(u);
     if (isCard(a)) {
-      if (!u.entries && !u.plans) return void removeNow("accounts", a.id);
+      if (!u.entries && !u.plans && !u.trips) return void removeNow("accounts", a.id);
       const targets = accounts.filter((x) => isCard(x) && x.id !== a.id);
       return askAccount({ kind: "accounts", id: a.id, name: a.name, targets, none: "Add another card to move them to.", lines: [
         `${a.name} has ${on}.`,
@@ -288,7 +289,7 @@ export function Settings({ onSetup, focusCard, initialPage }: { onSetup: () => v
       ].filter(Boolean) });
     }
     const balance = accountBalances([a], itemsToDate(refs, today()), s.baseCurrency).accounts[0]?.balance ?? a.openingBalance;
-    if (!u.entries && !u.plans && !balance && !a.openingBalance) return void removeNow("accounts", a.id);
+    if (!u.entries && !u.plans && !u.trips && !balance && !a.openingBalance) return void removeNow("accounts", a.id);
     // Only worth moving when something refers to it; same currency, so the total stays the same.
     const targets = on ? banks.filter((x) => x.id !== a.id && x.currency === a.currency) : undefined;
     askAccount({ kind: "accounts", id: a.id, name: a.name, targets, none: `Add another ${a.currency} bank account to move them to.`, lines: [

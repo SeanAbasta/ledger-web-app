@@ -2,13 +2,15 @@
 // cleaned up) without its entries and plans landing in "Other". Everything happens in one
 // transaction, and every changed entry or rule gets a new updatedAt so merges carry it.
 import type { DocMap, LedgerStore } from "./db";
-import { isCard, type Account, type Defaults, type Entry, type Rule, type Settings } from "./schema";
+import { isCard, type Account, type Defaults, type Entry, type Rule, type Settings, type TripsFile } from "./schema";
 
 export interface MoveResult {
   /** Entries that now point at the new account. */
   entries: number;
   /** Plans (recurring, installments, salary) that now point at it. */
   plans: number;
+  /** Expenses in open trips (and the trips' default accounts) that now point at it. Left out when none. */
+  trips?: number;
   /** Transfers left as they were because both ends would be the same account. */
   kept: number;
 }
@@ -51,6 +53,19 @@ function moveIn(docs: DocMap, months: string[], from: Set<string>, to: Account):
     };
   });
   if (rulesTouched) docs.set("rules.json", { ...rulesDoc, rules: nextRules });
+  // Open trips: their expenses and default account follow, so Conclude never meets a removed account.
+  const tripsDoc = docs.get("trips.json") as (Partial<TripsFile> & Record<string, unknown>) | undefined;
+  if (tripsDoc) {
+    const open = new Set((tripsDoc.trips ?? []).filter((x) => !x.deleted && x.status === "open").map((x) => x.id));
+    let n = 0;
+    const hit = (id?: string) => !!id && from.has(id);
+    const trips = (tripsDoc.trips ?? []).map((x) => (open.has(x.id) && hit(x.accountId) ? (n++, { ...x, accountId: to.id, updatedAt: t }) : x));
+    const tripItems = (tripsDoc.tripItems ?? []).map((x) => (!x.deleted && open.has(x.tripId) && hit(x.accountId) ? (n++, { ...x, accountId: to.id, updatedAt: t }) : x));
+    if (n) {
+      docs.set("trips.json", { ...tripsDoc, trips, tripItems });
+      out.trips = n;
+    }
+  }
   // Defaults follow too. Income and card payments come from a bank, so a card never takes those.
   const settings = docs.get("settings.json") as (Partial<Settings> & Record<string, unknown>) | undefined;
   const d = settings?.defaults;
@@ -66,7 +81,7 @@ function moveIn(docs: DocMap, months: string[], from: Set<string>, to: Account):
 async function run(store: LedgerStore, fromIds: string[], toId: string, tombstone?: string): Promise<MoveResult> {
   const months = (await store.paths()).filter((p) => p.startsWith("months/"));
   let result: MoveResult = { entries: 0, plans: 0, kept: 0 };
-  await store.transact([...months, "rules.json", "settings.json", "accounts.json"], (docs) => {
+  await store.transact([...months, "rules.json", "settings.json", "accounts.json", "trips.json"], (docs) => {
     const accountsDoc = docs.get("accounts.json");
     const accounts = (accountsDoc?.accounts as Account[] | undefined) ?? [];
     const to = accounts.find((a) => a.id === toId && !a.deleted);
