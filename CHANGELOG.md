@@ -2,6 +2,12 @@
 
 What changed in each version, newest first. To get a new version into your own copy, see "Keeping your copy up to date" in the [README](README.md). Updates only replace the app's code. They never change your data repo or your browser's copy.
 
+## V2.1.3 (2026-11-13)
+
+A small patch for People. Nothing about your data changes, so an older copy keeps working.
+
+- People you have settled up with are tucked under a **Settled up** heading with a Show or Hide link, so the list stays short as it grows. Anyone with a balance stays at the top. The section opens by itself when nobody has a balance, or when you open one of the settled people from somewhere else.
+
 ## V2.1.2 (2026-11-02)
 
 A patch for Travel, from a second review of its screens and words. Nothing about your data changes, so an older copy keeps working.

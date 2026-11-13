@@ -4,7 +4,7 @@ A personal expense tracker that runs in the browser. It replaced a spreadsheet.
 
 Your data is kept in your browser first and synced between your computers through a private GitHub repository that you own. There is no server run by anyone else, no account to create and nothing to pay for.
 
-Latest version: V2.1.2. [Changelog](CHANGELOG.md).
+Latest version: V2.1.3. [Changelog](CHANGELOG.md).
 
 Travel arrived in V2.1.0. Beyond that, later releases are fixes and small improvements.
 
@@ -215,6 +215,7 @@ Ledger is deployed and in daily use. Sync between a Mac and a Windows PC has bee
 
 | Version | What changed |
 |---|---|
+| V2.1.3 | People: settled people are tucked under a Settled up section |
 | V2.1.2 | Travel: one word per thing, a Statements tab, the running trip opens directly, a fuller concluded record |
 | V2.1.1 | Travel: readable offline, a day row and budget bar, estimated and final figures, a concluded record |
 | V2.1.0 | Travel: a trip ledger with several currencies, a statement step, and Conclude |
