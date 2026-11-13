@@ -16,6 +16,7 @@ import { UNDO_FAILED, useToast } from "../../ui/Toast";
 import { modeLabel } from "../../ui/splitLabels";
 import { copyImage, downloadImage, renderStatement } from "./snapshot";
 import { partCheck } from "./settle";
+import { isSettled, splitSettled } from "./settledGroups";
 
 interface Row {
   person: Person;
@@ -37,6 +38,8 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
   // Settle up: All of it (as before) or Part of it, with the amount typed.
   const [howMuch, setHowMuch] = useState<"All of it" | "Part of it">("All of it");
   const [part, setPart] = useState("");
+  // The settled people are tucked away until asked for (or when nobody has a balance, or one of them is open).
+  const [showSettled, setShowSettled] = useState(false);
   const [snap, setSnap] = useState<{ blob: Blob; url: string; name: string; note?: string }>();
 
   useEffect(() => {
@@ -47,7 +50,8 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
       setRows(rs);
       setLoaded(true);
       setAccounts((await list(store, "accounts")).filter((a) => !isCard(a))); // settling up never goes to a card
-      setSel((s) => (s && rs.some((r) => r.person.id === s) ? s : rs[0]?.person.id));
+      // Opens on someone with a balance, if anyone has one.
+      setSel((s) => (s && rs.some((r) => r.person.id === s) ? s : (splitSettled(rs).open[0] ?? rs[0])?.person.id));
     })();
   }, [store, rev]);
 
@@ -99,27 +103,42 @@ export function Splits({ initialPerson }: { initialPerson?: string } = {}) {
   if (!loaded) return null;
   if (!rows.length) return <Empty icon={<PeopleIcon />} title="No one owes anyone yet" note="Turn on Split when you add an expense and balances appear here." />;
 
+  // One person: their balance and the two buttons.
+  const personRow = (r: Row) => {
+      const net = nonZero(sumBy(r.lines));
+      return (
+        <div key={r.person.id} className={`row static person ${r.person.id === sel ? "sel" : ""}`}>
+          <button className="who" aria-pressed={r.person.id === sel} onClick={() => setSel(r.person.id)}>
+            <b>{r.person.name}</b>
+            <span className="mute">{net.length ? net.map(([c, a]) => `${phrase(r.person.name, a).replace(r.person.name, "").trim()} ${formatMinor(Math.abs(a), c)}`).join(" · ") : "Settled"}</span>
+          </button>
+          {/* The balance as a figure, the Ledger's way: owed to you green with a plus, what you owe plain. The line above says it in words. */}
+          {net.length > 0 && <span className="pfig" aria-hidden="true">{net.map(([c, a]) => <span key={c} className={a > 0 ? "pos" : ""}>{a > 0 ? "+" : ""}{formatMinor(Math.abs(a), c)}</span>)}</span>}
+          <span className="acts">
+            <button className="btn ghost sm" onClick={() => void makeSnapshot(r)}>Snapshot</button>
+            <button className="btn sm" disabled={!net.length} onClick={() => { setHowMuch("All of it"); setPart(""); setSettle(r); }}>Settle up</button>
+          </span>
+        </div>
+      );
+  };
+  const { open, settled } = splitSettled(rows);
+  const selSettled = !!current && isSettled(current.lines);
+  const settledShown = showSettled || open.length === 0 || selSettled;
+  // Hiding the section while one of its people is open moves the selection to someone with a balance.
+  const toggleSettled = () => {
+    if (settledShown && open[0]) setSel(open[0].person.id);
+    setShowSettled(!settledShown);
+  };
+
   return (
     <>
-      <div className="card">
-        {rows.map((r) => {
-          const net = nonZero(sumBy(r.lines));
-          return (
-            <div key={r.person.id} className={`row static person ${r.person.id === sel ? "sel" : ""}`}>
-              <button className="who" aria-pressed={r.person.id === sel} onClick={() => setSel(r.person.id)}>
-                <b>{r.person.name}</b>
-                <span className="mute">{net.length ? net.map(([c, a]) => `${phrase(r.person.name, a).replace(r.person.name, "").trim()} ${formatMinor(Math.abs(a), c)}`).join(" · ") : "Settled"}</span>
-              </button>
-              {/* The balance as a figure, the Ledger's way: owed to you green with a plus, what you owe plain. The line above says it in words. */}
-              {net.length > 0 && <span className="pfig" aria-hidden="true">{net.map(([c, a]) => <span key={c} className={a > 0 ? "pos" : ""}>{a > 0 ? "+" : ""}{formatMinor(Math.abs(a), c)}</span>)}</span>}
-              <span className="acts">
-                <button className="btn ghost sm" onClick={() => void makeSnapshot(r)}>Snapshot</button>
-                <button className="btn sm" disabled={!net.length} onClick={() => { setHowMuch("All of it"); setPart(""); setSettle(r); }}>Settle up</button>
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      {open.length > 0 && <div className="card">{open.map(personRow)}</div>}
+      {settled.length > 0 && (
+        <>
+          <div className="grp" role="heading" aria-level={2}>Settled up{open.length > 0 && <button type="button" className="link" aria-expanded={settledShown} onClick={() => toggleSettled()}>{settledShown ? "Hide" : `Show ${settled.length}`}</button>}</div>
+          {settledShown && <div className="card">{settled.map(personRow)}</div>}
+        </>
+      )}
 
       {current && st && (
         <>
